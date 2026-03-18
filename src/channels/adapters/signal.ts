@@ -40,17 +40,23 @@ export class SignalAdapter implements ChannelAdapter {
 
     // Check signal-cli HTTP API is accessible
     try {
-      const response = await fetch(`${this.httpUrl}/api/v1/accounts`);
+      // Try to get account info (different endpoints for different versions)
+      const checkUrl = `${this.httpUrl}/api/v1/accounts/${encodeURIComponent(this.phoneNumber)}`;
+      const response = await fetch(checkUrl);
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        // Try root endpoint as fallback
+        const rootResponse = await fetch(`${this.httpUrl}/`);
+        if (!rootResponse.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
       }
-      const accounts = await response.json();
-      console.log(`[Signal] Available accounts:`, accounts);
+      console.log(`[Signal] Connected to signal-cli at ${this.httpUrl}`);
     } catch (error) {
       throw new Error(
         `Cannot connect to signal-cli daemon at ${this.httpUrl}.\n` +
-        `Start signal-cli with:\n` +
-        `  signal-cli -a ${this.phoneNumber} daemon --http 127.0.0.1:8686`
+        `Make sure signal-cli is running:\n` +
+        `  signal-cli -a ${this.phoneNumber} daemon --http 127.0.0.1:8686\n` +
+        `Error: ${error instanceof Error ? error.message : String(error)}`
       );
     }
 
@@ -73,17 +79,17 @@ export class SignalAdapter implements ChannelAdapter {
     }
 
     try {
-      const response = await fetch(
-        `${this.httpUrl}/api/v1/messages/${encodeURIComponent(to)}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: content }),
-        }
-      );
+      // signal-cli HTTP API format: /api/v1/accounts/{account}/messages/{recipient}
+      const url = `${this.httpUrl}/api/v1/accounts/${encodeURIComponent(this.phoneNumber)}/messages/${encodeURIComponent(to)}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: content }),
+      });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
     } catch (error) {
       console.error('[Signal] Failed to send message:', error);
@@ -120,10 +126,10 @@ export class SignalAdapter implements ChannelAdapter {
   }
 
   private async streamEvents(abortSignal: AbortSignal): Promise<void> {
-    const url = new URL(`${this.httpUrl}/api/v1/events`);
-    url.searchParams.set('account', this.phoneNumber);
+    // signal-cli HTTP API: /api/v1/accounts/{account}/events
+    const url = `${this.httpUrl}/api/v1/accounts/${encodeURIComponent(this.phoneNumber)}/events`;
 
-    const response = await fetch(url.toString(), {
+    const response = await fetch(url, {
       signal: abortSignal,
     });
 
