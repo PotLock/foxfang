@@ -94,18 +94,27 @@ export async function runAgent(
 
     const results = await executeToolCalls(toolCallsWithIds);
     
-    // Add tool results to messages and continue
-    const toolResultContent = results.map(r => 
-      `${r.toolCallId}: ${r.error ? `Error: ${r.error}` : r.output}`
-    ).join('\n');
+    // Build tool results for model (pass data, not formatted output)
+    const toolResultsForModel = results.map(r => {
+      const toolName = toolCallsWithIds.find(tc => tc.id === r.toolCallId)?.name;
+      if (r.error) {
+        return `${toolName}: Error: ${r.error}`;
+      }
+      // Pass data object to let model format the response naturally
+      const data = r.data || r.output;
+      return `${toolName}: ${typeof data === 'object' ? JSON.stringify(data) : data}`;
+    }).join('\n');
 
     // Make another call with tool results
+    // Include the assistant's tool call intent so model has full context
+    const assistantToolCallMsg = response.content || `I'll use the ${toolCallsWithIds.map(tc => tc.name).join(', ')} tool to help you.`;
+    
     const finalResponse = await provider.chat({
       model: agent.model || defaultModel,
       messages: [
         ...messages,
-        { role: 'assistant', content: response.content },
-        { role: 'user', content: `[Tool Results]\n${toolResultContent}` },
+        { role: 'assistant', content: assistantToolCallMsg },
+        { role: 'user', content: `[Tool Results - use this to answer the user]\n${toolResultsForModel}\n\nNow provide a helpful response to the user based on these results.` },
       ],
     });
 
@@ -124,11 +133,12 @@ export async function runAgent(
 
 /**
  * Run agent with streaming response
+ * Handles tool calls in the stream and executes them
  */
 export async function* runAgentStream(
   agentId: string,
   context: AgentContext
-): AsyncGenerator<{ type: 'text' | 'done'; content?: string }> {
+): AsyncGenerator<{ type: 'text' | 'tool_call' | 'tool_result' | 'done'; content?: string; tool?: string; args?: any; result?: any }> {
   const agent = agentRegistry.get(agentId);
   if (!agent) {
     throw new Error(`Agent not found: ${agentId}`);
@@ -174,7 +184,10 @@ export async function* runAgentStream(
                        actualProviderId === 'anthropic' ? 'claude-3-5-sonnet-latest' :
                        'gpt-4o';
 
-  // Stream response
+  // Stream response with tool call handling
+  const pendingToolCalls: ToolCall[] = [];
+  let fullContent = '';
+
   try {
     const stream = provider.chatStream({
       model: agent.model || defaultModel,
@@ -183,7 +196,58 @@ export async function* runAgentStream(
     });
 
     for await (const chunk of stream) {
-      yield { type: 'text', content: chunk.content || '' };
+      if (chunk.type === 'content') {
+        fullContent += chunk.content || '';
+        yield { type: 'text', content: chunk.content || '' };
+      } else if (chunk.type === 'tool_call') {
+        const toolCall: ToolCall = {
+          id: `call_${Date.now()}_${pendingToolCalls.length}`,
+          name: chunk.tool || '',
+          arguments: chunk.args,
+        };
+        pendingToolCalls.push(toolCall);
+        yield { type: 'tool_call', tool: chunk.tool, args: chunk.args };
+      }
+    }
+
+    // Execute any pending tool calls
+    if (pendingToolCalls.length > 0) {
+      const results = await executeToolCalls(pendingToolCalls);
+      
+      for (const result of results) {
+        yield { 
+          type: 'tool_result', 
+          tool: pendingToolCalls.find(tc => tc.id === result.toolCallId)?.name,
+          result: result.error ? { error: result.error } : { data: result.data || result.output }
+        };
+      }
+
+      // Continue conversation with tool results (pass data to model, not formatted output)
+      const toolResultContent = results.map(r => {
+        const toolName = pendingToolCalls.find(tc => tc.id === r.toolCallId)?.name;
+        if (r.error) {
+          return `${toolName}: Error: ${r.error}`;
+        }
+        // Pass data object to model, let it format the response
+        const data = r.data || r.output;
+        return `${toolName}: ${typeof data === 'object' ? JSON.stringify(data) : data}`;
+      }).join('\n');
+
+      // Make follow-up call with tool results
+      const followUpStream = provider.chatStream({
+        model: agent.model || defaultModel,
+        messages: [
+          ...messages,
+          { role: 'assistant', content: fullContent },
+          { role: 'user', content: `[Tool Results]\n${toolResultContent}` },
+        ],
+      });
+
+      for await (const chunk of followUpStream) {
+        if (chunk.type === 'content') {
+          yield { type: 'text', content: chunk.content || '' };
+        }
+      }
     }
 
     yield { type: 'done' };
@@ -211,14 +275,14 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
 
   // Add tool instructions
   if (context.tools.length > 0) {
-    prompt += `\n\n## Available Tools\n\nYou have access to the following tools:\n`;
+    prompt += `\n\n## Available Tools\n\nYou have access to the following tools. Use them when needed to help the user:\n`;
     for (const toolName of context.tools) {
       const tool = toolRegistry.get(toolName);
       if (tool) {
         prompt += `- ${tool.name}: ${tool.description}\n`;
       }
     }
-    prompt += '\nTo use a tool, respond with: USE_TOOL: <tool_name> | <json_arguments>';
+    prompt += '\nWhen you need to use a tool, the system will automatically detect and execute it.';
   }
 
   return prompt;
@@ -247,6 +311,7 @@ async function executeToolCalls(toolCalls: ToolCall[]): Promise<ToolResult[]> {
         toolCallId: toolCall.id,
         output: result.success ? String(result.output) : '',
         error: result.success ? undefined : result.error,
+        data: result.success ? result.data : undefined,
       });
     } catch (error) {
       results.push({

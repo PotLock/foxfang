@@ -36,6 +36,7 @@ export interface ToolResult {
   toolCallId: string;
   output: string;
   error?: string;
+  data?: any; // Structured data for model to format
 }
 
 export interface AgentContext {
@@ -77,9 +78,11 @@ export interface RunRequest {
 }
 
 export interface StreamChunk {
-  type: 'text' | 'tool_call' | 'done';
+  type: 'text' | 'tool_call' | 'tool_result' | 'done';
   content?: string;
   tool?: string;
+  args?: any;
+  result?: any;
 }
 
 export interface RunResponse {
