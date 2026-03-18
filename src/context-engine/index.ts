@@ -4,30 +4,43 @@
  * Manages conversation context and project-specific knowledge.
  */
 
-import { searchMemories, getProjectMemories } from '../memory/database';
-import { queryOne } from '../database/sqlite';
+import { queryOne, query } from '../database/sqlite';
 
 export interface Context {
   userPreferences: Record<string, any>;
+  brandContext?: BrandContext;
   projectContext?: ProjectContext;
   recentMemories: string[];
   sessionHistory: string[];
 }
 
+export interface BrandContext {
+  id: string;
+  name: string;
+  description: string;
+  industry?: string;
+  brandProfile: Record<string, any>;
+  brandMd: string;
+  relevantMemories: string[];
+}
+
 export interface ProjectContext {
   id: string;
   name: string;
-  brandProfile: Record<string, any>;
+  description: string;
+  goals: string[];
+  brandId: string;
+  brandName: string;
   brandMd: string;
-  recentTasks: string[];
-  relevantMemories: string[];
+  tasks: Array<{ id: string; title: string; status: string }>;
 }
 
 /**
  * Build context for a conversation
  */
 export async function buildContext(options?: { 
-  projectId?: string; 
+  brandId?: string;
+  projectId?: string;
   sessionId?: string;
   query?: string;
 }): Promise<Context> {
@@ -37,15 +50,18 @@ export async function buildContext(options?: {
     sessionHistory: []
   };
 
-  // Load project context if specified
-  if (options?.projectId) {
-    context.projectContext = await loadProjectContext(options.projectId);
+  // Load brand context
+  if (options?.brandId) {
+    context.brandContext = await loadBrandContext(options.brandId);
   }
 
-  // Search relevant memories
-  if (options?.query) {
-    const memories = searchMemories(options.query, 5);
-    context.recentMemories = memories.map(m => m.content);
+  // Load project context (includes brand)
+  if (options?.projectId) {
+    context.projectContext = await loadProjectContext(options.projectId);
+    // If no brand specified but project has brand, load it
+    if (!context.brandContext && context.projectContext) {
+      context.brandContext = await loadBrandContext(context.projectContext.brandId);
+    }
   }
 
   return context;
@@ -60,40 +76,118 @@ async function loadUserPreferences(): Promise<Record<string, any>> {
   );
   
   if (user?.preferences) {
-    return JSON.parse(user.preferences);
+    try {
+      return JSON.parse(user.preferences);
+    } catch {
+      return {};
+    }
   }
   
   return {};
 }
 
 /**
- * Load project context
+ * Load brand context from database
+ */
+async function loadBrandContext(brandId: string): Promise<BrandContext | undefined> {
+  const brand = queryOne<{
+    id: string;
+    name: string;
+    description: string;
+    industry: string;
+    brand_profile: string;
+    brand_md_content: string;
+  }>(
+    `SELECT id, name, description, industry, brand_profile, brand_md_content
+     FROM brands WHERE id = ?`,
+    [brandId]
+  );
+
+  if (!brand) return undefined;
+
+  // Get brand-specific memories
+  const memories = query<{ content: string }>(
+    `SELECT content FROM memories 
+     WHERE brand_id = ? AND user_id = 'default_user'
+     ORDER BY importance DESC, created_at DESC
+     LIMIT 10`,
+    [brandId]
+  );
+
+  return {
+    id: brand.id,
+    name: brand.name,
+    description: brand.description,
+    industry: brand.industry,
+    brandProfile: brand.brand_profile ? JSON.parse(brand.brand_profile) : {},
+    brandMd: brand.brand_md_content || '',
+    relevantMemories: memories.map(m => m.content),
+  };
+}
+
+/**
+ * Load project context from database
  */
 async function loadProjectContext(projectId: string): Promise<ProjectContext | undefined> {
   const project = queryOne<{
     id: string;
+    brand_id: string;
     name: string;
-    brand_profile: string;
-    brand_md_content: string;
+    description: string;
+    goals: string;
   }>(
-    `SELECT id, name, brand_profile, brand_md_content 
+    `SELECT id, brand_id, name, description, goals
      FROM projects WHERE id = ?`,
     [projectId]
   );
 
   if (!project) return undefined;
 
-  // Get project memories
-  const memories = getProjectMemories(projectId, 10);
+  // Get brand info
+  const brand = queryOne<{ name: string; brand_md_content: string }>(
+    `SELECT name, brand_md_content FROM brands WHERE id = ?`,
+    [project.brand_id]
+  );
+
+  // Get project tasks
+  const tasks = query<{ id: string; title: string; status: string }>(
+    `SELECT id, title, status FROM tasks 
+     WHERE project_id = ? ORDER BY created_at DESC LIMIT 20`,
+    [projectId]
+  );
 
   return {
     id: project.id,
     name: project.name,
-    brandProfile: project.brand_profile ? JSON.parse(project.brand_profile) : {},
-    brandMd: project.brand_md_content || '',
-    recentTasks: [], // TODO: Load recent tasks
-    relevantMemories: memories.map(m => m.content)
+    description: project.description,
+    goals: project.goals ? JSON.parse(project.goals) : [],
+    brandId: project.brand_id,
+    brandName: brand?.name || 'Unknown',
+    brandMd: brand?.brand_md_content || '',
+    tasks: tasks || [],
   };
+}
+
+/**
+ * Get all brands for user
+ */
+export function getUserBrands(): Array<{ id: string; name: string; description: string }> {
+  return query(
+    `SELECT id, name, description FROM brands 
+     WHERE user_id = 'default_user' AND status = 'active'
+     ORDER BY created_at DESC`
+  );
+}
+
+/**
+ * Get projects for a brand
+ */
+export function getBrandProjects(brandId: string): Array<{ id: string; name: string; status: string }> {
+  return query(
+    `SELECT id, name, status FROM projects 
+     WHERE brand_id = ? ORDER BY created_at DESC`,
+    [brandId]
+  );
 }
 
 /**
@@ -102,21 +196,44 @@ async function loadProjectContext(projectId: string): Promise<ProjectContext | u
 export function formatContextForPrompt(context: Context): string {
   let prompt = '';
 
-  // Add project brand context
+  // Add brand context
+  if (context.brandContext) {
+    prompt += `\n=== BRAND: ${context.brandContext.name} ===\n`;
+    prompt += `${context.brandContext.description}\n`;
+    if (context.brandContext.industry) {
+      prompt += `Industry: ${context.brandContext.industry}\n`;
+    }
+    if (context.brandContext.brandMd) {
+      prompt += `\nBrand Guide:\n${context.brandContext.brandMd}\n`;
+    }
+  }
+
+  // Add project context
   if (context.projectContext) {
     prompt += `\n=== PROJECT: ${context.projectContext.name} ===\n`;
-    if (context.projectContext.brandMd) {
-      prompt += `Brand Guide:\n${context.projectContext.brandMd}\n\n`;
+    prompt += `${context.projectContext.description}\n`;
+    if (context.projectContext.goals.length > 0) {
+      prompt += `Goals: ${context.projectContext.goals.join(', ')}\n`;
+    }
+    if (context.projectContext.tasks.length > 0) {
+      const activeTasks = context.projectContext.tasks
+        .filter(t => t.status !== 'done')
+        .slice(0, 5);
+      if (activeTasks.length > 0) {
+        prompt += `\nActive Tasks:\n`;
+        for (const task of activeTasks) {
+          prompt += `- [${task.status}] ${task.title}\n`;
+        }
+      }
     }
   }
 
   // Add relevant memories
-  if (context.recentMemories.length > 0) {
-    prompt += '=== RELEVANT CONTEXT ===\n';
-    context.recentMemories.forEach(m => {
-      prompt += `- ${m}\n`;
-    });
-    prompt += '\n';
+  if (context.brandContext?.relevantMemories && context.brandContext.relevantMemories.length > 0) {
+    prompt += '\n=== RELEVANT MEMORIES ===\n';
+    for (const memory of context.brandContext.relevantMemories.slice(0, 5)) {
+      prompt += `- ${memory}\n`;
+    }
   }
 
   return prompt;
