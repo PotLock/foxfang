@@ -7,6 +7,7 @@ import chalk from 'chalk';
 import { intro, outro, text, select, confirm, spinner } from '@clack/prompts';
 import { loadConfig, saveConfig } from '../../config/index';
 import { initializeProviders } from '../../providers/index';
+import { bootstrapFoxFang } from '../../wizard/bootstrap';
 // import { testProviderConnection } from '../../providers/test';
 
 export async function registerWizardCommand(program: Command): Promise<void> {
@@ -18,9 +19,15 @@ export async function registerWizardCommand(program: Command): Promise<void> {
     .command('setup')
     .description('Run initial setup wizard')
     .action(async () => {
-      intro(chalk.cyan('FoxFang Setup Wizard'));
+      intro(chalk.cyan('FoxFang Setup Wizard 🦊'));
       
       console.log(chalk.dim('Let\'s configure your FoxFang installation.\n'));
+      
+      // Bootstrap ~/.foxfang/ directory
+      const s = spinner();
+      s.start('Creating FoxFang home directory...');
+      await bootstrapFoxFang();
+      s.stop('FoxFang home directory ready!');
       
       const config = await loadConfig();
       
@@ -74,8 +81,8 @@ export async function registerWizardCommand(program: Command): Promise<void> {
         initialValue: false,
       });
       
-      const s = spinner();
-      s.start('Saving configuration...');
+      const s2 = spinner();
+      s2.start('Saving configuration...');
       
       // Update config
       config.defaultProvider = defaultProvider as string;
@@ -111,14 +118,14 @@ export async function registerWizardCommand(program: Command): Promise<void> {
       }
       
       await saveConfig(config);
-      s.stop('Configuration saved!');
+      s2.stop('Configuration saved!');
       
       if (setupChannels) {
         console.log(chalk.dim('\nTo setup channels, run:'));
         console.log(chalk.yellow('  foxfang channels setup'));
       }
       
-      outro(chalk.green('Setup complete! Run "foxfang --help" to get started.'));
+      outro(chalk.green('Setup complete! 🦊\n\nYour FoxFang is ready at ~/.foxfang/\nRun "pnpm foxfang --help" to get started.'));
     });
 
   wizard
