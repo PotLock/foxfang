@@ -23,7 +23,7 @@ export interface AppConfig {
   channels?: {
     telegram?: { enabled: boolean; botToken?: string };
     discord?: { enabled: boolean; botToken?: string };
-    slack?: { enabled: boolean; botToken?: string };
+    slack?: { enabled: boolean; botToken?: string; appToken?: string };
     signal?: { 
       enabled: boolean; 
       phoneNumber: string;

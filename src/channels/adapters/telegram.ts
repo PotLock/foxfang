@@ -341,12 +341,12 @@ export class TelegramAdapter implements ChannelAdapter {
     // Skip messages from the bot itself
     if (message.from?.id === this.botInfo?.id) return;
 
-    // Build sender identifier
-    const sender = message.from?.username 
+    // Use numeric chat ID as sender for proper reply routing
+    // Store username in metadata for display
+    const chatId = message.chat.id.toString();
+    const senderUsername = message.from?.username 
       ? `@${message.from.username}` 
-      : message.chat.username
-        ? `@${message.chat.username}`
-        : message.chat.id.toString();
+      : message.from?.first_name || 'Unknown';
 
     // Build content with context
     let content = message.text;
@@ -357,16 +357,18 @@ export class TelegramAdapter implements ChannelAdapter {
     const channelMsg: ChannelMessage = {
       id: message.message_id.toString(),
       channel: 'telegram',
-      from: sender,
+      from: chatId,  // Use numeric chat ID for sending replies
       content: content,
       timestamp: new Date(message.date * 1000),
       metadata: {
-        chatId: message.chat.id.toString(),
+        chatId: chatId,
         chatType: message.chat.type,
         messageId: message.message_id.toString(),
         threadId: message.message_thread_id?.toString(),
         replyToMessageId: message.reply_to_message?.message_id?.toString(),
         senderId: message.from?.id?.toString(),
+        senderUsername: senderUsername,
+        senderName: `${message.from?.first_name || ''} ${message.from?.last_name || ''}`.trim() || senderUsername,
       },
     };
 

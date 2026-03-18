@@ -176,7 +176,7 @@ export class DiscordAdapter implements ChannelAdapter {
     }
   }
 
-  async sendTyping(to: string): Promise<void> {
+  async sendTyping(to: string, _threadId?: string): Promise<void> {
     if (!this.connected) return;
 
     try {

@@ -34,7 +34,7 @@ export interface ChannelAdapter {
    * Show typing indicator (if supported by channel)
    * Should be called repeatedly every few seconds to keep indicator alive
    */
-  sendTyping?(to: string): Promise<void>;
+  sendTyping?(to: string, threadId?: string): Promise<void>;
   
   /** Set handler for incoming messages */
   onMessage(handler: (msg: ChannelMessage) => Promise<ChannelResponse | void> | void): void;
