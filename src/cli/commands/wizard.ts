@@ -209,25 +209,28 @@ export async function registerWizardCommand(program: Command): Promise<void> {
         return;
       }
       
-      // Select default provider
-      const defaultProvider = await select({
-        message: 'Select your default provider:',
-        options: configuredProviders.map(p => ({
-          value: p.id,
-          label: p.name,
-          hint: p.defaultModel,
-        })),
-        initialValue: configuredProviders[0].id,
-      }) as string;
+      // Select default provider (only if multiple providers configured)
+      let defaultProvider: string;
+      let defaultProviderConfig: any;
       
-      const defaultProviderConfig = configuredProviders.find(p => p.id === defaultProvider)!;
-      
-      // Default Model (can override)
-      const defaultModel = await text({
-        message: 'Default model (global):',
-        placeholder: defaultProviderConfig.defaultModel,
-        defaultValue: defaultProviderConfig.defaultModel,
-      });
+      if (configuredProviders.length === 1) {
+        // Auto-select the only provider as default
+        defaultProvider = configuredProviders[0].id;
+        defaultProviderConfig = configuredProviders[0];
+        console.log(chalk.dim(`\nUsing ${defaultProviderConfig.name} as default provider`));
+      } else {
+        // Ask user to select default when multiple providers
+        defaultProvider = await select({
+          message: 'Select your default provider:',
+          options: configuredProviders.map(p => ({
+            value: p.id,
+            label: p.name,
+            hint: p.defaultModel,
+          })),
+          initialValue: configuredProviders[0].id,
+        }) as string;
+        defaultProviderConfig = configuredProviders.find(p => p.id === defaultProvider)!;
+      }
       
       // Workspace
       const workspaceDir = await text({
@@ -269,7 +272,7 @@ export async function registerWizardCommand(program: Command): Promise<void> {
       
       // Update config
       config.defaultProvider = defaultProvider;
-      config.defaultModel = (defaultModel as string) || defaultProviderConfig.defaultModel;
+      config.defaultModel = defaultProviderConfig.defaultModel;
       config.workspace = { homeDir: workspaceDir as string };
       config.daemon = { enabled: enableDaemon as boolean, port: 8787, host: '127.0.0.1' };
       
