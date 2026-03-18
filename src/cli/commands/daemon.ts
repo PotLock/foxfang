@@ -160,15 +160,37 @@ export async function registerDaemonCommand(program: Command): Promise<void> {
     .command('run')
     .description('Run gateway server in foreground (not as service)')
     .option('-p, --port <port>', 'Port to run on', '3001')
-    .option('-c, --channels <channels>', 'Comma-separated list of channels to enable')
+    .option('-c, --channels <channels>', 'Comma-separated list of channels (default: all enabled)')
+    .option('--all-channels', 'Enable all configured channels')
     .action(async (options) => {
       try {
         const port = parseInt(options.port, 10);
-        const channels = options.channels ? options.channels.split(',') : [];
+        
+        // Load config to get enabled channels
+        const { loadConfig } = await import('../../config/index');
+        const config = await loadConfig();
+        
+        let channels: string[] = [];
+        
+        if (options.channels) {
+          // Use explicitly specified channels
+          channels = options.channels.split(',').map((c: string) => c.trim());
+        } else if (options.allChannels || !options.channels) {
+          // Auto-load all enabled channels from config
+          if (config.channels) {
+            channels = Object.entries(config.channels)
+              .filter(([_, cfg]: [string, any]) => cfg.enabled)
+              .map(([name, _]) => name);
+          }
+        }
         
         console.log(chalk.blue('Starting FoxFang Gateway (foreground mode)...'));
         console.log(chalk.dim(`  Port: ${port}`));
-        console.log(chalk.dim(`  Channels: ${channels.join(', ') || 'none'}`));
+        console.log(chalk.dim(`  Channels: ${channels.length > 0 ? channels.join(', ') : 'none'}`));
+        
+        if (channels.length === 0) {
+          console.log(chalk.yellow('\n  Tip: Enable channels with: pnpm foxfang channel setup <signal|telegram|discord|slack>'));
+        }
         console.log('');
         
         // Set environment
