@@ -9,7 +9,7 @@ import { homedir } from 'os';
 import { spawn } from 'child_process';
 
 const CONFIG_DIR = join(homedir(), '.foxfang');
-const CONFIG_FILE = join(CONFIG_DIR, 'config.json');
+const CONFIG_FILE = join(CONFIG_DIR, 'foxfang.json');
 
 export interface AppConfig {
   defaultProvider: string;

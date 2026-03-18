@@ -155,8 +155,7 @@ All configuration is stored locally in `~/.foxfang/`:
 
 ```
 ~/.foxfang/
-├── config.json          # Main configuration
-├── secrets.json         # API keys (encrypted)
+├── foxfang.json         # Main configuration (API keys, settings)
 ├── memory/              # Local memory storage
 │   └── memories.json
 ├── sessions/            # Chat session history
@@ -178,7 +177,7 @@ The wizard will:
 2. Configure optional channels (Telegram, Discord, etc.)
 3. Set your preferences
 
-All data is stored in `~/.foxfang/` — no environment variables needed.
+All data is stored in `~/.foxfang/foxfang.json` — no environment variables needed.
 
 ---
 
