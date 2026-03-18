@@ -5,7 +5,6 @@
  */
 
 import { AgentOrchestrator } from '../agents/orchestrator';
-import { SessionManager } from '../sessions/manager';
 
 export interface IncomingMessage {
   id: string;

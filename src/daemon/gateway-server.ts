@@ -18,6 +18,9 @@ import { SessionManager } from '../sessions/manager';
 import { initializeTools } from '../tools/index';
 import { setDefaultProvider } from '../agents/runtime';
 import { ChannelManager } from '../channels/manager';
+import { CronService } from '../cron/service';
+import { setCronService } from '../tools/builtin/cron';
+import { initCronTables } from '../cron/store';
 
 const PORT = parseInt(process.env.FOXFANG_GATEWAY_PORT || '8787', 10);
 const CHANNELS = (process.env.FOXFANG_CHANNELS || '').split(',').filter(Boolean);
@@ -35,11 +38,15 @@ class GatewayServer {
   private orchestrator: AgentOrchestrator | null = null;
   private sessionManager: SessionManager | null = null;
   private channelManager: ChannelManager;
+  private cronService: CronService | null = null;
 
   constructor(port: number) {
     const server = createServer();
     this.wss = new WebSocketServer({ server });
     this.channelManager = new ChannelManager(CHANNELS);
+    
+    // Initialize cron tables
+    initCronTables();
     
     this.setupWebSocket();
     this.initialize();
@@ -54,11 +61,65 @@ class GatewayServer {
     // Initialize agents
     await this.initializeAgents();
     
+    // Initialize cron service
+    this.initializeCronService();
+    
     // Connect channels
     if (CHANNELS.length > 0) {
       this.channelManager.setOrchestrator(this.orchestrator!);
       await this.channelManager.connectAll();
     }
+  }
+
+  private initializeCronService(): void {
+    this.cronService = new CronService({
+      executeJob: async (job) => {
+        if (!this.orchestrator) {
+          return { success: false, error: 'Orchestrator not available' };
+        }
+
+        try {
+          let message: string;
+          if (job.payload.kind === 'systemEvent') {
+            message = `[Cron: ${job.name}] ${job.payload.text}`;
+          } else {
+            message = `[Cron: ${job.name}] ${job.payload.message}`;
+          }
+
+          const result = await this.orchestrator.run({
+            sessionId: job.sessionKey || `cron-${job.id}`,
+            agentId: job.agentId || 'orchestrator',
+            message,
+            stream: false,
+          });
+
+          return {
+            success: true,
+            output: result.content,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
+      },
+      deliverResult: async (job, result) => {
+        // TODO: Implement delivery to channels
+        return { success: false, error: 'Delivery not implemented' };
+      },
+      onError: (error) => {
+        console.error('[CronService] Error:', error);
+      },
+    });
+
+    // Start cron service
+    this.cronService.start();
+    
+    // Make it available to the cron tool
+    setCronService(this.cronService);
+    
+    console.log('[Gateway] Cron service initialized');
   }
 
   private setupWebSocket(): void {
@@ -212,12 +273,14 @@ const server = new GatewayServer(PORT);
 // Handle process signals
 process.on('SIGTERM', async () => {
   console.log('[Gateway] SIGTERM received, shutting down...');
+  server['cronService']?.stop();
   await server['channelManager'].disconnectAll();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   console.log('[Gateway] SIGINT received, shutting down...');
+  server['cronService']?.stop();
   await server['channelManager'].disconnectAll();
   process.exit(0);
 });

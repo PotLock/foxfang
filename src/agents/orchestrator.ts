@@ -10,7 +10,7 @@ import { runAgent, runAgentStream, parseDirectives } from './runtime';
 import { SessionManager } from '../sessions/manager';
 import { toolRegistry } from '../tools/index';
 import { buildContext } from '../context-engine';
-import { storeMemory, searchMemories } from '../memory/database';
+import { storeMemory } from '../memory/database';
 
 export class AgentOrchestrator {
   private sessionManager: SessionManager;

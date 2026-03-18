@@ -80,6 +80,8 @@ export function initializeTools(config: Record<string, any>): void {
   const { CreateBrandTool, ListBrandsTool, GetBrandTool } = require('./builtin/brand');
   const { CreateProjectTool, ListProjectsTool, GetProjectTool } = require('./builtin/project');
   const { CreateTaskTool, ListTasksTool, GetTaskTool, UpdateTaskStatusTool } = require('./builtin/task');
+  const { BashExecTool, BashListTool, BashLogTool, BashPollTool, BashKillTool, BashRemoveTool } = require('./builtin/bash');
+  const { CronTool } = require('./builtin/cron');
   
   // Research tools
   toolRegistry.register(new WebSearchTool());
@@ -109,6 +111,17 @@ export function initializeTools(config: Record<string, any>): void {
   toolRegistry.register(new ListTasksTool());
   toolRegistry.register(new GetTaskTool());
   toolRegistry.register(new UpdateTaskStatusTool());
+  
+  // Bash/Shell execution tools
+  toolRegistry.register(new BashExecTool());
+  toolRegistry.register(new BashListTool());
+  toolRegistry.register(new BashLogTool());
+  toolRegistry.register(new BashPollTool());
+  toolRegistry.register(new BashKillTool());
+  toolRegistry.register(new BashRemoveTool());
+  
+  // Cron scheduler tool
+  toolRegistry.register(new CronTool());
   
   console.log(`Initialized ${toolRegistry.list().length} tools`);
 }
