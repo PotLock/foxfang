@@ -126,7 +126,7 @@ export class ChannelManager {
 
     // Start typing indicator (if supported)
     const typingKey = `${msg.channel}:${msg.from}`;
-    await this.startTypingIndicator(adapter, msg.from, typingKey);
+    await this.startTypingIndicator(adapter, msg.from, typingKey, msg.metadata?.threadId);
 
     try {
       // Process through agent (NON-STREAMING - wait for complete response)
@@ -184,16 +184,17 @@ export class ChannelManager {
   private async startTypingIndicator(
     adapter: ChannelAdapter, 
     recipient: string, 
-    key: string
+    key: string,
+    threadId?: string
   ): Promise<void> {
     if (!adapter.sendTyping) {
-      // Channel doesn't support typing indicators (e.g., Signal)
+      // Channel doesn't support typing indicators
       return;
     }
 
     // Send immediately
     try {
-      await adapter.sendTyping(recipient);
+      await adapter.sendTyping(recipient, threadId);
     } catch {
       // Ignore errors for typing indicators
     }
@@ -201,7 +202,7 @@ export class ChannelManager {
     // Repeat every 4 seconds (typing indicators usually expire after ~5s)
     const interval = setInterval(async () => {
       try {
-        await adapter.sendTyping!(recipient);
+        await adapter.sendTyping!(recipient, threadId);
       } catch {
         // Ignore errors
       }

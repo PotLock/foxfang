@@ -672,24 +672,15 @@ async function setupTelegram() {
     },
   });
   
-  // Save token to credentials store
-  await saveCredential('channel:telegram', {
-    provider: 'channel:telegram',
-    apiKey: token as string,
-    createdAt: new Date().toISOString(),
-  });
-  
   const config = await loadConfig();
   if (!config.channels) config.channels = {};
   config.channels.telegram = {
     enabled: true,
+    botToken: token as string,
   };
   await saveConfig(config);
   
-  const keychainStatus = isKeychainAvailable() 
-    ? 'OS keychain' 
-    : 'encrypted file';
-  console.log(chalk.dim(`  Token saved to ${keychainStatus}`));
+  console.log(chalk.dim('  Token saved to config'));
 }
 
 async function setupDiscord() {
@@ -705,24 +696,15 @@ async function setupDiscord() {
     },
   });
   
-  // Save token to credentials store
-  await saveCredential('channel:discord', {
-    provider: 'channel:discord',
-    apiKey: token as string,
-    createdAt: new Date().toISOString(),
-  });
-  
   const config = await loadConfig();
   if (!config.channels) config.channels = {};
   config.channels.discord = {
     enabled: true,
+    botToken: token as string,
   };
   await saveConfig(config);
   
-  const keychainStatus = isKeychainAvailable() 
-    ? 'OS keychain' 
-    : 'encrypted file';
-  console.log(chalk.dim(`  Token saved to ${keychainStatus}`));
+  console.log(chalk.dim('  Token saved to config'));
 }
 
 async function setupSlack() {
@@ -732,32 +714,33 @@ async function setupSlack() {
   console.log('3. Add Bot Token Scopes: chat:write, im:history');
   console.log('4. Install app and copy Bot User OAuth Token\n');
   
-  const token = await text({
-    message: 'Bot User OAuth Token:',
+  const botToken = await text({
+    message: 'Bot User OAuth Token (xoxb-):',
     placeholder: 'xoxb-...',
     validate: (value) => {
       if (!value?.startsWith('xoxb-')) return 'Token should start with xoxb-';
     },
   });
   
-  // Save token to credentials store
-  await saveCredential('channel:slack', {
-    provider: 'channel:slack',
-    apiKey: token as string,
-    createdAt: new Date().toISOString(),
+  // Socket Mode requires app-level token
+  const appToken = await text({
+    message: 'App-Level Token (xapp-):',
+    placeholder: 'xapp-...',
+    validate: (value) => {
+      if (!value?.startsWith('xapp-')) return 'Token should start with xapp-';
+    },
   });
   
   const config = await loadConfig();
   if (!config.channels) config.channels = {};
   config.channels.slack = {
     enabled: true,
+    botToken: botToken as string,
+    appToken: appToken as string,
   };
   await saveConfig(config);
   
-  const keychainStatus = isKeychainAvailable() 
-    ? 'OS keychain' 
-    : 'encrypted file';
-  console.log(chalk.dim(`  Token saved to ${keychainStatus}`));
+  console.log(chalk.dim('  Tokens saved to config'));
 }
 
 async function setupSignal() {
