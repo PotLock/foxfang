@@ -95,6 +95,30 @@ export class SignalAdapter implements ChannelAdapter {
     }
   }
 
+  async sendTyping(to: string): Promise<void> {
+    if (!this.connected) return;
+
+    try {
+      // JSON-RPC call to send typing indicator
+      // Note: signal-cli doesn't have stop-typing, indicators auto-expire after ~15s
+      await fetch(`${this.httpUrl}/api/v1/rpc`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'sendTyping',
+          params: {
+            account: this.phoneNumber,
+            recipient: [to],
+          },
+          id: Math.random().toString(36).substr(2, 9),
+        }),
+      });
+    } catch {
+      // Ignore errors for typing indicators
+    }
+  }
+
   onMessage(handler: (msg: ChannelMessage) => Promise<ChannelResponse | void>): void {
     this.messageHandler = handler;
   }
@@ -188,18 +212,9 @@ export class SignalAdapter implements ChannelAdapter {
             threadId: msg.groupInfo?.groupId,
           };
 
-          console.log(`[Signal] 📩 ${sourceName}: ${msg.message.substring(0, 50)}${msg.message.length > 50 ? '...' : ''}`);
-
-          // Process through agent
-          this.messageHandler(channelMsg).then(async (response) => {
-            if (response) {
-              const preview = response.content.substring(0, 80).replace(/\n/g, ' ');
-              console.log(`[Signal] 🤖 Agent: ${preview}${response.content.length > 80 ? '...' : ''}`);
-              await this.send(source, response.content);
-              console.log(`[Signal] 📤 Sent reply (${response.content.length} chars)`);
-            }
-          }).catch(err => {
-            console.error('[Signal] Error handling message:', err);
+          // Process through agent (ChannelManager handles logging)
+          this.messageHandler(channelMsg).catch(err => {
+            console.error('[Signal] Error:', err);
           });
         }
       }

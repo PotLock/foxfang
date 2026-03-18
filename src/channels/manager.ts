@@ -132,12 +132,8 @@ export class ChannelManager {
       this.stopTypingIndicator(typingKey);
 
       if (result.content) {
-        const responsePreview = result.content.substring(0, 60).replace(/\n/g, ' ');
-        console.log(`[ChannelManager] 🤖 Response (${result.content.length} chars): ${responsePreview}...`);
-        
-        // Send complete response
+        // Send complete response (adapter will log)
         await adapter.send(msg.from, result.content);
-        console.log(`[ChannelManager] 📤 Sent reply to ${msg.from}`);
 
         return {
           messageId: msg.id,
