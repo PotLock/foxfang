@@ -16,12 +16,6 @@ export interface ChannelResponse {
   content: string;
 }
 
-export interface StreamChunk {
-  type: 'chunk' | 'done' | 'error';
-  content?: string;
-  error?: string;
-}
-
 export interface ChannelAdapter {
   readonly name: string;
   readonly connected: boolean;
@@ -35,8 +29,11 @@ export interface ChannelAdapter {
   /** Send message to channel */
   send(to: string, content: string): Promise<void>;
   
-  /** Send streaming response to channel */
-  sendStream?(to: string, stream: AsyncIterable<StreamChunk>): Promise<void>;
+  /** 
+   * Show typing indicator (if supported by channel)
+   * Should be called repeatedly every few seconds to keep indicator alive
+   */
+  sendTyping?(to: string): Promise<void>;
   
   /** Set handler for incoming messages */
   onMessage(handler: (msg: ChannelMessage) => Promise<ChannelResponse | void> | void): void;
