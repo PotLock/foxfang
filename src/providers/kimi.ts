@@ -85,7 +85,9 @@ export class KimiCodingProvider implements Provider {
     };
     
     const result: ChatResponse = {
-      content: data.content?.[0]?.text || data.completion || '',
+      content: data.content?.find(c => c.type === 'text')?.text || 
+               data.content?.[0]?.text || 
+               data.completion || '',
       usage: {
         promptTokens: data.usage?.input_tokens || 0,
         completionTokens: data.usage?.output_tokens || 0,
@@ -93,12 +95,13 @@ export class KimiCodingProvider implements Provider {
       },
     };
 
-    // Handle tool use if present
-    if (data.content?.[0]?.type === 'tool_use') {
-      result.toolCalls = [{
-        name: data.content[0].name || '',
-        arguments: data.content[0].input,
-      }];
+    // Handle tool use if present (look through all content blocks)
+    const toolUses = data.content?.filter(c => c.type === 'tool_use') || [];
+    if (toolUses.length > 0) {
+      result.toolCalls = toolUses.map(tu => ({
+        name: tu.name || '',
+        arguments: tu.input,
+      }));
     }
 
     return result;
@@ -112,6 +115,11 @@ export class KimiCodingProvider implements Provider {
         model: request.model || 'kimi-code',
         messages: this.transformMessages(request.messages),
         max_tokens: 4096,
+        tools: request.tools?.map(t => ({
+          name: t.name,
+          description: t.description,
+          input_schema: t.parameters,
+        })),
         stream: true,
       }),
     });
@@ -126,6 +134,7 @@ export class KimiCodingProvider implements Provider {
 
     const decoder = new TextDecoder();
     let buffer = '';
+    let currentToolCall: { name: string; args: string } | null = null;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -142,7 +151,17 @@ export class KimiCodingProvider implements Provider {
           currentEvent = trimmedLine.slice(6).trim();
         } else if (trimmedLine.startsWith('data:')) {
           const data = trimmedLine.slice(5).trim();
-          if (data === '[DONE]') return;
+          if (data === '[DONE]') {
+            // Yield any pending tool call
+            if (currentToolCall?.name) {
+              yield { 
+                type: 'tool_call', 
+                tool: currentToolCall.name, 
+                args: JSON.parse(currentToolCall.args || '{}') 
+              };
+            }
+            return;
+          }
 
           try {
             const parsed = JSON.parse(data);
@@ -153,9 +172,29 @@ export class KimiCodingProvider implements Provider {
                 yield { type: 'content', content: parsed.delta.text };
               }
             }
-            // Handle message_delta for stop reason
-            else if (currentEvent === 'message_delta' && parsed.delta?.stop_reason) {
-              // Stream ending
+            // Handle tool_use content blocks
+            else if (currentEvent === 'content_block_start' && parsed.content_block) {
+              if (parsed.content_block.type === 'tool_use') {
+                currentToolCall = { 
+                  name: parsed.content_block.name || '', 
+                  args: '' 
+                };
+              }
+            }
+            // Handle tool input JSON streaming
+            else if (currentEvent === 'content_block_delta' && parsed.delta?.partial_json) {
+              if (currentToolCall) {
+                currentToolCall.args += parsed.delta.partial_json;
+              }
+            }
+            // Handle content_block_stop to finalize tool call
+            else if (currentEvent === 'content_block_stop' && currentToolCall) {
+              yield { 
+                type: 'tool_call', 
+                tool: currentToolCall.name, 
+                args: JSON.parse(currentToolCall.args || '{}') 
+              };
+              currentToolCall = null;
             }
           } catch {
             // Ignore parse errors
