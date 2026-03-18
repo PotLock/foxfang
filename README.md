@@ -26,7 +26,7 @@ Unlike complex marketing platforms, FoxFang is a **personal AI assistant** that:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/foxfang.git
+git clone https://github.com/potlock/foxfang.git
 cd foxfang
 
 # Install dependencies
@@ -164,17 +164,21 @@ All configuration is stored locally in `~/.foxfang/`:
     └── projects/
 ```
 
-### Environment Variables
+### Setup
+
+FoxFang uses a setup wizard to configure everything. No `.env` files needed!
 
 ```bash
-# AI Provider API Keys (pick one or more)
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-KIMI_API_KEY=...
-
-# Optional: Custom config location
-FOXFANG_CONFIG=/path/to/config.json
+# Run the wizard to setup API keys and preferences
+pnpm foxfang wizard setup
 ```
+
+The wizard will:
+1. Ask for your AI provider API key (OpenAI, Anthropic, or Kimi)
+2. Configure optional channels (Telegram, Discord, etc.)
+3. Set your preferences
+
+All data is stored in `~/.foxfang/` — no environment variables needed.
 
 ---
 

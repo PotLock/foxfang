@@ -13,10 +13,6 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Environment
-.env
-!.env.example
-
 # Dependencies
 node_modules/
 **/node_modules/
