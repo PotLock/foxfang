@@ -3,16 +3,22 @@
  * 
  * Manages all channel connections and routes messages between
  * channels and the agent orchestrator.
+ * 
+ * Pattern: ZeroClaw-style handling
+ * - Show typing indicator while processing (if supported)
+ * - Wait for complete response
+ * - Send full response at once (no streaming)
  */
 
 import { SignalAdapter } from './adapters/signal';
-import type { ChannelAdapter, ChannelMessage, ChannelResponse, StreamChunk } from './types';
+import type { ChannelAdapter, ChannelMessage, ChannelResponse } from './types';
 import type { AgentOrchestrator } from '../agents/orchestrator';
 
 export class ChannelManager {
   private adapters: Map<string, ChannelAdapter> = new Map();
   private orchestrator: AgentOrchestrator | null = null;
   private enabledChannels: string[] = [];
+  private typingIntervals: Map<string, NodeJS.Timeout> = new Map();
 
   constructor(channels: string[] = []) {
     this.enabledChannels = channels;
@@ -27,7 +33,6 @@ export class ChannelManager {
       try {
         await this.connectChannel(channelName);
       } catch (error) {
-        // Log warning but don't crash - channel may be started later
         const errorMsg = error instanceof Error ? error.message : String(error);
         console.warn(`[ChannelManager] ⚠️  ${channelName} not available: ${errorMsg.split('\n')[0]}`);
         console.warn(`[ChannelManager]    Gateway will run without ${channelName}. Start it and restart daemon to enable.`);
@@ -46,7 +51,6 @@ export class ChannelManager {
       throw new Error(`Unknown channel: ${name}`);
     }
 
-    // Set up message handler
     adapter.onMessage(async (msg: ChannelMessage) => {
       return this.handleChannelMessage(msg);
     });
@@ -56,6 +60,13 @@ export class ChannelManager {
   }
 
   async disconnectAll(): Promise<void> {
+    // Clear all typing intervals
+    for (const [key, interval] of this.typingIntervals) {
+      clearInterval(interval);
+      console.log(`[ChannelManager] Stopped typing indicator for ${key}`);
+    }
+    this.typingIntervals.clear();
+
     for (const [name, adapter] of this.adapters) {
       try {
         await adapter.disconnect();
@@ -87,119 +98,108 @@ export class ChannelManager {
     switch (name) {
       case 'signal':
         return new SignalAdapter();
-      // Add more channels here:
-      // case 'telegram': return new TelegramAdapter();
-      // case 'discord': return new DiscordAdapter();
-      // case 'slack': return new SlackAdapter();
       default:
         return null;
     }
   }
 
   private async handleChannelMessage(msg: ChannelMessage): Promise<ChannelResponse | void> {
-    console.log(`[ChannelManager] 📩 ${msg.channel}:${msg.from.split(' ')[0]}: ${msg.content.substring(0, 40)}${msg.content.length > 40 ? '...' : ''}`);
+    const preview = msg.content.substring(0, 40);
+    console.log(`[ChannelManager] 📩 ${msg.channel}:${msg.from.split(' ')[0]}: ${preview}${msg.content.length > 40 ? '...' : ''}`);
 
     if (!this.orchestrator) {
       console.error('[ChannelManager] No orchestrator set');
       return;
     }
 
+    const adapter = this.adapters.get(msg.channel);
+    if (!adapter) return;
+
+    // Start typing indicator (if supported)
+    const typingKey = `${msg.channel}:${msg.from}`;
+    await this.startTypingIndicator(adapter, msg.from, typingKey);
+
     try {
-      // Process through agent with streaming
+      // Process through agent (NON-STREAMING - wait for complete response)
       const result = await this.orchestrator.run({
         sessionId: `channel-${msg.channel}-${msg.from}`,
         agentId: 'orchestrator',
         message: `[From ${msg.channel}:${msg.from}] ${msg.content}`,
-        stream: true,
+        stream: false, // Important: don't stream, wait for complete response
       });
 
-      if (result.stream) {
-        // Stream response back to channel
-        return this.streamResponse(msg, result.stream);
-      } else if (result.content) {
-        // Fallback to non-streaming
+      // Stop typing indicator
+      this.stopTypingIndicator(typingKey);
+
+      if (result.content) {
+        const responsePreview = result.content.substring(0, 60).replace(/\n/g, ' ');
+        console.log(`[ChannelManager] 🤖 Response (${result.content.length} chars): ${responsePreview}...`);
+        
+        // Send complete response
+        await adapter.send(msg.from, result.content);
+        console.log(`[ChannelManager] 📤 Sent reply to ${msg.from}`);
+
         return {
           messageId: msg.id,
           content: result.content,
         };
       }
     } catch (error) {
+      // Stop typing indicator on error
+      this.stopTypingIndicator(typingKey);
+      
       console.error('[ChannelManager] Error processing message:', error);
+      const errorMsg = 'Sorry, I encountered an error processing your message.';
+      await adapter.send(msg.from, errorMsg);
+      
       return {
         messageId: msg.id,
-        content: 'Sorry, I encountered an error processing your message.',
+        content: errorMsg,
       };
     }
   }
 
-  private async streamResponse(
-    msg: ChannelMessage, 
-    stream: AsyncIterable<{ type: 'text' | 'done' | 'tool_call'; content?: string }>
-  ): Promise<ChannelResponse | void> {
-    const adapter = this.adapters.get(msg.channel);
-    if (!adapter) return;
+  /**
+   * Start typing indicator for a recipient
+   * Typing indicators expire after a few seconds, so we need to repeat them
+   */
+  private async startTypingIndicator(
+    adapter: ChannelAdapter, 
+    recipient: string, 
+    key: string
+  ): Promise<void> {
+    if (!adapter.sendTyping) {
+      // Channel doesn't support typing indicators (e.g., Signal)
+      return;
+    }
 
-    // Collect chunks and send in blocks (similar to OpenClaw's block streaming)
-    const chunks: string[] = [];
-    const MIN_BLOCK_SIZE = 200;  // Minimum chars before sending
-    const MAX_BLOCK_SIZE = 2000; // Maximum chars per message
-    let buffer = '';
+    // Send immediately
+    try {
+      await adapter.sendTyping(recipient);
+    } catch {
+      // Ignore errors for typing indicators
+    }
 
-    for await (const chunk of stream) {
-      // Skip tool calls for channel streaming
-      if (chunk.type === 'tool_call') continue;
-      
-      if (chunk.type === 'text' && chunk.content) {
-        chunks.push(chunk.content);
-        buffer += chunk.content;
-
-        // Send block if we have enough content
-        if (buffer.length >= MIN_BLOCK_SIZE) {
-          // Try to break at sentence boundary
-          const breakPoint = this.findBreakPoint(buffer, MAX_BLOCK_SIZE);
-          const toSend = buffer.slice(0, breakPoint).trim();
-          buffer = buffer.slice(breakPoint).trim();
-
-          if (toSend) {
-            console.log(`[ChannelManager] 📤 Streaming block (${toSend.length} chars)`);
-            await adapter.send(msg.from, toSend);
-          }
-        }
+    // Repeat every 4 seconds (typing indicators usually expire after ~5s)
+    const interval = setInterval(async () => {
+      try {
+        await adapter.sendTyping!(recipient);
+      } catch {
+        // Ignore errors
       }
-    }
+    }, 4000);
 
-    // Send remaining buffer
-    if (buffer.trim()) {
-      await adapter.send(msg.from, buffer.trim());
-    }
-
-    const fullContent = chunks.join('');
-    return {
-      messageId: msg.id,
-      content: fullContent,
-    };
+    this.typingIntervals.set(key, interval);
   }
 
-  private findBreakPoint(text: string, maxChars: number): number {
-    // Prefer breaking at paragraph, then sentence, then word boundary
-    if (text.length <= maxChars) return text.length;
-
-    // Look for paragraph break
-    const paraIndex = text.lastIndexOf('\n\n', maxChars);
-    if (paraIndex > maxChars * 0.5) return paraIndex + 2;
-
-    // Look for sentence break
-    const sentenceMatch = text.slice(0, maxChars).match(/[.!?]\s+/g);
-    if (sentenceMatch) {
-      const lastSentence = text.lastIndexOf(sentenceMatch[sentenceMatch.length - 1], maxChars);
-      if (lastSentence > maxChars * 0.5) return lastSentence + 2;
+  /**
+   * Stop typing indicator for a recipient
+   */
+  private stopTypingIndicator(key: string): void {
+    const interval = this.typingIntervals.get(key);
+    if (interval) {
+      clearInterval(interval);
+      this.typingIntervals.delete(key);
     }
-
-    // Look for word break
-    const spaceIndex = text.lastIndexOf(' ', maxChars);
-    if (spaceIndex > maxChars * 0.5) return spaceIndex + 1;
-
-    // Hard break at max
-    return maxChars;
   }
 }
