@@ -1,0 +1,46 @@
+{
+  "name": "foxfang",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FoxFang 🦊 — Your personal AI marketing agent",
+  
+  "main": "dist/index.js",
+  "bin": {
+    "foxfang": "./foxfang.cjs"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "dev:ui": "pnpm --filter ui dev",
+    "build:ui": "pnpm --filter ui build",
+    "dev:all": "pnpm dev & pnpm dev:ui",
+    "cli": "node foxfang.cjs",
+    "cli:dev": "tsx src/cli/entry.ts",
+    "daemon:start": "node foxfang.cjs daemon start",
+    "daemon:stop": "node foxfang.cjs daemon stop",
+    "wizard": "node foxfang.cjs wizard setup"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.10.0",
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "openai": "^4.28.0",
+    "ora": "^8.2.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "pnpm@10.30.3+sha512.c961d1e0a2d8e354ecaa5166b822516668b7f44cb5bd95122d590dd81922f606f5473b6d23ec4a5be05e7fcd18e8488d47d978bbe981872f1145d06e9a740017"
+}
