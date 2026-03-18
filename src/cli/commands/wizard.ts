@@ -158,16 +158,22 @@ export async function registerWizardCommand(program: Command): Promise<void> {
           console.log(chalk.dim('✓ No API key needed for Ollama (local)'));
         }
         
-        // Ask for custom base URL (optional)
+        // Ask for custom base URL (optional) - skip for providers with fixed endpoints
         let baseUrl = providerMeta.baseUrl;
-        const customBaseUrl = await text({
-          message: `${providerMeta.name} Base URL (optional):`,
-          placeholder: providerMeta.baseUrl,
-          defaultValue: providerMeta.baseUrl,
-        });
+        const skipBaseUrlPrompt = providerId === 'kimi-coding'; // Kimi Coding has fixed endpoint
         
-        if (!isCancel(customBaseUrl) && customBaseUrl) {
-          baseUrl = customBaseUrl as string;
+        if (!skipBaseUrlPrompt) {
+          const customBaseUrl = await text({
+            message: `${providerMeta.name} Base URL (optional):`,
+            placeholder: providerMeta.baseUrl,
+            defaultValue: providerMeta.baseUrl,
+          });
+          
+          if (!isCancel(customBaseUrl) && customBaseUrl) {
+            baseUrl = customBaseUrl as string;
+          }
+        } else {
+          console.log(chalk.dim(`  Using fixed endpoint: ${providerMeta.baseUrl}`));
         }
         
         // Select default model for this provider
@@ -412,11 +418,20 @@ async function addProvider(config: any) {
     }) as string;
   }
   
-  const baseUrl = await text({
-    message: `${providerMeta.name} Base URL (optional):`,
-    placeholder: providerMeta.baseUrl,
-    defaultValue: providerMeta.baseUrl,
-  }) as string;
+  // Skip base URL prompt for providers with fixed endpoints
+  let baseUrl = providerMeta.baseUrl;
+  if (providerId !== 'kimi-coding') {
+    const customBaseUrl = await text({
+      message: `${providerMeta.name} Base URL (optional):`,
+      placeholder: providerMeta.baseUrl,
+      defaultValue: providerMeta.baseUrl,
+    }) as string;
+    if (customBaseUrl) {
+      baseUrl = customBaseUrl;
+    }
+  } else {
+    console.log(chalk.dim(`Using fixed endpoint: ${providerMeta.baseUrl}`));
+  }
   
   const defaultModel = await select({
     message: `Default model for ${providerMeta.name}:`,
@@ -427,7 +442,7 @@ async function addProvider(config: any) {
     id: providerId,
     name: providerMeta.name,
     apiKey,
-    baseUrl: baseUrl || providerMeta.baseUrl,
+    baseUrl,
     defaultModel,
     enabled: true,
   };
