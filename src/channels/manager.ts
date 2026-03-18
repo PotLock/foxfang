@@ -27,7 +27,10 @@ export class ChannelManager {
       try {
         await this.connectChannel(channelName);
       } catch (error) {
-        console.error(`[ChannelManager] Failed to connect ${channelName}:`, error);
+        // Log warning but don't crash - channel may be started later
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.warn(`[ChannelManager] ⚠️  ${channelName} not available: ${errorMsg.split('\n')[0]}`);
+        console.warn(`[ChannelManager]    Gateway will run without ${channelName}. Start it and restart daemon to enable.`);
       }
     }
   }
