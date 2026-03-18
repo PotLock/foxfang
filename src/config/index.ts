@@ -27,11 +27,7 @@ export interface AppConfig {
     signal?: { 
       enabled: boolean; 
       phoneNumber: string;
-      httpHost?: string;
-      httpPort?: number;
       httpUrl?: string;
-      cliPath?: string;
-      autoStart?: boolean;
     };
   };
   observability: { enabled: boolean };

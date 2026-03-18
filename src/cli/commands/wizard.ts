@@ -606,7 +606,7 @@ async function setupSlack() {
 
 async function setupSignal() {
   console.log(chalk.dim('\nSignal Setup:'));
-  console.log('Signal requires signal-cli to be installed.');
+  console.log('Signal requires signal-cli to be installed and running.');
   console.log('Docs: https://github.com/AsamK/signal-cli\n');
   
   const phoneNumber = await text({
@@ -614,65 +614,24 @@ async function setupSignal() {
     placeholder: '+1234567890',
   });
   
-  // Signal CLI configuration options
-  const useDefaults = await confirm({
-    message: 'Use default signal-cli settings (localhost:8080)?',
-    initialValue: true,
+  const httpUrl = await text({
+    message: 'Signal CLI URL:',
+    placeholder: 'http://localhost:8080',
+    defaultValue: 'http://localhost:8080',
   });
   
-  let signalConfig: any = {
-    enabled: true,
-    phoneNumber: phoneNumber as string,
-  };
-  
-  if (!useDefaults) {
-    console.log(chalk.dim('\n--- Signal CLI Configuration ---\n'));
-    
-    const httpHost = await text({
-      message: 'Signal CLI HTTP host:',
-      placeholder: '127.0.0.1',
-      defaultValue: '127.0.0.1',
-    });
-    
-    const httpPort = await text({
-      message: 'Signal CLI HTTP port:',
-      placeholder: '8080',
-      defaultValue: '8080',
-    });
-    
-    const httpUrl = await text({
-      message: 'Signal CLI HTTP URL (optional - overrides host/port):',
-      placeholder: 'http://127.0.0.1:8080',
-      defaultValue: '',
-    });
-    
-    const cliPath = await text({
-      message: 'Signal CLI binary path (optional):',
-      placeholder: 'signal-cli',
-      defaultValue: 'signal-cli',
-    });
-    
-    const autoStart = await confirm({
-      message: 'Auto-start signal-cli daemon?',
-      initialValue: true,
-    });
-    
-    signalConfig.httpHost = httpHost as string;
-    signalConfig.httpPort = parseInt(httpPort as string) || 8080;
-    if (httpUrl) signalConfig.httpUrl = httpUrl as string;
-    signalConfig.cliPath = cliPath as string;
-    signalConfig.autoStart = autoStart;
-  }
+  const httpUrlStr = (httpUrl as string) || 'http://localhost:8080';
   
   const config = await loadConfig();
   if (!config.channels) config.channels = {};
-  config.channels.signal = signalConfig;
+  config.channels.signal = {
+    enabled: true,
+    phoneNumber: phoneNumber as string,
+    httpUrl: httpUrlStr,
+  };
   await saveConfig(config);
   
-  console.log(chalk.dim('\nSignal CLI connection settings:'));
-  console.log(chalk.dim(`  Host: ${signalConfig.httpHost || '127.0.0.1'}`));
-  console.log(chalk.dim(`  Port: ${signalConfig.httpPort || 8080}`));
-  if (signalConfig.httpUrl) console.log(chalk.dim(`  URL: ${signalConfig.httpUrl}`));
+  console.log(chalk.dim(`\n✓ Signal configured: ${httpUrlStr}`));
 }
 
 /**
