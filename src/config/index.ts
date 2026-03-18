@@ -24,7 +24,15 @@ export interface AppConfig {
     telegram?: { enabled: boolean; botToken: string };
     discord?: { enabled: boolean; botToken: string };
     slack?: { enabled: boolean; botToken: string };
-    signal?: { enabled: boolean; phoneNumber: string };
+    signal?: { 
+      enabled: boolean; 
+      phoneNumber: string;
+      httpHost?: string;
+      httpPort?: number;
+      httpUrl?: string;
+      cliPath?: string;
+      autoStart?: boolean;
+    };
   };
   observability: { enabled: boolean };
   heartbeat: { enabled: boolean; intervalMs: number };
