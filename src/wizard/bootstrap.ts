@@ -197,41 +197,40 @@ Last updated:
 *This file is automatically updated as your FoxFang learns.*
 `,
 
-  'HEARTBEAT.md': `# HEARTBEAT — Your FoxFang's Health
+  'HEARTBEAT.md': `# HEARTBEAT — Agent Progress Log
 
-## Status Overview
+## Purpose
 
-*Last updated: Setup incomplete*
+This file is used by FoxFang agents to record periodic progress updates 
+during long-running tasks. Agents write heartbeat entries to show they're
+still working and report intermediate results.
 
-## Components
+## How It Works
 
-### AI Providers
-- [ ] OpenAI
-- [ ] Anthropic
-- [ ] Kimi
+When an agent is processing a complex task, it will periodically append
+to this file:
+- Current status (in_progress, waiting, error)
+- Progress percentage
+- Recent actions taken
+- Any blockers or issues
 
-### Channels
-- [ ] Telegram
-- [ ] Discord
-- [ ] Slack
-- [ ] Signal
+## Recent Entries
 
-### Storage
-- Status: ✓ Healthy
-- Memory entries: 0
-- Sessions: 0
+*No entries yet*
 
-## Recent Activity
+## Example Entry
 
-*No activity yet*
-
-## Configuration
-
-Heartbeat enabled: true
-Check interval: 30 seconds
+\`\`\`
+## 2024-01-15 14:30:15 - Content Specialist
+**Status:** in_progress  
+**Progress:** 45%  
+**Action:** Drafting Twitter thread about AI trends  
+**Notes:** Researched 3 sources, synthesizing key points
+\`\`\`
 
 ---
-*Run \`pnpm foxfang status\` for real-time health info.*
+
+*This file is maintained automatically by agents during task execution.*
 `,
 
   'AGENT.md': `# AGENT — Your FoxFang Agent Configuration
