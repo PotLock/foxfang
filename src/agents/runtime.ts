@@ -174,6 +174,7 @@ export async function runAgent(
   const allToolCalls: ToolCall[] = [];
   let iteration = 0;
   const maxIterations = 10; // Prevent infinite loops
+  let toolErrorStreak = 0;
 
   // AGENT LOOP
   while (iteration < maxIterations) {
@@ -227,6 +228,25 @@ export async function runAgent(
       hasOutput: !!r.output,
       hasError: !!r.error,
     })));
+
+    const allErrors = results.length > 0 && results.every(r => r.error);
+    if (allErrors) {
+      toolErrorStreak += 1;
+    } else {
+      toolErrorStreak = 0;
+    }
+
+    if (allErrors && toolErrorStreak >= 2) {
+      const errorSummary = results.map(r => {
+        const toolName = toolCallsWithIds.find(tc => tc.id === r.toolCallId)?.name;
+        return `${toolName}: ${r.error}`;
+      }).join('\n');
+      return {
+        content: `Tool execution failed repeatedly:\n${errorSummary}`,
+        toolCalls: allToolCalls,
+        usage: response.usage,
+      };
+    }
 
     // Build tool results
     const toolResultsForModel = results.map(r => {
@@ -316,6 +336,7 @@ export async function* runAgentStream(
   // Track iterations to prevent infinite loops
   let iteration = 0;
   const maxIterations = 10;
+  let toolErrorStreak = 0;
 
   // AGENT LOOP
   while (iteration < maxIterations) {
@@ -359,6 +380,23 @@ export async function* runAgentStream(
       // Execute pending tool calls
       console.log(`[AgentRuntime] Executing ${pendingToolCalls.length} tool calls`);
       const results = await executeToolCalls(pendingToolCalls);
+
+      const allErrors = results.length > 0 && results.every(r => r.error);
+      if (allErrors) {
+        toolErrorStreak += 1;
+      } else {
+        toolErrorStreak = 0;
+      }
+
+      if (allErrors && toolErrorStreak >= 2) {
+        const errorSummary = results.map(r => {
+          const toolName = pendingToolCalls.find(tc => tc.id === r.toolCallId)?.name;
+          return `${toolName}: ${r.error}`;
+        }).join('\n');
+        yield { type: 'text', content: `\nTool execution failed repeatedly:\n${errorSummary}\n` };
+        yield { type: 'done' };
+        return;
+      }
       
       // Yield tool results
       for (const result of results) {

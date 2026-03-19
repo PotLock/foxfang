@@ -54,9 +54,14 @@ export class FetchUrlTool implements Tool {
       const result = await fetchAndExtract(args.url, args.maxLength || 10000, args.includeLinks !== false);
       return { success: true, data: result };
     } catch (error) {
+      let message = error instanceof Error ? error.message : 'Failed to fetch URL';
+      const cause = error instanceof Error ? (error as any).cause : undefined;
+      if (cause instanceof Error && cause.message) {
+        message = `${message} (${cause.message})`;
+      }
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Failed to fetch URL' 
+        error: message 
       };
     }
   }
@@ -68,17 +73,23 @@ export class FetchUrlTool implements Tool {
 async function fetchAndExtract(url: string, maxLength: number, includeLinks: boolean): Promise<FetchUrlResult> {
   // Validate URL
   let parsedUrl: URL;
+  let normalizedUrl = url.trim();
   try {
-    parsedUrl = new URL(url);
-    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-      throw new Error('URL must be http or https');
-    }
+    parsedUrl = new URL(normalizedUrl);
   } catch {
-    throw new Error('Invalid URL format');
+    try {
+      parsedUrl = new URL(`https://${normalizedUrl}`);
+      normalizedUrl = parsedUrl.href;
+    } catch {
+      throw new Error('Invalid URL format');
+    }
+  }
+  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+    throw new Error('URL must be http or https');
   }
 
   // Fetch with browser-like headers
-  const response = await fetch(url, {
+  const response = await fetch(normalizedUrl, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
