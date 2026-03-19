@@ -6,7 +6,7 @@
 
 import { Agent, AgentContext, AgentRunResult, ToolCall, ToolResult, WorkspaceManagerLike } from './types';
 import { agentRegistry } from './registry';
-import { getProvider } from '../providers/index';
+import { getProvider, getProviderConfig } from '../providers/index';
 import { toolRegistry } from '../tools/index';
 import { ChatMessage } from '../providers/traits';
 
@@ -166,10 +166,8 @@ export async function runAgent(
 
   // Get model
   const actualProviderId = agent.provider || defaultProviderId || 'openai';
-  const defaultModel = actualProviderId === 'kimi-coding' ? 'kimi-code' : 
-                       actualProviderId === 'kimi' ? 'moonshot-v1-8k' :
-                       actualProviderId === 'anthropic' ? 'claude-3-5-sonnet-latest' :
-                       'gpt-4o';
+  const providerConfig = getProviderConfig(actualProviderId);
+  const defaultModel = providerConfig?.defaultModel || 'gpt-4o';
   const model = agent.model || defaultModel;
 
   // Track all tool calls made during the loop
@@ -311,10 +309,8 @@ export async function* runAgentStream(
   }
 
   const actualProviderId = agent.provider || defaultProviderId || 'openai';
-  const defaultModel = actualProviderId === 'kimi-coding' ? 'kimi-code' : 
-                       actualProviderId === 'kimi' ? 'moonshot-v1-8k' :
-                       actualProviderId === 'anthropic' ? 'claude-3-5-sonnet-latest' :
-                       'gpt-4o';
+  const providerConfig = getProviderConfig(actualProviderId);
+  const defaultModel = providerConfig?.defaultModel || 'gpt-4o';
   const model = agent.model || defaultModel;
 
   // Track iterations to prevent infinite loops

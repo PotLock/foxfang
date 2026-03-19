@@ -404,6 +404,7 @@ export class SignalAdapter implements ChannelAdapter {
         const sourceName = data.envelope.sourceName || source;
         
         if (msg.message && this.messageHandler) {
+          const isGroup = !!msg.groupInfo?.groupId;
           const channelMsg: ChannelMessage = {
             id: data.envelope.timestamp.toString(),
             channel: 'signal',
@@ -411,6 +412,11 @@ export class SignalAdapter implements ChannelAdapter {
             content: msg.message,
             timestamp: new Date(data.envelope.timestamp),
             threadId: msg.groupInfo?.groupId,
+            metadata: {
+              chatId: isGroup ? msg.groupInfo.groupId : source,
+              chatType: isGroup ? 'group' : 'private',
+              sourcePhone: source,
+            },
           };
 
           // Process through agent (ChannelManager handles logging)

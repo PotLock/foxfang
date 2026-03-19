@@ -22,6 +22,9 @@ export class AnthropicProvider implements Provider {
 
   constructor(config: ProviderConfig) {
     this.apiKey = config.apiKey || '';
+    if (config.baseUrl) {
+      this.baseUrl = config.baseUrl;
+    }
   }
 
   async chat(request: ChatRequest): Promise<ChatResponse> {

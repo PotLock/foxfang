@@ -5,6 +5,7 @@
 import { Provider, ProviderStatus } from './traits';
 
 const providers: Map<string, Provider> = new Map();
+const providerConfigs: Map<string, ProviderConfig> = new Map();
 
 export interface ProviderConfig {
   id: string;
@@ -12,15 +13,23 @@ export interface ProviderConfig {
   apiKey?: string;
   enabled: boolean;
   baseUrl?: string;
+  defaultModel?: string;
   models?: string[];
+  headers?: Record<string, string>;
+  apiType?: string;
 }
 
-export function registerProvider(id: string, provider: Provider): void {
+export function registerProvider(id: string, provider: Provider, config?: ProviderConfig): void {
   providers.set(id, provider);
+  if (config) providerConfigs.set(id, config);
 }
 
 export function getProvider(id: string): Provider | undefined {
   return providers.get(id);
+}
+
+export function getProviderConfig(id: string): ProviderConfig | undefined {
+  return providerConfigs.get(id);
 }
 
 export function getProviderWithFallback(id: string): Provider | undefined {
@@ -92,12 +101,20 @@ export function initializeProviders(configs: ProviderConfig[]): void {
           const { KimiCodingProvider } = require('./kimi');
           provider = new KimiCodingProvider(config);
           break;
+        case 'openrouter':
+        case 'ollama':
+        case 'custom': {
+          // All OpenAI-compatible providers
+          const { OpenAIProvider: OpenAICompatProvider } = require('./openai');
+          provider = new OpenAICompatProvider(config);
+          break;
+        }
         default:
           console.warn(`Unknown provider: ${config.id}`);
           continue;
       }
       
-      registerProvider(config.id, provider);
+      registerProvider(config.id, provider, config);
       console.log(`Registered provider: ${config.id}`);
     } catch (error) {
       console.error(`Failed to initialize provider ${config.id}:`, error);

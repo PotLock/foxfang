@@ -197,10 +197,10 @@ export class ChannelManager {
         id: msg.from,
         name: msg.from,
       },
-      chat: msg.metadata?.chatId ? {
-        id: msg.metadata.chatId,
-        type: 'private',
-      } : undefined,
+      chat: {
+        id: msg.metadata?.chatId || msg.from,
+        type: msg.metadata?.chatType || 'private',
+      },
       text: msg.content,
       replyToMessageId: msg.metadata?.replyToMessageId,
       threadId: msg.metadata?.threadId,
@@ -215,12 +215,14 @@ export class ChannelManager {
         // Send typing callback
         async () => {
           if (adapter.sendTyping) {
-            await adapter.sendTyping(msg.from, msg.metadata?.threadId);
+            const replyTo = msg.metadata?.sourcePhone || msg.metadata?.chatId || msg.from;
+            await adapter.sendTyping(replyTo, msg.metadata?.threadId);
           }
         },
         // Send reply callback
         async (payload) => {
-          await adapter.send(msg.from, payload.text || '', {
+          const replyTo = msg.metadata?.sourcePhone || msg.metadata?.chatId || msg.from;
+          await adapter.send(replyTo, payload.text || '', {
             replyToMessageId: payload.replyToMessageId ?? (this.config.autoReply.replyToMessage ? msg.id : undefined),
             threadId: payload.threadId ?? msg.metadata?.threadId,
           });
@@ -262,7 +264,8 @@ export class ChannelManager {
       const errorMsg = '❌ Sorry, I encountered an error processing your message.';
       
       // Send error message
-      await adapter.send(msg.from, errorMsg);
+      const errorReplyTo = msg.metadata?.sourcePhone || msg.metadata?.chatId || msg.from;
+      await adapter.send(errorReplyTo, errorMsg);
       
       // Remove the "eyes" reaction after error message
       if (adapter.removeReaction) {

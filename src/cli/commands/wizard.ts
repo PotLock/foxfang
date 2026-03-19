@@ -160,22 +160,18 @@ export async function registerWizardCommand(program: Command): Promise<void> {
           console.log(chalk.dim('✓ No API key needed for Ollama (local)'));
         }
         
-        // Ask for custom base URL (optional) - skip for providers with fixed endpoints
+        // Use default base URL — only prompt for custom/ollama providers
         let baseUrl = providerMeta.baseUrl;
-        const skipBaseUrlPrompt = providerId === 'kimi-coding'; // Kimi Coding has fixed endpoint
-        
-        if (!skipBaseUrlPrompt) {
+        if (providerId === 'custom' || providerId === 'ollama') {
           const customBaseUrl = await text({
-            message: `${providerMeta.name} Base URL (optional):`,
+            message: `${providerMeta.name} Base URL:`,
             placeholder: providerMeta.baseUrl,
             defaultValue: providerMeta.baseUrl,
           });
-          
+
           if (!isCancel(customBaseUrl) && customBaseUrl) {
             baseUrl = customBaseUrl as string;
           }
-        } else {
-          console.log(chalk.dim(`  Using fixed endpoint: ${providerMeta.baseUrl}`));
         }
         
         // Select default model for this provider
@@ -277,7 +273,7 @@ export async function registerWizardCommand(program: Command): Promise<void> {
           initialValue: true,
         });
         
-        if (shouldMigrate) {
+        if (!isCancel(shouldMigrate) && shouldMigrate === true) {
           const sMigrate = spinner();
           sMigrate.start('Migrating API keys to secure storage...');
           const migrated = await migrateFromConfig(config);
@@ -361,7 +357,7 @@ export async function registerWizardCommand(program: Command): Promise<void> {
       console.log(chalk.dim('   Example: "I need to create a marketing campaign for my coffee shop"'));
       
       // Setup channels immediately if requested
-      if (setupChannels) {
+      if (!isCancel(setupChannels) && setupChannels === true) {
         console.log(chalk.dim('\n--- Channel Setup ---\n'));
         await runChannelSetupWizard(config);
       }
@@ -373,7 +369,7 @@ export async function registerWizardCommand(program: Command): Promise<void> {
         initialValue: false,
       });
       
-      if (connectGitHub) {
+      if (!isCancel(connectGitHub) && connectGitHub === true) {
         const s4 = spinner();
         s4.start('Starting GitHub OAuth flow...');
         
@@ -510,19 +506,17 @@ async function addProvider(config: any) {
     }) as string;
   }
   
-  // Skip base URL prompt for providers with fixed endpoints
+  // Use default base URL — only prompt for custom/ollama providers
   let baseUrl = providerMeta.baseUrl;
-  if (providerId !== 'kimi-coding') {
+  if (providerId === 'custom' || providerId === 'ollama') {
     const customBaseUrl = await text({
-      message: `${providerMeta.name} Base URL (optional):`,
+      message: `${providerMeta.name} Base URL:`,
       placeholder: providerMeta.baseUrl,
       defaultValue: providerMeta.baseUrl,
     }) as string;
     if (customBaseUrl) {
       baseUrl = customBaseUrl;
     }
-  } else {
-    console.log(chalk.dim(`Using fixed endpoint: ${providerMeta.baseUrl}`));
   }
   
   const defaultModel = await select({
@@ -591,12 +585,16 @@ async function editProvider(config: any) {
     defaultValue: '',
   }) as string;
   
-  const baseUrl = await text({
-    message: `${provider.name} Base URL:`,
-    placeholder: providerMeta?.baseUrl || 'https://api...',
-    defaultValue: provider.baseUrl || providerMeta?.baseUrl,
-  }) as string;
-  
+  // Only prompt base URL for custom/ollama providers
+  let baseUrl = provider.baseUrl || providerMeta?.baseUrl || '';
+  if (providerId === 'custom' || providerId === 'ollama') {
+    baseUrl = await text({
+      message: `${provider.name} Base URL:`,
+      placeholder: providerMeta?.baseUrl || 'https://api...',
+      defaultValue: provider.baseUrl || providerMeta?.baseUrl,
+    }) as string;
+  }
+
   // Save API key to credentials store
   if (apiKey) {
     await saveCredential(providerId, {
@@ -826,7 +824,7 @@ async function runChannelSetupWizard(config: any) {
       initialValue: false,
     });
     
-    if (!setupAnother) {
+    if (isCancel(setupAnother) || setupAnother !== true) {
       continueSetup = false;
     }
   }
