@@ -36,8 +36,8 @@ export interface ChannelAdapter {
    * @returns The message ID if available
    */
   send(to: string, content: string, options?: { replyToMessageId?: string; threadId?: string }): Promise<string | void>;
-  
-  /** 
+
+  /**
    * Edit an existing message
    * @param messageId - The ID of the message to edit
    * @param newContent - The new content
@@ -45,7 +45,7 @@ export interface ChannelAdapter {
    * @returns true if edit was successful
    */
   edit?(messageId: string, newContent: string, to?: string): Promise<boolean>;
-  
+
   /**
    * Delete/unsend a message
    * @param messageId - The ID of the message to delete
