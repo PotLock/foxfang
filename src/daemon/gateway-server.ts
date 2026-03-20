@@ -33,7 +33,10 @@ const PORT = parseInt(
   process.env.FOXFANG_GATEWAY_PORT || process.env.PORT || '8787',
   10
 );
-const CHANNELS = (process.env.FOXFANG_CHANNELS || '').split(',').filter(Boolean);
+const ENV_CHANNELS = (process.env.FOXFANG_CHANNELS || '')
+  .split(',')
+  .map((channel) => channel.trim())
+  .filter(Boolean);
 const SETUP_USERNAME = process.env.SETUP_USERNAME || '';
 const SETUP_PASSWORD = process.env.SETUP_PASSWORD || '';
 
@@ -143,6 +146,7 @@ class GatewayServer {
   private startedAt = Date.now();
   private restartScheduled = false;
   private githubOAuthStates: Map<string, number> = new Map();
+  private enabledChannels: string[] = [...ENV_CHANNELS];
 
   constructor(port: number) {
     const server = createServer((req, res) => {
@@ -156,7 +160,7 @@ class GatewayServer {
       });
     });
     this.wss = new WebSocketServer({ server });
-    this.channelManager = new ChannelManager(CHANNELS);
+    this.channelManager = new ChannelManager(this.enabledChannels);
     
     // Initialize cron tables
     initCronTables();
@@ -166,7 +170,6 @@ class GatewayServer {
     
     server.listen(port, () => {
       console.log(`[Gateway] Server listening on port ${port}`);
-      console.log(`[Gateway] Channels enabled: ${CHANNELS.join(', ') || 'none'}`);
     });
   }
 
@@ -179,7 +182,7 @@ class GatewayServer {
         status: 'ok',
         uptimeMs: Date.now() - this.startedAt,
         clients: this.clients.size,
-        channels: CHANNELS,
+        channels: this.enabledChannels,
       });
       return;
     }
@@ -828,6 +831,30 @@ class GatewayServer {
     return 'http://signal-api:8080';
   }
 
+  private normalizeSignalHttpUrl(value: unknown): string {
+    const normalized = this.sanitizeString(value).replace(/\/+$/, '');
+    if (!normalized || normalized === 'http://signal-cli:8080') {
+      return this.getDefaultSignalHttpUrl();
+    }
+    return normalized;
+  }
+
+  private async resolveEnabledChannels(): Promise<string[]> {
+    if (ENV_CHANNELS.length > 0) {
+      return [...ENV_CHANNELS];
+    }
+
+    const config = await loadConfig().catch(() => null);
+    if (!config?.channels || typeof config.channels !== 'object') {
+      return [];
+    }
+
+    return Object.entries(config.channels)
+      .filter(([, channelConfig]) => Boolean(channelConfig?.enabled))
+      .map(([channelName]) => channelName.trim())
+      .filter(Boolean);
+  }
+
   private async persistSetupConfig(payload: SetupPayload): Promise<void> {
     const config = await loadConfig();
     const existingProviderMap = new Map<string, any>(
@@ -899,10 +926,7 @@ class GatewayServer {
       if (!signalPhone) {
         throw new Error('Signal channel requires phone number');
       }
-      const signalHttpUrl = this.sanitizeString(config.channels.signal.httpUrl);
-      if (!signalHttpUrl) {
-        config.channels.signal.httpUrl = this.getDefaultSignalHttpUrl();
-      }
+      config.channels.signal.httpUrl = this.normalizeSignalHttpUrl(config.channels.signal.httpUrl);
     }
 
     const braveSearchApiKey = this.sanitizeString(payload.braveSearchApiKey);
@@ -961,6 +985,10 @@ class GatewayServer {
   }
 
   private async initialize(): Promise<void> {
+    this.enabledChannels = await this.resolveEnabledChannels();
+    this.channelManager = new ChannelManager(this.enabledChannels);
+    console.log(`[Gateway] Channels enabled: ${this.enabledChannels.join(', ') || 'none'}`);
+
     // Initialize agents
     await this.initializeAgents();
     
@@ -968,7 +996,7 @@ class GatewayServer {
     this.initializeCronService();
     
     // Connect channels
-    if (CHANNELS.length > 0) {
+    if (this.enabledChannels.length > 0) {
       this.channelManager.setOrchestrator(this.orchestrator!);
       await this.channelManager.connectAll();
     }
