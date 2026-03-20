@@ -16,7 +16,12 @@
     .grid-1 { display: grid; grid-template-columns: 1fr; gap: 12px; }
     label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #374151; }
     input, select { width: 100%; box-sizing: border-box; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px 12px; font-size: 14px; }
-    .channel { display: grid; grid-template-columns: 180px 1fr; gap: 10px; align-items: center; margin: 6px 0; }
+    .channels-stack { display: grid; gap: 12px; }
+    .channel-block { border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; background: #fcfcfd; }
+    .channel-title { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+    .channel-name { font-size: 14px; font-weight: 700; color: #111827; margin: 0; }
+    .channel-hint { margin-top: 4px; font-size: 12px; color: #6b7280; }
+    .channel-state { width: 180px; }
     .inline { display: flex; align-items: center; gap: 8px; font-size: 14px; }
     .actions { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
     button { background: #111827; color: #fff; border: 0; border-radius: 10px; padding: 10px 14px; cursor: pointer; font-weight: 600; }
@@ -30,7 +35,11 @@
     .config-preview { margin: 0; padding: 12px; border-radius: 10px; border: 1px solid #e5e7eb; background: #f9fafb; color: #111827; font-size: 12px; line-height: 1.45; overflow: auto; max-height: 320px; }
     .signal-qr { margin-top: 10px; max-width: 320px; width: 100%; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; }
     code { background: #f3f4f6; border-radius: 6px; padding: 2px 6px; }
-    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+      .channel-title { flex-direction: column; }
+      .channel-state { width: 100%; }
+    }
   </style>
 </head>
 <body>
@@ -75,19 +84,26 @@
 
       <div class="card">
         <h2>Channels (optional)</h2>
-        <div class="grid-1">
-          <div class="channel">
-            <label>
-              Telegram
-              <select id="telegramEnabled">
-                <option value="disabled">Disabled</option>
-                <option value="enabled">Enabled</option>
-              </select>
-            </label>
+        <div class="channels-stack">
+          <div class="channel-block">
+            <div class="channel-title">
+              <div>
+                <div class="channel-name">Telegram</div>
+                <div class="channel-hint">DM always replies. Mode below controls groups, supergroups, and community channels.</div>
+                <div class="channel-hint">For <code>always</code> in groups, disable bot privacy mode in @BotFather (<code>/setprivacy</code>).</div>
+              </div>
+              <label class="channel-state">
+                Status
+                <select id="telegramEnabled">
+                  <option value="disabled">Disabled</option>
+                  <option value="enabled">Enabled</option>
+                </select>
+              </label>
+            </div>
             <div class="grid">
               <input id="telegramBotToken" type="password" placeholder="Telegram bot token" />
               <label>
-                Group Reply Mode
+                Group/Community Reply Mode
                 <select id="telegramGroupActivation">
                   <option value="always">Always reply</option>
                   <option value="mention">Mention only</option>
@@ -95,18 +111,25 @@
               </label>
             </div>
           </div>
-          <div class="channel">
-            <label>
-              Discord
-              <select id="discordEnabled">
-                <option value="disabled">Disabled</option>
-                <option value="enabled">Enabled</option>
-              </select>
-            </label>
+
+          <div class="channel-block">
+            <div class="channel-title">
+              <div>
+                <div class="channel-name">Discord</div>
+                <div class="channel-hint">DM always replies. Mode below controls guild channels and thread conversations.</div>
+              </div>
+              <label class="channel-state">
+                Status
+                <select id="discordEnabled">
+                  <option value="disabled">Disabled</option>
+                  <option value="enabled">Enabled</option>
+                </select>
+              </label>
+            </div>
             <div class="grid">
               <input id="discordBotToken" type="password" placeholder="Discord bot token" />
               <label>
-                Group/Channel Reply Mode
+                Guild/Thread Reply Mode
                 <select id="discordGroupActivation">
                   <option value="always">Always reply</option>
                   <option value="mention">Mention only</option>
@@ -114,19 +137,26 @@
               </label>
             </div>
           </div>
-          <div class="channel">
-            <label>
-              Slack
-              <select id="slackEnabled">
-                <option value="disabled">Disabled</option>
-                <option value="enabled">Enabled</option>
-              </select>
-            </label>
+
+          <div class="channel-block">
+            <div class="channel-title">
+              <div>
+                <div class="channel-name">Slack</div>
+                <div class="channel-hint">DM always replies. Mode below controls workspace channels and thread replies.</div>
+              </div>
+              <label class="channel-state">
+                Status
+                <select id="slackEnabled">
+                  <option value="disabled">Disabled</option>
+                  <option value="enabled">Enabled</option>
+                </select>
+              </label>
+            </div>
             <div class="grid">
               <input id="slackBotToken" type="password" placeholder="Slack bot token (xoxb-...)" />
               <input id="slackAppToken" type="password" placeholder="Slack app token (xapp-...)" />
               <label>
-                Group/Channel Reply Mode
+                Channel/Thread Reply Mode
                 <select id="slackGroupActivation">
                   <option value="always">Always reply</option>
                   <option value="mention">Mention only</option>
@@ -134,14 +164,21 @@
               </label>
             </div>
           </div>
-          <div class="channel">
-            <label>
-              Signal
-              <select id="signalEnabled">
-                <option value="disabled">Disabled</option>
-                <option value="enabled">Enabled</option>
-              </select>
-            </label>
+
+          <div class="channel-block">
+            <div class="channel-title">
+              <div>
+                <div class="channel-name">Signal</div>
+                <div class="channel-hint">DM always replies. Mode below controls group chats.</div>
+              </div>
+              <label class="channel-state">
+                Status
+                <select id="signalEnabled">
+                  <option value="disabled">Disabled</option>
+                  <option value="enabled">Enabled</option>
+                </select>
+              </label>
+            </div>
             <div class="grid">
               <input id="signalPhoneNumber" placeholder="+1234567890" />
               <input id="signalHttpUrl" placeholder="Signal HTTP URL (optional)" />
@@ -153,9 +190,8 @@
                 </select>
               </label>
             </div>
+            <div class="channel-hint">If Signal HTTP URL is empty, FoxFang uses <code>SIGNAL_HTTP_URL</code> (Railway default: <code>http://signal-api:8080</code>, local default: <code>http://127.0.0.1:8686</code>).</div>
           </div>
-          <div class="models-note">Each channel uses its own group activation policy (<code>always</code> or <code>mention</code>).</div>
-          <div class="models-note">If Signal HTTP URL is empty, FoxFang uses <code>SIGNAL_HTTP_URL</code> env (Railway default: <code>http://signal-api:8080</code>, local default: <code>http://127.0.0.1:8686</code>).</div>
         </div>
       </div>
 
@@ -308,6 +344,13 @@
     const signalSetupStatusEl = document.getElementById('signalSetupStatus');
     const signalAccountsStatusEl = document.getElementById('signalAccountsStatus');
     const signalQrImageEl = document.getElementById('signalQrImage');
+    const channelSavedState = {
+      telegramHasBotToken: false,
+      discordHasBotToken: false,
+      slackHasBotToken: false,
+      slackHasAppToken: false,
+      signalHasPhoneNumber: false,
+    };
     let githubPopup = null;
 
     function setStatus(message, type) {
@@ -440,6 +483,46 @@
       signalPhoneNumberEl.disabled = !signalEnabled;
       signalHttpUrlEl.disabled = !signalEnabled;
       signalGroupActivationEl.disabled = !signalEnabled;
+    }
+
+    function validateChannelFields() {
+      const telegramEnabled = modeToBool(telegramEnabledEl.value);
+      if (telegramEnabled) {
+        const token = telegramBotTokenEl.value.trim();
+        if (!token && !channelSavedState.telegramHasBotToken) {
+          return 'Telegram is enabled but Bot Token is missing.';
+        }
+      }
+
+      const discordEnabled = modeToBool(discordEnabledEl.value);
+      if (discordEnabled) {
+        const token = discordBotTokenEl.value.trim();
+        if (!token && !channelSavedState.discordHasBotToken) {
+          return 'Discord is enabled but Bot Token is missing.';
+        }
+      }
+
+      const slackEnabled = modeToBool(slackEnabledEl.value);
+      if (slackEnabled) {
+        const botToken = slackBotTokenEl.value.trim();
+        const appToken = slackAppTokenEl.value.trim();
+        if (!botToken && !channelSavedState.slackHasBotToken) {
+          return 'Slack is enabled but Bot Token (xoxb-) is missing.';
+        }
+        if (!appToken && !channelSavedState.slackHasAppToken) {
+          return 'Slack is enabled but App Token (xapp-) is missing.';
+        }
+      }
+
+      const signalEnabled = modeToBool(signalEnabledEl.value);
+      if (signalEnabled) {
+        const phone = signalPhoneNumberEl.value.trim();
+        if (!phone && !channelSavedState.signalHasPhoneNumber) {
+          return 'Signal is enabled but phone number is missing.';
+        }
+      }
+
+      return '';
     }
 
     function getPreset(providerId) {
@@ -705,6 +788,11 @@
           discordEnabledEl.value = boolToMode(!!data.channels.discord?.enabled);
           slackEnabledEl.value = boolToMode(!!data.channels.slack?.enabled);
           signalEnabledEl.value = boolToMode(!!data.channels.signal?.enabled);
+          channelSavedState.telegramHasBotToken = !!data.channels.telegram?.hasBotToken;
+          channelSavedState.discordHasBotToken = !!data.channels.discord?.hasBotToken;
+          channelSavedState.slackHasBotToken = !!data.channels.slack?.hasBotToken;
+          channelSavedState.slackHasAppToken = !!data.channels.slack?.hasAppToken;
+          channelSavedState.signalHasPhoneNumber = !!data.channels.signal?.phoneNumber;
           telegramGroupActivationEl.value = data.channels.telegram?.groupActivation === 'mention' ? 'mention' : 'always';
           discordGroupActivationEl.value = data.channels.discord?.groupActivation === 'mention' ? 'mention' : 'always';
           slackGroupActivationEl.value = data.channels.slack?.groupActivation === 'mention' ? 'mention' : 'always';
@@ -831,6 +919,13 @@
 
       if (!providerId) {
         setSaveStatus('Provider is required.', 'error');
+        saveBtn.disabled = false;
+        return;
+      }
+
+      const channelError = validateChannelFields();
+      if (channelError) {
+        setSaveStatus(channelError, 'error');
         saveBtn.disabled = false;
         return;
       }
