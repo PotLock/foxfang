@@ -1632,7 +1632,7 @@ class GatewayServer {
     initializeTools(config.tools?.tools || {});
     
     // Initialize FoxFang home and workspace
-    const foxfangHome = initFoxFangHome();
+    const foxfangHome = initFoxFangHome(config.workspace?.homeDir);
     const workspaceManager = createWorkspaceManager(
       'default_user',
       foxfangHome,

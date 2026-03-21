@@ -9,6 +9,7 @@ import { agentRegistry } from './registry';
 import { getProvider, getProviderConfig } from '../providers/index';
 import { toolRegistry } from '../tools/index';
 import { ChatMessage } from '../providers/traits';
+import { formatSkillsForPrompt, loadAvailableSkills } from '../skill-system';
 
 let defaultProviderId: string | undefined;
 
@@ -70,6 +71,8 @@ const TOOL_SUMMARIES: Record<string, string> = {
   bash_log: 'Get logs from background processes',
   bash_kill: 'Terminate background processes',
   cron: 'Schedule recurring tasks and reminders',
+  skills_list: 'List available skills (bundled/local/workspace) that can guide agent behavior',
+  skills_add: 'Create or install a new skill into FoxFang skills directory',
   
   // GitHub tools
   github_connect: 'Check GitHub connection status',
@@ -469,6 +472,7 @@ function buildToolSection(tools: string[]): string {
     'Brand & Project': ['create_brand', 'list_brands', 'get_brand', 'create_project', 'list_projects', 'get_project'],
     'Tasks': ['create_task', 'list_tasks', 'update_task_status'],
     'System': ['bash', 'bash_list', 'bash_poll', 'bash_log', 'bash_kill', 'cron'],
+    'Skills': ['skills_list', 'skills_add'],
     'GitHub': ['github_connect', 'github_create_issue', 'github_create_pr', 'github_list_issues', 'github_list_prs'],
   };
 
@@ -519,8 +523,36 @@ function buildToolSection(tools: string[]): string {
   lines.push('- For tweets: use fetch_tweet (handles x.com/twitter.com automatically)');
   lines.push('- For websites: use fetch_url or firecrawl_scrape (if API key available)');
   lines.push('- For search: prefer brave_search if available, fallback to web_search');
+  lines.push('- For skill management: use skills_list to inspect and skills_add to install/create');
   lines.push('');
   lines.push("**Never say 'I can't access that'** — use the tool first. If it fails, THEN explain.");
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+function buildSkillsSection(context: AgentContext): string {
+  const workspaceInfo = context.workspace?.getWorkspaceInfo?.();
+  const skills = loadAvailableSkills({
+    homeDir: workspaceInfo?.homeDir,
+    workspacePath: workspaceInfo?.workspacePath,
+  });
+
+  if (skills.length === 0) {
+    return '';
+  }
+
+  const lines: string[] = [];
+  lines.push('## Skills');
+  lines.push('');
+  lines.push('Before replying: scan `<available_skills>` descriptions.');
+  lines.push('- If exactly one skill clearly matches, follow it.');
+  lines.push('- If multiple skills might match, pick the most specific one.');
+  lines.push('- If needed, load full instructions via `bash` with `cat "<location>"`.');
+  lines.push('- Read at most one skill file before your first answer.');
+  lines.push('- If user asks to add/install a skill, use `skills_add`.');
+  lines.push('');
+  lines.push(formatSkillsForPrompt(skills));
   lines.push('');
 
   return lines.join('\n');
@@ -541,15 +573,21 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push(buildToolSection(context.tools));
   }
 
-  // 3. Tool Call Style
+  // 3. Skills section
+  const skillsSection = buildSkillsSection(context);
+  if (skillsSection) {
+    lines.push(skillsSection);
+  }
+
+  // 4. Tool Call Style
   lines.push(TOOL_CALL_STYLE_GUIDANCE);
   lines.push('');
 
-  // 4. Safety
+  // 5. Safety
   lines.push(SAFETY_SECTION);
   lines.push('');
 
-  // 5. Communication Style (SOUL-inspired)
+  // 6. Communication Style (SOUL-inspired)
   lines.push('## Communication Style');
   lines.push('');
   lines.push('**CRITICAL: Match the user\'s language.** If they write in Vietnamese, reply in Vietnamese. If English, reply in English. Never force a language switch.');
@@ -573,13 +611,13 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   lines.push('Don\'t bullet-point emoji or stack them.');
   lines.push('');
 
-  // 6. Agent Role
+  // 7. Agent Role
   lines.push('## Your Role');
   lines.push('');
   lines.push(agent.systemPrompt);
   lines.push('');
 
-  // 7. Brand Context (if available)
+  // 8. Brand Context (if available)
   if (context.brandContext) {
     lines.push('## Brand Context');
     lines.push('');
@@ -587,7 +625,7 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push('');
   }
 
-  // 8. Relevant Memories
+  // 9. Relevant Memories
   if (context.relevantMemories && context.relevantMemories.length > 0) {
     lines.push('## Relevant Context from Memory');
     lines.push('');
@@ -595,7 +633,7 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push('');
   }
 
-  // 9. Workspace Files (if workspace manager available)
+  // 10. Workspace Files (if workspace manager available)
   if (context.workspace) {
     const workspaceContent = buildWorkspaceContext(context.workspace);
     if (workspaceContent) {
@@ -603,7 +641,7 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     }
   }
 
-  // 10. Runtime info
+  // 11. Runtime info
   lines.push('## Runtime');
   lines.push(`Agent: ${agent.id} | Model: ${agent.model || 'default'}`);
   lines.push('');

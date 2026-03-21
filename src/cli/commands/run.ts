@@ -11,6 +11,7 @@ import { loadConfigWithCredentials } from '../../config/index';
 import { initializeProviders } from '../../providers/index';
 import { initializeTools } from '../../tools/index';
 import { setDefaultProvider } from '../../agents/runtime';
+import { createWorkspaceManager, initFoxFangHome } from '../../workspace';
 
 export async function registerRunCommand(program: Command): Promise<void> {
   program
@@ -43,9 +44,18 @@ export async function registerRunCommand(program: Command): Promise<void> {
         
         // Create session manager
         const sessionManager = new SessionManager(config.sessions);
+
+        // Initialize workspace + skills
+        const foxfangHome = initFoxFangHome(config.workspace?.homeDir);
+        const workspaceManager = createWorkspaceManager(
+          'default_user',
+          foxfangHome,
+          options.project,
+          options.agent,
+        );
         
         // Create orchestrator
-        const orchestrator = new AgentOrchestrator(sessionManager);
+        const orchestrator = new AgentOrchestrator(sessionManager, workspaceManager);
         
         spinner.succeed('Ready');
         

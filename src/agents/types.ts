@@ -53,6 +53,7 @@ export interface AgentContext {
 // Minimal interface to avoid circular dependency with WorkspaceManager
 export interface WorkspaceManagerLike {
   readFile(filename: string): string | null;
+  getWorkspaceInfo?(): { homeDir: string; workspacePath: string };
 }
 
 export interface AgentRequest {

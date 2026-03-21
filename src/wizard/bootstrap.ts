@@ -8,6 +8,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
+import { seedManagedSkills } from '../skill-system';
 
 const TEMPLATES: Record<string, string> = {
   'SOUL.md': `# SOUL — Who You Are 🦊
@@ -476,6 +477,8 @@ export async function bootstrapFoxFang(): Promise<void> {
   await mkdir(join(FOXFANG_DIR, 'memory'), { recursive: true });
   await mkdir(join(FOXFANG_DIR, 'sessions'), { recursive: true });
   await mkdir(join(FOXFANG_DIR, 'workspace'), { recursive: true });
+  await mkdir(join(FOXFANG_DIR, 'workspace', 'skills'), { recursive: true });
+  await mkdir(join(FOXFANG_DIR, 'skills'), { recursive: true });
   await mkdir(join(FOXFANG_DIR, 'tools'), { recursive: true });
   
   // Write template files if they don't exist
@@ -486,6 +489,8 @@ export async function bootstrapFoxFang(): Promise<void> {
       await writeFile(targetPath, content, 'utf-8');
     }
   }
+
+  seedManagedSkills(FOXFANG_DIR);
 }
 
 /**

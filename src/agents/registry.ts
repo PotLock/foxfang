@@ -19,6 +19,7 @@ IMPORTANT RULES:
 2. When they mention a campaign or initiative under a brand, use create_project tool.
 3. When user wants to create a GitHub issue or PR, FIRST use github_connect tool to check connection status, then proceed based on the result.
 4. When user shares ANY URL (tweet, article, website), IMMEDIATELY use the appropriate tool (fetch_tweet, fetch_url, etc.) to fetch it. NEVER ask user to copy paste content.
+5. When user asks to add/install/create a skill, use skills_add. Use skills_list first if you need to inspect existing skills.
 
 GitHub WORKFLOW:
 - User asks to create issue/PR → Call github_connect first (action: "check")
@@ -34,7 +35,7 @@ Available specialists:
 - growth-analyst: Reviews content quality, suggests optimizations
 
 When routing to another agent, use: MESSAGE_AGENT: <agent-id> | <brief description of task>`,
-    tools: ['create_brand', 'list_brands', 'get_brand', 'create_project', 'list_projects', 'get_project', 'memory_recall', 'memory_store', 'bash', 'bash_list', 'bash_poll', 'bash_log', 'bash_kill', 'cron', 'github_connect', 'github_create_issue', 'github_create_pr', 'github_list_issues', 'github_list_prs', 'fetch_tweet', 'fetch_user_tweets', 'fetch_url', 'web_search', 'brave_search', 'firecrawl_search', 'firecrawl_scrape'],
+    tools: ['create_brand', 'list_brands', 'get_brand', 'create_project', 'list_projects', 'get_project', 'memory_recall', 'memory_store', 'bash', 'bash_list', 'bash_poll', 'bash_log', 'bash_kill', 'cron', 'skills_list', 'skills_add', 'github_connect', 'github_create_issue', 'github_create_pr', 'github_list_issues', 'github_list_prs', 'fetch_tweet', 'fetch_user_tweets', 'fetch_url', 'web_search', 'brave_search', 'firecrawl_search', 'firecrawl_scrape'],
   },
   {
     id: 'content-specialist',
@@ -51,7 +52,7 @@ Always:
 - Create tasks for content workflow when needed
 
 When content is ready for review, mark it as complete.`,
-    tools: ['web_search', 'fetch_tweet', 'fetch_user_tweets', 'fetch_url', 'firecrawl_search', 'firecrawl_scrape', 'brave_search', 'memory_recall', 'memory_store', 'create_task', 'list_tasks', 'update_task_status', 'bash', 'bash_list', 'bash_poll', 'bash_log', 'bash_kill', 'cron', 'github_connect', 'github_create_issue', 'github_create_pr', 'github_list_issues', 'github_list_prs'],
+    tools: ['web_search', 'fetch_tweet', 'fetch_user_tweets', 'fetch_url', 'firecrawl_search', 'firecrawl_scrape', 'brave_search', 'memory_recall', 'memory_store', 'create_task', 'list_tasks', 'update_task_status', 'bash', 'bash_list', 'bash_poll', 'bash_log', 'bash_kill', 'cron', 'skills_list', 'skills_add', 'github_connect', 'github_create_issue', 'github_create_pr', 'github_list_issues', 'github_list_prs'],
   },
   {
     id: 'strategy-lead',
@@ -69,7 +70,7 @@ Your responsibilities:
 
 Always ground recommendations in research and data.
 Create tasks to track strategic initiatives.`,
-    tools: ['web_search', 'fetch_tweet', 'fetch_user_tweets', 'fetch_url', 'firecrawl_search', 'firecrawl_scrape', 'brave_search', 'memory_recall', 'memory_store', 'create_task', 'list_tasks', 'get_project', 'bash', 'bash_list', 'bash_poll', 'bash_log', 'bash_kill'],
+    tools: ['web_search', 'fetch_tweet', 'fetch_user_tweets', 'fetch_url', 'firecrawl_search', 'firecrawl_scrape', 'brave_search', 'memory_recall', 'memory_store', 'create_task', 'list_tasks', 'get_project', 'bash', 'bash_list', 'bash_poll', 'bash_log', 'bash_kill', 'skills_list', 'skills_add'],
   },
   {
     id: 'growth-analyst',
@@ -86,7 +87,7 @@ Evaluate content on:
 
 Provide specific, actionable feedback.
 Track content performance through tasks.`,
-    tools: ['web_search', 'fetch_url', 'memory_recall', 'memory_store', 'create_task', 'list_tasks', 'update_task_status', 'bash', 'bash_list', 'bash_poll', 'bash_log', 'bash_kill'],
+    tools: ['web_search', 'fetch_url', 'memory_recall', 'memory_store', 'create_task', 'list_tasks', 'update_task_status', 'bash', 'bash_list', 'bash_poll', 'bash_log', 'bash_kill', 'skills_list', 'skills_add'],
   },
 ];
 

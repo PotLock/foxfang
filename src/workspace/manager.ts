@@ -4,6 +4,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { resolveFoxFangHome } from '../config/defaults';
+import { expandHomePath, seedManagedSkills } from '../skill-system';
 import { WorkspaceFile, WorkspaceConfig, IdentityData, UserData, SoulData } from './types';
 import {
   IDENTITY_TEMPLATE,
@@ -24,10 +25,11 @@ import {
  * Creates the top-level folder structure (workspace, sessions, skills, data).
  */
 export function initFoxFangHome(homeDir?: string): string {
-  const home = homeDir || resolveFoxFangHome();
+  const home = expandHomePath(homeDir || resolveFoxFangHome());
   const dirs = [
     home,
     join(home, 'workspace'),
+    join(home, 'workspace', 'skills'),
     join(home, 'workspace', 'projects'),
     join(home, 'sessions'),
     join(home, 'skills'),
@@ -38,6 +40,11 @@ export function initFoxFangHome(homeDir?: string): string {
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true });
     }
+  }
+
+  const seeded = seedManagedSkills(home);
+  if (seeded.copied > 0) {
+    console.log(`[FoxFang] Seeded ${seeded.copied} default skill(s) to: ${seeded.managedDir}`);
   }
 
   console.log(`[FoxFang] Home directory initialized at: ${home}`);
@@ -391,6 +398,14 @@ ${project.description || 'No description provided.'}
       userId: this.config.userId
     };
   }
+
+  // Runtime hook for skills + prompt context resolution.
+  getWorkspaceInfo(): { homeDir: string; workspacePath: string } {
+    return {
+      homeDir: this.config.workspaceDir,
+      workspacePath: this.getWorkspacePath(),
+    };
+  }
 }
 
 // Factory function
@@ -401,7 +416,7 @@ export function createWorkspaceManager(
   agentId?: string
 ): WorkspaceManager {
   return new WorkspaceManager({
-    workspaceDir: workspaceDir || resolveFoxFangHome(),
+    workspaceDir: expandHomePath(workspaceDir || resolveFoxFangHome()),
     userId,
     projectId,
     agentId

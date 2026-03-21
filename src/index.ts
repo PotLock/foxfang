@@ -12,6 +12,7 @@ import { AgentOrchestrator } from './agents/orchestrator';
 import { SessionManager } from './sessions/manager';
 import { Gateway } from './gateway/index';
 import { initializeLogging } from './logging/index';
+import { createWorkspaceManager, initFoxFangHome } from './workspace';
 
 async function main() {
   console.log('🚀 Starting FoxFang...\n');
@@ -38,7 +39,9 @@ async function main() {
     // Create session manager and orchestrator
     console.log('[4/5] Initializing agent...');
     const sessionManager = new SessionManager(config.sessions);
-    const orchestrator = new AgentOrchestrator(sessionManager);
+    const foxfangHome = initFoxFangHome(config.workspace?.homeDir);
+    const workspaceManager = createWorkspaceManager('default_user', foxfangHome);
+    const orchestrator = new AgentOrchestrator(sessionManager, workspaceManager);
     
     // Create and start gateway
     console.log('[5/5] Starting Gateway...');

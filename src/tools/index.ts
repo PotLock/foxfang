@@ -83,6 +83,7 @@ export function initializeTools(config: Record<string, any>): void {
   const { BashExecTool, BashListTool, BashLogTool, BashPollTool, BashKillTool, BashRemoveTool } = require('./builtin/bash');
   const { CronTool } = require('./builtin/cron');
   const { GitHubConnectTool, GitHubCreateIssueTool, GitHubCreatePRTool, GitHubListIssuesTool, GitHubListPRsTool } = require('./builtin/github');
+  const { SkillsListTool, SkillsAddTool } = require('./builtin/skills');
   
   // Research tools
   toolRegistry.register(new WebSearchTool());
@@ -123,6 +124,10 @@ export function initializeTools(config: Record<string, any>): void {
   
   // Cron scheduler tool
   toolRegistry.register(new CronTool());
+
+  // Skills tools
+  toolRegistry.register(new SkillsListTool());
+  toolRegistry.register(new SkillsAddTool());
   
   // GitHub tools
   toolRegistry.register(new GitHubConnectTool());
