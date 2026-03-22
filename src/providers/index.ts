@@ -107,6 +107,10 @@ export function initializeProviders(configs: ProviderConfig[]): void {
           provider = new GitHubCopilotProvider(config);
           break;
         }
+        case 'gemini':
+        case 'groq':
+        case 'byteplus-ark':
+        case 'alibabacloud':
         case 'openrouter':
         case 'ollama':
         case 'custom': {

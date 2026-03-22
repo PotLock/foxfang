@@ -22,23 +22,23 @@ import { loginWithDeviceCode } from '../../providers/github-copilot';
 
 // Available providers with metadata
 const AVAILABLE_PROVIDERS = [
-  { 
-    id: 'openai', 
-    name: 'OpenAI', 
-    hint: 'GPT-4, GPT-4o, GPT-3.5',
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    hint: 'GPT-4.1, GPT-5, o3/o4-mini',
     apiKeyPlaceholder: 'sk-...',
     apiKeyPrefix: 'sk-',
     baseUrl: 'https://api.openai.com/v1',
-    models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4', 'gpt-3.5-turbo']
+    models: ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4o', 'gpt-4o-mini', 'o3-mini', 'o4-mini']
   },
-  { 
-    id: 'anthropic', 
-    name: 'Anthropic', 
-    hint: 'Claude 3.5 Sonnet, Opus, Haiku',
+  {
+    id: 'anthropic',
+    name: 'Anthropic',
+    hint: 'Claude Sonnet 4.6, Opus 4.6, Haiku 4.5',
     apiKeyPlaceholder: 'sk-ant-...',
     apiKeyPrefix: 'sk-ant-',
     baseUrl: 'https://api.anthropic.com/v1',
-    models: ['claude-3-5-sonnet-latest', 'claude-3-opus-latest', 'claude-3-haiku-latest']
+    models: ['claude-sonnet-4-6-20250514', 'claude-opus-4-6-20250605', 'claude-haiku-4-5-20251001', 'claude-sonnet-4-20250514']
   },
   { 
     id: 'kimi', 
@@ -60,18 +60,53 @@ const AVAILABLE_PROVIDERS = [
     apiType: 'anthropic-messages',
     headers: { 'User-Agent': 'claude-code/0.1.0' }
   },
-  { 
-    id: 'openrouter', 
-    name: 'OpenRouter', 
-    hint: 'Access 100+ models via unified API',
+  {
+    id: 'gemini',
+    name: 'Google Gemini',
+    hint: 'Free tier — Gemini 3.1, 2.5 Flash/Pro',
+    apiKeyPlaceholder: 'AIza...',
+    apiKeyPrefix: 'AIza',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    models: ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro', 'gemini-3-flash-preview', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite-preview']
+  },
+  {
+    id: 'groq',
+    name: 'Groq',
+    hint: 'Free tier — Ultra-fast LPU (Llama 4, Qwen3, Kimi K2)',
+    apiKeyPlaceholder: 'gsk_...',
+    apiKeyPrefix: 'gsk_',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b', 'moonshotai/kimi-k2-instruct-0905', 'openai/gpt-oss-120b', 'openai/gpt-oss-20b']
+  },
+  {
+    id: 'byteplus-ark',
+    name: 'BytePlus Ark (Doubao/Seed)',
+    hint: 'Free trial — Doubao, Seed 1.8 models',
+    apiKeyPlaceholder: 'your-ark-api-key',
+    baseUrl: 'https://ark.ap-southeast.bytepluses.com/api/v3',
+    models: ['doubao-seed-1-8-251228', 'seed-1-6-250915', 'doubao-1-5-pro-32k', 'doubao-1-5-lite-32k']
+  },
+  {
+    id: 'alibabacloud',
+    name: 'Alibaba Cloud (Qwen)',
+    hint: 'Free tier — Qwen3, Qwen3.5, QwQ reasoning',
+    apiKeyPlaceholder: 'sk-...',
+    apiKeyPrefix: 'sk-',
+    baseUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
+    models: ['qwen3-max', 'qwen3.5-plus', 'qwen3.5-flash', 'qwen-plus', 'qwen-flash', 'qwen-turbo', 'qwq-plus', 'qwen3-coder-plus', 'qwen-long']
+  },
+  {
+    id: 'openrouter',
+    name: 'OpenRouter',
+    hint: 'Access 100+ models — free (:free) and paid tiers',
     apiKeyPlaceholder: 'sk-or-...',
     apiKeyPrefix: 'sk-or-',
     baseUrl: 'https://openrouter.ai/api/v1',
-    models: ['openai/gpt-4o', 'anthropic/claude-3.5-sonnet', 'meta/llama-3.1-405b']
+    models: ['openrouter/free', 'google/gemini-2.0-flash-exp:free', 'meta-llama/llama-4-maverick:free', 'meta-llama/llama-3.3-70b-instruct:free', 'deepseek/deepseek-chat:free', 'qwen/qwen3-32b:free', 'openai/gpt-4o', 'anthropic/claude-sonnet-4']
   },
-  { 
-    id: 'ollama', 
-    name: 'Ollama (Local)', 
+  {
+    id: 'ollama',
+    name: 'Ollama (Local)',
     hint: 'Run models locally - no API key needed',
     apiKeyPlaceholder: 'not-needed',
     baseUrl: 'http://localhost:11434/v1',
@@ -83,7 +118,7 @@ const AVAILABLE_PROVIDERS = [
     hint: 'Use your GitHub Copilot subscription (device code login)',
     apiKeyPlaceholder: '',
     baseUrl: '',
-    models: ['gpt-4o', 'gpt-4.1', 'gpt-4.1-mini', 'claude-sonnet-4.6', 'o1', 'o3-mini'],
+    models: ['gpt-4.1', 'gpt-5-mini', 'gpt-5.4-mini', 'claude-sonnet-4.6', 'claude-opus-4.6', 'gemini-2.5-pro', 'gemini-3-flash'],
     authFlow: 'device-code' as const,
   },
   {

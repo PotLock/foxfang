@@ -67,8 +67,12 @@
             <select id="providerId" required>
               <option value="openai">openai</option>
               <option value="anthropic">anthropic</option>
+              <option value="gemini">gemini (Google)</option>
+              <option value="groq">groq (Free LPU)</option>
               <option value="kimi">kimi</option>
               <option value="kimi-coding">kimi-coding</option>
+              <option value="byteplus-ark">byteplus-ark (Doubao)</option>
+              <option value="alibabacloud">alibabacloud (Qwen)</option>
               <option value="github-copilot">github-copilot</option>
               <option value="openrouter">openrouter</option>
               <option value="ollama">ollama</option>
@@ -316,11 +320,11 @@
     const PROVIDER_PRESETS = {
       openai: {
         baseUrl: 'https://api.openai.com/v1',
-        models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini', 'gpt-4.1'],
+        models: ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4o', 'gpt-4o-mini', 'o3-mini', 'o4-mini'],
       },
       anthropic: {
         baseUrl: 'https://api.anthropic.com/v1',
-        models: ['claude-3-7-sonnet-latest', 'claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest'],
+        models: ['claude-sonnet-4-6-20250514', 'claude-opus-4-6-20250605', 'claude-haiku-4-5-20251001', 'claude-sonnet-4-20250514'],
       },
       kimi: {
         baseUrl: 'https://api.moonshot.cn/v1',
@@ -330,14 +334,30 @@
         baseUrl: 'https://api.kimi.com/coding/',
         models: ['kimi-code', 'k2p5'],
       },
+      gemini: {
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+        models: ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro', 'gemini-3-flash-preview', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite-preview'],
+      },
+      groq: {
+        baseUrl: 'https://api.groq.com/openai/v1',
+        models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b', 'moonshotai/kimi-k2-instruct-0905', 'openai/gpt-oss-120b', 'openai/gpt-oss-20b'],
+      },
+      'byteplus-ark': {
+        baseUrl: 'https://ark.ap-southeast.bytepluses.com/api/v3',
+        models: ['doubao-seed-1-8-251228', 'seed-1-6-250915', 'doubao-1-5-pro-32k', 'doubao-1-5-lite-32k'],
+      },
+      alibabacloud: {
+        baseUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
+        models: ['qwen3-max', 'qwen3.5-plus', 'qwen3.5-flash', 'qwen-plus', 'qwen-flash', 'qwen-turbo', 'qwq-plus', 'qwen3-coder-plus', 'qwen-long'],
+      },
       'github-copilot': {
         baseUrl: '',
-        models: ['gpt-4o', 'gpt-4.1', 'gpt-4.1-mini', 'claude-sonnet-4.6', 'o1', 'o3-mini'],
+        models: ['gpt-4.1', 'gpt-5-mini', 'gpt-5.4-mini', 'claude-sonnet-4.6', 'claude-opus-4.6', 'gemini-2.5-pro', 'gemini-3-flash'],
         authFlow: 'device-code',
       },
       openrouter: {
         baseUrl: 'https://openrouter.ai/api/v1',
-        models: ['openai/gpt-4o-mini', 'anthropic/claude-3.5-sonnet', 'meta-llama/llama-3.1-70b-instruct'],
+        models: ['openrouter/free', 'google/gemini-2.0-flash-exp:free', 'meta-llama/llama-4-maverick:free', 'meta-llama/llama-3.3-70b-instruct:free', 'deepseek/deepseek-chat:free', 'qwen/qwen3-32b:free', 'openai/gpt-4o', 'anthropic/claude-sonnet-4'],
       },
       ollama: {
         baseUrl: 'http://localhost:11434/v1',

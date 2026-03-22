@@ -228,6 +228,10 @@ export class GitHubCopilotProvider implements Provider {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${copilot.token}`,
+        'Editor-Version': 'vscode/1.95.0',
+        'Editor-Plugin-Version': 'copilot/1.250.0',
+        'Copilot-Integration-Id': 'vscode-chat',
+        'Openai-Intent': 'conversation-panel',
       },
       baseUrl: copilot.baseUrl,
     };

@@ -53,13 +53,13 @@ const PROVIDER_PRESETS: Record<string, ProviderPreset> = {
     id: 'openai',
     name: 'OpenAI',
     baseUrl: 'https://api.openai.com/v1',
-    models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini', 'gpt-4.1'],
+    models: ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4o', 'gpt-4o-mini', 'o3-mini', 'o4-mini'],
   },
   anthropic: {
     id: 'anthropic',
     name: 'Anthropic',
     baseUrl: 'https://api.anthropic.com/v1',
-    models: ['claude-3-7-sonnet-latest', 'claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest'],
+    models: ['claude-sonnet-4-6-20250514', 'claude-opus-4-6-20250605', 'claude-haiku-4-5-20251001', 'claude-sonnet-4-20250514'],
   },
   kimi: {
     id: 'kimi',
@@ -73,11 +73,41 @@ const PROVIDER_PRESETS: Record<string, ProviderPreset> = {
     baseUrl: 'https://api.kimi.com/coding/',
     models: ['kimi-code', 'k2p5'],
   },
+  gemini: {
+    id: 'gemini',
+    name: 'Google Gemini',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    models: ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro', 'gemini-3-flash-preview', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite-preview'],
+  },
+  groq: {
+    id: 'groq',
+    name: 'Groq',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'meta-llama/llama-4-scout-17b-16e-instruct', 'qwen/qwen3-32b', 'moonshotai/kimi-k2-instruct-0905', 'openai/gpt-oss-120b'],
+  },
+  'byteplus-ark': {
+    id: 'byteplus-ark',
+    name: 'BytePlus Ark',
+    baseUrl: 'https://ark.ap-southeast.bytepluses.com/api/v3',
+    models: ['doubao-seed-1-8-251228', 'seed-1-6-250915', 'doubao-1-5-pro-32k', 'doubao-1-5-lite-32k'],
+  },
+  alibabacloud: {
+    id: 'alibabacloud',
+    name: 'Alibaba Cloud (Qwen)',
+    baseUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
+    models: ['qwen3-max', 'qwen3.5-plus', 'qwen3.5-flash', 'qwen-plus', 'qwen-flash', 'qwen-turbo', 'qwq-plus', 'qwen3-coder-plus', 'qwen-long'],
+  },
+  'github-copilot': {
+    id: 'github-copilot',
+    name: 'GitHub Copilot',
+    baseUrl: '',
+    models: ['gpt-4.1', 'gpt-5-mini', 'gpt-5.4-mini', 'claude-sonnet-4.6', 'claude-opus-4.6', 'gemini-2.5-pro', 'gemini-3-flash'],
+  },
   openrouter: {
     id: 'openrouter',
     name: 'OpenRouter',
     baseUrl: 'https://openrouter.ai/api/v1',
-    models: ['openai/gpt-4o-mini', 'anthropic/claude-3.5-sonnet', 'meta-llama/llama-3.1-70b-instruct'],
+    models: ['openrouter/free', 'google/gemini-2.0-flash-exp:free', 'meta-llama/llama-4-maverick:free', 'deepseek/deepseek-chat:free', 'openai/gpt-4o', 'anthropic/claude-sonnet-4'],
   },
   ollama: {
     id: 'ollama',
@@ -871,6 +901,8 @@ class GatewayServer {
     if (!baseUrl) return [];
     if (providerId === 'custom') return [];
     if (providerId === 'kimi-coding') return [];
+    if (providerId === 'github-copilot') return [];
+    if (providerId === 'byteplus-ark') return [];
 
     const normalizedBaseUrl = this.normalizeBaseUrl(baseUrl);
     const headers: Record<string, string> = {};
