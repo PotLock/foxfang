@@ -35,6 +35,7 @@ function resolveTraceFilePath(): string {
 export function createRequestTrace(requestId: string): RequestTrace {
   return {
     requestId,
+    createdAt: new Date().toISOString(),
     agentsInvoked: [],
     totalInputTokens: 0,
     totalOutputTokens: 0,

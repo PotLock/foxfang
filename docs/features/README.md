@@ -2,8 +2,12 @@
 
 ## Contents
 
-- [01-router-handoff-context.md](./01-router-handoff-context.md)
-- [02-budget-review-quality.md](./02-budget-review-quality.md)
-- [03-tool-compaction-cache.md](./03-tool-compaction-cache.md)
-- [04-skills-model-toolscope.md](./04-skills-model-toolscope.md)
-- [05-telemetry-dashboard.md](./05-telemetry-dashboard.md)
+- [router-handoff-context.md](./router-handoff-context.md)
+- [budget-review-quality.md](./budget-review-quality.md)
+- [tool-compaction-cache.md](./tool-compaction-cache.md)
+- [skills-model-toolscope.md](./skills-model-toolscope.md)
+- [telemetry-dashboard.md](./telemetry-dashboard.md)
+- [binding-routing-subagent-isolation.md](./binding-routing-subagent-isolation.md)
+- [dynamic-agent-catalog-routing.md](./dynamic-agent-catalog-routing.md)
+- [setup-bindings-ui.md](./setup-bindings-ui.md)
+- [runtime-governance.md](./runtime-governance.md)

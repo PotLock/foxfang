@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-03-22
+
+### Enhanced
+- Dashboard telemetry now includes:
+  - top requests by token burn
+  - top requests by latency
+- Added `--json` mode for `foxfang dashboard` to support automation/analysis pipelines.
+- Request traces now include `createdAt` timestamps for better request-level time analysis.
+
 ## 2026-03-21
 
 ### Added

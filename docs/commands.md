@@ -199,11 +199,13 @@ Show token/tool usage hotspots from request traces (`request-trace-*.jsonl`).
 ```bash
 pnpm foxfang dashboard
 pnpm foxfang dashboard --days 3 --top 5
+pnpm foxfang dashboard --days 3 --top 20 --json
 ```
 
 Options:
 - `--days <days>` - Number of recent days to aggregate (default: `7`)
 - `--top <n>` - Top rows per table (default: `10`)
+- `--json` - Output structured JSON instead of formatted console tables
 
 ---
 

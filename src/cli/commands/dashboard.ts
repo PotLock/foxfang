@@ -7,6 +7,7 @@ import { resolveFoxFangHome } from '../../config/defaults';
 
 type TraceRecord = {
   requestId: string;
+  createdAt?: string;
   agentsInvoked: string[];
   totalInputTokens: number;
   totalOutputTokens: number;
@@ -88,15 +89,37 @@ function formatMs(ms: number): string {
   return `${(ms / 1000).toFixed(2)}s`;
 }
 
+function inferTraceTimestampMs(trace: TraceRecord): number | null {
+  const createdAtMs = Date.parse(String(trace.createdAt || ''));
+  if (Number.isFinite(createdAtMs)) return createdAtMs;
+
+  const id = String(trace.requestId || '');
+  const idx = id.lastIndexOf(':');
+  if (idx > 0) {
+    const rawTs = Number(id.slice(idx + 1));
+    if (Number.isFinite(rawTs) && rawTs > 946684800000) {
+      return rawTs;
+    }
+  }
+  return null;
+}
+
+function formatDateTime(value: number | null): string {
+  if (!value || !Number.isFinite(value)) return '-';
+  return new Date(value).toISOString();
+}
+
 export async function registerDashboardCommand(program: Command): Promise<void> {
   program
     .command('dashboard')
     .description('Show token/cost hotspots from request traces')
     .option('--days <days>', 'How many recent days to include', '7')
     .option('--top <top>', 'Top N rows per table', '10')
+    .option('--json', 'Output dashboard as JSON', false)
     .action(async (options) => {
       const days = Math.max(1, Number(options.days || 7));
       const top = Math.max(1, Number(options.top || 10));
+      const asJson = Boolean(options.json);
 
       const files = listTraceFiles(days);
       if (files.length === 0) {
@@ -186,6 +209,66 @@ export async function registerDashboardCommand(program: Command): Promise<void> 
         .sort((a, b) => b.saved - a.saved)
         .slice(0, top);
 
+      const requestRows = traces
+        .map((trace) => {
+          const totalTokens = (trace.totalInputTokens || 0) + (trace.totalOutputTokens || 0);
+          const timestampMs = inferTraceTimestampMs(trace);
+          return {
+            requestId: trace.requestId,
+            totalTokens,
+            inputTokens: trace.totalInputTokens || 0,
+            outputTokens: trace.totalOutputTokens || 0,
+            latencyMs: trace.totalLatencyMs || 0,
+            agents: Array.isArray(trace.agentsInvoked) ? Array.from(new Set(trace.agentsInvoked)) : [],
+            timestampMs,
+          };
+        });
+
+      const hottestRequests = [...requestRows]
+        .sort((a, b) => b.totalTokens - a.totalTokens)
+        .slice(0, top);
+
+      const slowestRequests = [...requestRows]
+        .sort((a, b) => b.latencyMs - a.latencyMs)
+        .slice(0, top);
+
+      if (asJson) {
+        const payload = {
+          windowDays: days,
+          files,
+          totalRecords: traces.length,
+          totals: {
+            inputTokens: totalInput,
+            outputTokens: totalOutput,
+            avgLatencyMs: traces.length > 0 ? totalLatency / traces.length : 0,
+            delegations: totalDelegations,
+            reviewPasses: totalReviews,
+          },
+          topAgentsByTokens: agentRows,
+          topToolsByRawSize: toolRows,
+          topToolsByEstimatedTokenBurn: toolBurnRows,
+          topCompactionSavings: savingsRows,
+          topRequestsByTokenBurn: hottestRequests.map((row) => ({
+            requestId: row.requestId,
+            timestamp: formatDateTime(row.timestampMs),
+            totalTokens: row.totalTokens,
+            inputTokens: row.inputTokens,
+            outputTokens: row.outputTokens,
+            latencyMs: row.latencyMs,
+            agents: row.agents,
+          })),
+          topRequestsByLatency: slowestRequests.map((row) => ({
+            requestId: row.requestId,
+            timestamp: formatDateTime(row.timestampMs),
+            latencyMs: row.latencyMs,
+            totalTokens: row.totalTokens,
+            agents: row.agents,
+          })),
+        };
+        console.log(JSON.stringify(payload, null, 2));
+        return;
+      }
+
       console.log(chalk.cyan('╔════════════════════════════════════════╗'));
       console.log(chalk.cyan('║       FoxFang Usage Dashboard          ║'));
       console.log(chalk.cyan('╚════════════════════════════════════════╝'));
@@ -240,6 +323,28 @@ export async function registerDashboardCommand(program: Command): Promise<void> 
         console.log(
           `  ${row.tool.padEnd(22)} saved=${formatNumber(row.saved).padStart(10)} `
           + `ratio=${(row.ratio * 100).toFixed(1).padStart(6)}%`,
+        );
+      }
+      console.log();
+
+      console.log(chalk.cyan(`Top Requests by Token Burn (top ${top})`));
+      for (const row of hottestRequests) {
+        console.log(
+          `  ${row.requestId.padEnd(30)} total=${formatNumber(row.totalTokens).padStart(9)} `
+          + `in=${formatNumber(row.inputTokens).padStart(8)} `
+          + `out=${formatNumber(row.outputTokens).padStart(8)} `
+          + `lat=${formatMs(row.latencyMs).padStart(8)} `
+          + `at=${formatDateTime(row.timestampMs)}`,
+        );
+      }
+      console.log();
+
+      console.log(chalk.cyan(`Top Requests by Latency (top ${top})`));
+      for (const row of slowestRequests) {
+        console.log(
+          `  ${row.requestId.padEnd(30)} lat=${formatMs(row.latencyMs).padStart(10)} `
+          + `tokens=${formatNumber(row.totalTokens).padStart(9)} `
+          + `at=${formatDateTime(row.timestampMs)}`,
         );
       }
       console.log();

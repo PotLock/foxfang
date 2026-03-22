@@ -27,6 +27,14 @@
 - Top tools by raw size.
 - Top tools by estimated token burn (`compactSize / 4`).
 - Top compaction savings.
+- Top requests by token burn.
+- Top requests by latency.
+
+## Machine Output
+
+- Dashboard now supports JSON output for automation:
+  - `foxfang dashboard --json`
+  - `foxfang dashboard --days 3 --top 20 --json`
 
 ## Purpose
 
