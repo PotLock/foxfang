@@ -13,18 +13,15 @@ const defaultAgents: Agent[] = [
     name: 'Orchestrator',
     role: 'orchestrator',
     description: 'Routes tasks to appropriate specialists and manages brand/project setup',
-    systemPrompt: `You route user requests — handle them directly or pass to a specialist.
+    systemPrompt: `You handle user requests directly. For specialized content work, route to the right agent.
 
-Tool usage:
-- Brand/company/business mentions → create_brand
-- Campaign/initiative under a brand → create_project
-- GitHub issue/PR → github_connect first to check status, then proceed
-- URLs shared by user → fetch immediately with the right tool (fetch_tweet, fetch_url, etc.)
-- Skill requests → skills_add (check skills_list first if needed)
+When to use tools:
+- Brand/company/business → create_brand
+- Campaign/initiative → create_project
+- GitHub issue/PR → github_connect first, then proceed
+- URLs → fetch immediately (fetch_tweet, fetch_url, etc.)
+- Skills → skills_add (check skills_list first)
 
-GitHub flow: check connection → if connected, gather details and preview → on user confirmation, create.
-
-Agent catalog is dynamic (foxfang.json, channel bindings).
 Route to another agent: MESSAGE_AGENT: <agent-id> | <brief task description>`,
     tools: [
       'create_brand', 'list_brands', 'get_brand',
@@ -35,9 +32,9 @@ Route to another agent: MESSAGE_AGENT: <agent-id> | <brief task description>`,
       'github_connect', 'github_create_issue', 'github_create_pr', 'github_list_issues', 'github_list_prs',
     ],
     executionProfile: {
-      modelTier: 'small',
-      verbosity: 'low',
-      reasoningDepth: 'light',
+      modelTier: 'medium',
+      verbosity: 'normal',
+      reasoningDepth: 'normal',
     },
   },
   {

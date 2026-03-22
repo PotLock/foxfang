@@ -757,22 +757,30 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   });
   const lines: string[] = [];
 
-  // 1. Core identity (minimal — personality comes from SOUL.md in Project Context)
+  // Identity (minimal — personality comes from SOUL.md in Project Context)
   lines.push('You are a personal assistant running inside FoxFang 🦊.');
   lines.push('');
 
-  // 2. Agent role
-  lines.push('## Your Role');
-  lines.push('');
-  lines.push(agent.systemPrompt);
-  lines.push('');
-
-  // 4. Tool rules (only when tools are enabled)
+  // Tooling
   if (context.tools.length > 0) {
     lines.push(buildToolSection(context.tools));
   }
 
-  // 5. Skills section
+  lines.push(TOOL_CALL_STYLE_GUIDANCE);
+  lines.push('');
+
+  // Safety
+  lines.push(SAFETY_SECTION);
+  lines.push('');
+
+  // Agent-specific guidance (only for specialist agents — orchestrator relies on SOUL.md)
+  if (agent.role !== 'orchestrator' && agent.systemPrompt) {
+    lines.push('## Agent Role');
+    lines.push(agent.systemPrompt);
+    lines.push('');
+  }
+
+  // Skills
   if (!isMinimal) {
     const skillsSection = buildSkillsSection(context);
     if (skillsSection) {
@@ -780,6 +788,7 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     }
   }
 
+  // Memory Recall
   if (!isMinimal && (context.tools.includes('memory_search') || context.tools.includes('memory_get'))) {
     lines.push('## Memory Recall');
     lines.push('For prior decisions, preferences, dates, or facts: run memory_search first, then memory_get only for needed ranges.');
@@ -787,15 +796,7 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push('');
   }
 
-  // 6. Tool Call style
-  lines.push(TOOL_CALL_STYLE_GUIDANCE);
-  lines.push('');
-
-  // 7. Safety
-  lines.push(SAFETY_SECTION);
-  lines.push('');
-
-  // 8. Runtime governance
+  // Runtime governance
   lines.push(buildSessionGovernanceSection({
     tools: context.tools || [],
     isMinimal,
@@ -816,7 +817,7 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   });
   if (heartbeatSection) lines.push(heartbeatSection);
 
-  // 9. Sub-agent policy
+  // Sub-agent policy
   const subAgentPolicy = buildSubAgentPolicySection({ isSubAgent, promptMode });
   if (subAgentPolicy) {
     lines.push(subAgentPolicy);
@@ -881,7 +882,7 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push('');
   }
 
-  // 10. Brand context (shortened upstream)
+  // Brand context
   if (context.brandContext && !isMinimal) {
     lines.push('## Brand Context');
     lines.push('');
@@ -889,7 +890,7 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push('');
   }
 
-  // 11. Relevant memories (top-k)
+  // Relevant memories
   if (context.relevantMemories && context.relevantMemories.length > 0 && !isMinimal) {
     lines.push('## Relevant Context from Memory');
     lines.push('');
@@ -897,7 +898,8 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push('');
   }
 
-  // 12. Workspace Files (minimal injection)
+  // Project Context (workspace files including SOUL.md — this is the personality layer)
+  // OpenClaw pattern: context files come last so they have high recency salience
   if (context.workspace) {
     const workspace = buildWorkspaceContext(context.workspace, promptMode);
     if (workspace.text) {
@@ -905,9 +907,9 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     }
   }
 
-  // 13. Runtime info
+  // Runtime (always last, like OpenClaw)
   lines.push('## Runtime');
-  lines.push(`Agent: ${agent.id} | Model: ${agent.model || 'default'}`);
+  lines.push(`Runtime: agent=${agent.id} | model=${agent.model || 'default'}`);
   lines.push('');
 
   return lines.join('\n');
@@ -998,7 +1000,7 @@ function buildWorkspaceContext(workspace: WorkspaceManagerLike, promptMode: Prom
       lines.splice(
         insertAt + 1,
         0,
-        'If SOUL.md is present, embody its persona and tone. Avoid stiff, generic replies; follow its guidance unless higher-priority instructions override it.',
+        'SOUL.md defines your persona and tone. Embody it in every reply. Avoid stiff, generic, or corporate-sounding replies; follow SOUL.md guidance for voice, emoji usage, and conversational style.',
       );
     }
   }
