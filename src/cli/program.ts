@@ -55,7 +55,7 @@ export async function buildProgram(): Promise<Command> {
   program.addHelpText('after', `
 ${chalk.cyan('Examples:')}
   ${chalk.dim('$')} foxfang run "Create a marketing campaign for Q4"
-  ${chalk.dim('$')} foxfang chat --agent content-specialist
+  ${chalk.dim('$')} foxfang chat --agent orchestrator
   ${chalk.dim('$')} foxfang gateway start
   ${chalk.dim('$')} foxfang onboard
   ${chalk.dim('$')} foxfang wizard setup channels

@@ -50,6 +50,10 @@ interface BashSession {
 const sessions = new Map<string, BashSession>();
 let sessionCounter = 0;
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function generateSessionId(): string {
   return `bash-${Date.now()}-${++sessionCounter}`;
 }
@@ -206,7 +210,7 @@ async function executeCommand(
  */
 export class BashExecTool implements Tool {
   name = 'bash';
-  description = 'Execute a shell command. Supports timeout, working directory, and background execution. Use timeout_ms to limit execution time (default 60s, max 600s). Use background=true to run long commands asynchronously.';
+  description = 'Execute a shell command. Supports timeout, working directory, background execution, and yield windows. Use timeout_ms to limit execution time (default 60s, max 600s). Use background=true to run long commands asynchronously.';
   category = ToolCategory.UTILITY;
   parameters = {
     type: 'object' as const,
@@ -227,6 +231,14 @@ export class BashExecTool implements Tool {
         type: 'boolean',
         description: 'Run in background and return session ID immediately',
       },
+      yield_ms: {
+        type: 'number',
+        description: 'When set, start command in background, wait this many milliseconds, then return current status/output snapshot',
+      },
+      confirm: {
+        type: 'boolean',
+        description: 'Explicit confirmation required for risky commands (rm -rf, sudo, chmod 777, etc.)',
+      },
       env: {
         type: 'object',
         description: 'Environment variables to set',
@@ -240,6 +252,8 @@ export class BashExecTool implements Tool {
     workdir?: string;
     timeout_ms?: number;
     background?: boolean;
+    yield_ms?: number;
+    confirm?: boolean;
     env?: Record<string, string>;
   }): Promise<ToolResult> {
     try {
@@ -258,7 +272,53 @@ export class BashExecTool implements Tool {
       // Warning for risky commands
       let warning = '';
       if (isRiskyCommand(args.command)) {
+        if (args.confirm !== true) {
+          return {
+            success: false,
+            error: 'Approval required: risky command detected. Re-run with `confirm: true` to execute intentionally.',
+            data: {
+              approvalRequired: true,
+              command: args.command,
+              hint: 'Use readonly commands first when possible.',
+            },
+          };
+        }
         warning = '⚠️ Warning: This command may be destructive or require elevated privileges.\n\n';
+      }
+
+      const requestedYield = Math.floor(Number(args.yield_ms || 0));
+      const shouldYield = requestedYield > 0 && !args.background;
+      if (shouldYield) {
+        const { session } = await executeCommand(args.command, {
+          workdir: args.workdir,
+          timeout: args.timeout_ms,
+          env: args.env,
+          background: true,
+        });
+        const yieldMs = Math.max(100, Math.min(requestedYield, MAX_TIMEOUT_MS));
+        await sleep(yieldMs);
+        const latest = sessions.get(session.id) || session;
+        const combinedOutput = `${latest.stdout || ''}${latest.stderr || ''}`;
+        const outputPreview = combinedOutput.length > MAX_OUTPUT_CHARS
+          ? `${combinedOutput.slice(-MAX_OUTPUT_CHARS)}\n[...output truncated...]`
+          : combinedOutput;
+        return {
+          success: latest.status === 'completed' || latest.status === 'running',
+          output: `${warning}${outputPreview}`.trim(),
+          data: {
+            session_id: latest.id,
+            pid: latest.pid,
+            status: latest.status,
+            exit_code: latest.exitCode,
+            workdir: latest.workdir,
+            command: latest.command,
+            yielded: true,
+            yield_ms: yieldMs,
+            note: latest.status === 'running'
+              ? 'Process still running. Use bash_poll/bash_log for updates.'
+              : 'Process completed during yield window.',
+          },
+        };
       }
 
       const { session, output } = await executeCommand(args.command, {

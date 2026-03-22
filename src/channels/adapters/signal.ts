@@ -692,6 +692,7 @@ export class SignalAdapter implements ChannelAdapter {
       metadata: {
         chatId,
         chatType,
+        accountId: this.phoneNumber,
         sourcePhone,
         sourceUuid,
         replyTarget,

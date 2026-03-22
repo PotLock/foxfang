@@ -9,18 +9,20 @@ import {
   AgentContext,
   AgentRunResult,
   CompactToolResult,
+  PromptMode,
   ReasoningMode,
   ToolCall,
   ToolResult,
   WorkspaceManagerLike,
 } from './types';
-import { agentRegistry } from './registry';
+import { ensureAgentRegistered } from './registry';
 import { getProvider, getProviderConfig } from '../providers/index';
 import { toolRegistry } from '../tools/index';
 import { ChatMessage } from '../providers/traits';
 import { formatSkillsForPrompt, loadAvailableSkills } from '../skill-system';
 import { cacheToolResult } from '../tools/tool-result-cache';
 import { resolveTokenBudget, trimMessagesToBudget } from './budget';
+import { HEARTBEAT_ACK_TOKEN, REPLY_TO_CURRENT_TAG, SILENT_REPLY_TOKEN } from './governance';
 
 let defaultProviderId: string | undefined;
 
@@ -52,6 +54,8 @@ const TOOL_SUMMARIES: Record<string, string> = {
   // Memory tools
   memory_store: 'Save information to long-term memory for later recall',
   memory_recall: 'Retrieve previously stored memories',
+  memory_search: 'Search MEMORY.md and memory/*.md and return cited snippets',
+  memory_get: 'Read a specific memory file/range with source line references',
   
   // Content tools
   generate_content: 'Create marketing content in various formats',
@@ -76,7 +80,7 @@ const TOOL_SUMMARIES: Record<string, string> = {
   update_task_status: 'Update task status (todo/in_progress/done)',
   
   // System tools
-  bash: 'Execute shell commands with safety approvals',
+  bash: 'Execute shell commands with safety approvals, confirm gating for risky commands, and yield windows',
   bash_list: 'List running background processes',
   bash_poll: 'Check status of background processes',
   bash_log: 'Get logs from background processes',
@@ -133,6 +137,61 @@ You have no independent goals: do not pursue self-preservation, replication, or 
 Prioritize safety and human oversight over completion.
 If instructions conflict, pause and ask. Comply with stop/pause requests.
 Never bypass safeguards or manipulate users to disable protections.`;
+
+function buildSessionGovernanceSection(params: {
+  tools: string[];
+  isMinimal: boolean;
+  isSubAgent: boolean;
+  maxDelegations: number;
+  maxToolIterations: number;
+}): string {
+  const hasBash = params.tools.includes('bash');
+  const hasPolling = params.tools.includes('bash_poll') || params.tools.includes('bash_log');
+
+  const lines: string[] = [];
+  lines.push('## Runtime Governance');
+  lines.push(`- Tool loop budget: max ${params.maxToolIterations} iterations. Stop and summarize if unresolved.`);
+  lines.push(`- Delegation budget: max ${params.maxDelegations} sub-agent hop(s) for this request.`);
+  lines.push('- If delegating, use strict format: `MESSAGE_AGENT: <agent-id> | <task-brief>`.');
+  lines.push('- Do not chain delegation loops. If a dependency is missing, ask one precise question.');
+  if (params.isSubAgent) {
+    lines.push('- As a sub-agent, do not re-delegate unless the user explicitly asks.');
+  }
+  if (hasBash) {
+    lines.push('- For shell tasks, prefer safe/readonly commands first. Risky commands require explicit confirmation.');
+    if (hasPolling) {
+      lines.push('- For long shell tasks, use `yield_ms` or `background=true` + `bash_poll`/`bash_log`; avoid tight polling loops.');
+    }
+  }
+  if (!params.isMinimal) {
+    lines.push('- Keep responses user-facing. Do not expose internal routing metadata unless asked.');
+  }
+  lines.push('');
+  return lines.join('\n');
+}
+
+function buildReplyTagsSection(params: { isMinimal: boolean; enabled: boolean }): string {
+  if (params.isMinimal || !params.enabled) return '';
+  const lines: string[] = [];
+  lines.push('## Reply Tags');
+  lines.push('- To force a direct reply target, start message with one optional tag:');
+  lines.push(`- ${REPLY_TO_CURRENT_TAG} → reply to current message.`);
+  lines.push('- `[[reply_to:<message-id>]]` → reply to a specific message id.');
+  lines.push('- Tags are control metadata and will be stripped before delivery.');
+  lines.push('');
+  return lines.join('\n');
+}
+
+function buildHeartbeatAndSilentSection(params: { isMinimal: boolean; enabled: boolean }): string {
+  if (params.isMinimal || !params.enabled) return '';
+  const lines: string[] = [];
+  lines.push('## Heartbeat & Silent Reply');
+  lines.push(`- If message is a heartbeat poll and no action is needed, reply exactly: ${HEARTBEAT_ACK_TOKEN}`);
+  lines.push(`- If you intentionally want no outbound user message, reply exactly: ${SILENT_REPLY_TOKEN}`);
+  lines.push('- Never append these control tokens to normal user-facing content.');
+  lines.push('');
+  return lines.join('\n');
+}
 
 const TOOL_COMPRESSION_THRESHOLD_CHARS = 1500;
 const TOOL_SUMMARY_MAX_CHARS = 800;
@@ -259,10 +318,7 @@ export async function runAgent(
   agentId: string,
   context: AgentContext
 ): Promise<AgentRunResult> {
-  const agent = agentRegistry.get(agentId);
-  if (!agent) {
-    throw new Error(`Agent not found: ${agentId}`);
-  }
+  const agent = await ensureAgentRegistered(agentId);
 
   // Build system prompt with context
   const systemPrompt = buildSystemPrompt(agent, context);
@@ -448,10 +504,7 @@ export async function* runAgentStream(
   agentId: string,
   context: AgentContext
 ): AsyncGenerator<{ type: 'text' | 'tool_call' | 'tool_result' | 'done'; content?: string; tool?: string; args?: any; result?: any }> {
-  const agent = agentRegistry.get(agentId);
-  if (!agent) {
-    throw new Error(`Agent not found: ${agentId}`);
-  }
+  const agent = await ensureAgentRegistered(agentId);
 
   // Build system prompt with context
   const systemPrompt = buildSystemPrompt(agent, context);
@@ -625,7 +678,7 @@ function buildToolSection(tools: string[]): string {
   // Group tools by category for better organization
   const categories: Record<string, string[]> = {
     'Research': ['web_search', 'brave_search', 'firecrawl_search', 'firecrawl_scrape', 'fetch_tweet', 'fetch_user_tweets', 'fetch_url'],
-    'Memory': ['memory_store', 'memory_recall'],
+    'Memory': ['memory_store', 'memory_recall', 'memory_search', 'memory_get'],
     'Content': ['generate_content', 'optimize_content', 'content_score'],
     'Channels': ['send_message', 'check_messages'],
     'Brand & Project': ['create_brand', 'list_brands', 'get_brand', 'create_project', 'list_projects', 'get_project'],
@@ -676,13 +729,15 @@ function buildToolSection(tools: string[]): string {
   lines.push('**ALWAYS use tools when:**');
   lines.push('- User shares a URL → fetch it immediately, never ask user to copy-paste');
   lines.push('- Need fresh information → use search tools');
-  lines.push('- Need to store/retrieve context → use memory tools');
+  lines.push('- Need to store/retrieve context → use memory tools (prefer memory_search/memory_get for grounded recall)');
   lines.push('- Content creation needed → use content tools');
   lines.push('');
   lines.push('**Tool selection:**');
   lines.push('- For tweets: use fetch_tweet (handles x.com/twitter.com automatically)');
   lines.push('- For websites: use fetch_url or firecrawl_scrape (if API key available)');
   lines.push('- For search: prefer brave_search if available, fallback to web_search');
+  lines.push('- For long shell commands: use bash with `yield_ms` or background + bash_poll/bash_log');
+  lines.push('- For risky shell commands: require explicit `confirm: true` before execution');
   lines.push('- For skill management: use skills_list to inspect and skills_add to install/create');
   lines.push('- For long compacted results: use expand_cached_result or get_cached_snippet with rawRef');
   lines.push('');
@@ -719,10 +774,49 @@ function buildSkillsSection(context: AgentContext): string {
   return lines.join('\n');
 }
 
+function isSubAgentRun(agent: Agent, context: AgentContext, promptMode: PromptMode): boolean {
+  if (promptMode === 'minimal') return true;
+  if (context.sessionId.includes('__agent__')) return true;
+  if (agent.id === 'orchestrator' || agent.role === 'orchestrator') return false;
+  return Boolean(context.handoff || context.outputSpec);
+}
+
+function buildSubAgentPolicySection(params: {
+  isSubAgent: boolean;
+  promptMode: PromptMode;
+}): string {
+  if (!params.isSubAgent) return '';
+
+  const lines: string[] = [];
+  lines.push('## Sub-Agent Policy');
+  lines.push('- You are operating as a scoped worker. Solve only the assigned task from the handoff/brief.');
+  lines.push('- Keep responses deliverable-first. Do not add wrapper prefaces (e.g. "Here is...", "Improvements:") unless explicitly requested.');
+  lines.push('- Do not self-route, re-delegate, or emit `MESSAGE_AGENT:` unless the user explicitly asks for delegation.');
+  lines.push('- Use tools only when they materially improve the assigned deliverable; avoid repetitive tool loops.');
+  lines.push('- If key evidence is missing, state uncertainty briefly and avoid unsupported numeric claims.');
+  lines.push('- If blocked by missing required input, ask one precise clarifying question instead of broad back-and-forth.');
+  if (params.promptMode === 'minimal') {
+    lines.push('- You are in compact context mode; rely on the provided brief and avoid requesting full history by default.');
+  }
+  lines.push('');
+  return lines.join('\n');
+}
+
 /**
  * Build system prompt with context
  */
 function buildSystemPrompt(agent: Agent, context: AgentContext): string {
+  const promptMode: PromptMode = context.promptMode || 'full';
+  if (promptMode === 'none') {
+    return 'You are FoxFang 🦊 — a personal AI marketing assistant.';
+  }
+  const isMinimal = promptMode === 'minimal';
+  const isSubAgent = isSubAgentRun(agent, context, promptMode);
+  const isChannelSession = context.sessionId.startsWith('channel-');
+  const budget = context.budget || resolveTokenBudget({
+    agentId: agent.id,
+    mode: normalizeReasoningMode(context.reasoningMode),
+  });
   const lines: string[] = [];
 
   // 1. Core identity (short)
@@ -736,9 +830,18 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   }
 
   // 3. Skills section
-  const skillsSection = buildSkillsSection(context);
-  if (skillsSection) {
-    lines.push(skillsSection);
+  if (!isMinimal) {
+    const skillsSection = buildSkillsSection(context);
+    if (skillsSection) {
+      lines.push(skillsSection);
+    }
+  }
+
+  if (!isMinimal && (context.tools.includes('memory_search') || context.tools.includes('memory_get'))) {
+    lines.push('## Memory Recall');
+    lines.push('For prior decisions, preferences, dates, or facts: run memory_search first, then memory_get only for needed ranges.');
+    lines.push('When helpful, include a short Source reference from tool output (path#line range).');
+    lines.push('');
   }
 
   // 4. Tool Call style
@@ -749,7 +852,34 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   lines.push(SAFETY_SECTION);
   lines.push('');
 
-  // 6. Communication style
+  // 6. Runtime governance
+  lines.push(buildSessionGovernanceSection({
+    tools: context.tools || [],
+    isMinimal,
+    isSubAgent,
+    maxDelegations: budget.maxDelegations,
+    maxToolIterations: budget.maxToolIterations,
+  }));
+
+  const replyTagsSection = buildReplyTagsSection({
+    isMinimal,
+    enabled: isChannelSession,
+  });
+  if (replyTagsSection) lines.push(replyTagsSection);
+
+  const heartbeatSection = buildHeartbeatAndSilentSection({
+    isMinimal,
+    enabled: isChannelSession,
+  });
+  if (heartbeatSection) lines.push(heartbeatSection);
+
+  // 7. Sub-agent policy
+  const subAgentPolicy = buildSubAgentPolicySection({ isSubAgent, promptMode });
+  if (subAgentPolicy) {
+    lines.push(subAgentPolicy);
+  }
+
+  // 8. Communication style
   lines.push('## Communication Style');
   lines.push('');
   lines.push('- Match the user language exactly.');
@@ -764,13 +894,13 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   lines.push('- Keep output specific and actionable without sounding templated.');
   lines.push('');
 
-  // 7. Agent role
+  // 9. Agent role
   lines.push('## Your Role');
   lines.push('');
   lines.push(agent.systemPrompt);
   lines.push('');
 
-  // 8. Task brief (handoff + output spec + summary)
+  // 10. Task brief (handoff + output spec + summary)
   if (context.handoff) {
     lines.push('## Task Brief');
     lines.push(`Intent: ${context.handoff.userIntent}`);
@@ -787,7 +917,7 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push('');
   }
 
-  if (context.outputSpec) {
+  if (context.outputSpec && !isMinimal) {
     lines.push('## Output Spec');
     lines.push(`Format: ${context.outputSpec.format}`);
     lines.push(`Length: ${context.outputSpec.length}`);
@@ -800,7 +930,7 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push('');
   }
 
-  if (context.sessionSummary) {
+  if (context.sessionSummary && !isMinimal) {
     lines.push('## Session Summary');
     lines.push(`Current goal: ${context.sessionSummary.currentGoal}`);
     if (context.sessionSummary.importantDecisions.length > 0) {
@@ -816,12 +946,12 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   }
 
   if (context.systemAddendum) {
-    lines.push('## Task Addendum');
+    lines.push(isSubAgent || isMinimal ? '## Subagent Context' : '## Task Addendum');
     lines.push(context.systemAddendum);
     lines.push('');
   }
 
-  if (context.sourceSnippets && context.sourceSnippets.length > 0) {
+  if (context.sourceSnippets && context.sourceSnippets.length > 0 && !isMinimal) {
     lines.push('## Source Snippets');
     for (const snippet of context.sourceSnippets.slice(0, 3)) {
       lines.push(`- ${snippet}`);
@@ -829,31 +959,31 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push('');
   }
 
-  // 9. Brand context (shortened upstream)
-  if (context.brandContext) {
+  // 10. Brand context (shortened upstream)
+  if (context.brandContext && !isMinimal) {
     lines.push('## Brand Context');
     lines.push('');
     lines.push(context.brandContext);
     lines.push('');
   }
 
-  // 10. Relevant memories (top-k)
-  if (context.relevantMemories && context.relevantMemories.length > 0) {
+  // 11. Relevant memories (top-k)
+  if (context.relevantMemories && context.relevantMemories.length > 0 && !isMinimal) {
     lines.push('## Relevant Context from Memory');
     lines.push('');
     lines.push(context.relevantMemories.slice(0, 5).join('\n'));
     lines.push('');
   }
 
-  // 11. Workspace Files (minimal injection)
+  // 12. Workspace Files (minimal injection)
   if (context.workspace) {
-    const workspaceContent = buildWorkspaceContext(context.workspace);
+    const workspaceContent = buildWorkspaceContext(context.workspace, promptMode);
     if (workspaceContent) {
       lines.push(workspaceContent);
     }
   }
 
-  // 12. Runtime info
+  // 13. Runtime info
   lines.push('## Runtime');
   lines.push(`Agent: ${agent.id} | Model: ${agent.model || 'default'}`);
   lines.push('');
@@ -864,22 +994,40 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
 /**
  * Build workspace context from bootstrap files
  */
-function buildWorkspaceContext(workspace: WorkspaceManagerLike): string {
+function buildWorkspaceContext(workspace: WorkspaceManagerLike, promptMode: PromptMode): string {
+  const isMinimal = promptMode === 'minimal';
   const lines: string[] = [];
-  const filesToInject = [
-    { name: 'AGENTS.md', required: false },
-    { name: 'SOUL.md', required: false },
-    { name: 'TOOLS.md', required: false },
-    { name: 'IDENTITY.md', required: false },
-    { name: 'USER.md', required: false },
-    { name: 'MEMORY.md', required: false },
-  ];
+  const filesToInject: Array<{ name: string; required: boolean; fallbacks?: string[] }> = isMinimal
+    ? [
+      { name: 'AGENTS.md', required: false },
+      { name: 'TOOLS.md', required: false },
+    ]
+    : [
+      { name: 'AGENTS.md', required: false },
+      { name: 'SOUL.md', required: false },
+      { name: 'TOOLS.md', required: false },
+      { name: 'IDENTITY.md', required: false },
+      { name: 'USER.md', required: false },
+      { name: 'HEARTBEAT.md', required: false },
+      { name: 'BOOTSTRAP.md', required: false },
+      { name: 'MEMORY.md', required: false, fallbacks: ['memory.md'] },
+    ];
 
   let hasInjectedContent = false;
   let hasSoulFile = false;
 
-  for (const { name, required } of filesToInject) {
-    const content = workspace.readFile(name);
+  for (const { name, required, fallbacks } of filesToInject) {
+    const pathCandidates = [name, ...(fallbacks || [])];
+    let content: string | null = null;
+    let loadedFrom = name;
+    for (const candidate of pathCandidates) {
+      const found = workspace.readFile(candidate);
+      if (found) {
+        content = found;
+        loadedFrom = candidate;
+        break;
+      }
+    }
     if (content) {
       if (name === 'SOUL.md') hasSoulFile = true;
       if (!hasInjectedContent) {
@@ -890,9 +1038,12 @@ function buildWorkspaceContext(workspace: WorkspaceManagerLike): string {
         hasInjectedContent = true;
       }
       lines.push(`### ${name}`);
+      if (loadedFrom !== name) {
+        lines.push(`(loaded from fallback: ${loadedFrom})`);
+      }
       lines.push('');
       // Truncate if too long
-      const maxChars = 1800;
+      const maxChars = isMinimal ? 1400 : 1800;
       if (content.length > maxChars) {
         lines.push(content.slice(0, maxChars));
         lines.push('');
@@ -908,7 +1059,7 @@ function buildWorkspaceContext(workspace: WorkspaceManagerLike): string {
     }
   }
 
-  if (hasInjectedContent && hasSoulFile) {
+  if (hasInjectedContent && hasSoulFile && !isMinimal) {
     lines.splice(
       3,
       0,
@@ -969,15 +1120,23 @@ async function executeToolCalls(toolCalls: ToolCall[]): Promise<ToolResult[]> {
  * Parse agent directives from response
  */
 export function parseDirectives(content: string): Array<{ type: string; target?: string; payload: string }> {
-  const directives = [];
-  
-  // MESSAGE_AGENT: target | payload
-  const messageMatch = content.match(/MESSAGE_AGENT:\s*(\w+)\s*\|\s*(.+)/i);
-  if (messageMatch) {
+  const directives: Array<{ type: string; target?: string; payload: string }> = [];
+
+  const messageRegex = /MESSAGE_AGENT:\s*([a-zA-Z0-9._-]+)\s*\|\s*(.+)/gi;
+  let match: RegExpExecArray | null;
+  while ((match = messageRegex.exec(content)) !== null) {
     directives.push({
       type: 'MESSAGE_AGENT',
-      target: messageMatch[1],
-      payload: messageMatch[2].trim(),
+      target: match[1],
+      payload: match[2].trim(),
+    });
+  }
+
+  const yieldMatch = content.match(/YIELD:\s*(.+)/i);
+  if (yieldMatch) {
+    directives.push({
+      type: 'YIELD',
+      payload: yieldMatch[1].trim(),
     });
   }
 

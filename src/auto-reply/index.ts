@@ -10,6 +10,7 @@
  */
 
 import { AgentOrchestrator } from '../agents/orchestrator';
+import { parseReplyControls } from '../agents/governance';
 import { createReplyDispatcher } from './dispatcher';
 import { createTypingController } from './typing';
 import { CommandRegistryManager, registerBuiltinCommands } from './commands';
@@ -17,7 +18,9 @@ import {
   IncomingMessage, 
   ReplyPayload, 
   AutoReplyConfig,
-  CommandContext 
+  CommandContext,
+  AutoReplyBinding,
+  AutoReplySessionScope,
 } from './types';
 
 // Re-export types
@@ -30,6 +33,11 @@ export interface HandleMessageResult {
   content?: string;
   toolCalls?: Array<{ name: string; args: unknown }>;
   error?: string;
+  route?: {
+    agentId: string;
+    sessionId: string;
+    bindingId?: string;
+  };
 }
 
 /**
@@ -47,6 +55,139 @@ export class AutoReplyHandler {
     this.config = config;
     this.commandRegistry = new CommandRegistryManager();
     registerBuiltinCommands(this.commandRegistry);
+  }
+
+  private toValueList(input?: string | string[]): string[] {
+    if (typeof input === 'string') return [input];
+    if (!Array.isArray(input)) return [];
+    return input;
+  }
+
+  private matchesValue(actualRaw: unknown, expected?: string | string[]): boolean {
+    const expectedValues = this.toValueList(expected)
+      .map((value) => String(value).trim().toLowerCase())
+      .filter(Boolean);
+    if (expectedValues.length === 0) return true;
+
+    const actual = String(actualRaw ?? '').trim().toLowerCase();
+    if (!actual) return false;
+    return expectedValues.includes(actual);
+  }
+
+  private matchesMetadata(
+    metadata: Record<string, unknown> | undefined,
+    expected?: Record<string, string | string[]>
+  ): boolean {
+    if (!expected || Object.keys(expected).length === 0) return true;
+    const source = metadata || {};
+    for (const [key, expectedValue] of Object.entries(expected)) {
+      if (!this.matchesValue(source[key], expectedValue)) return false;
+    }
+    return true;
+  }
+
+  private bindingSpecificity(binding: AutoReplyBinding): number {
+    let score = 0;
+    if (binding.channel) score += 1;
+    if (binding.chatType) score += 1;
+    if (binding.chatId) score += 2;
+    if (binding.threadId) score += 2;
+    if (binding.fromId) score += 1;
+    if (binding.accountId) score += 1;
+    if (binding.metadata) score += Object.keys(binding.metadata).length;
+    return score;
+  }
+
+  private selectBinding(message: IncomingMessage): AutoReplyBinding | undefined {
+    const candidates = (this.config.bindings || []).filter((binding) => binding.enabled !== false);
+    if (candidates.length === 0) return undefined;
+
+    const metadata = message.metadata || {};
+    const chatId = message.chat?.id || metadata.chatId;
+    const threadId = message.threadId || metadata.threadId || metadata.threadTs;
+    const accountId = metadata.accountId;
+    const fromId = message.from?.id || String(metadata.senderId || metadata.userId || metadata.authorId || '');
+    const chatType = message.chat?.type || metadata.chatType || metadata.channelType;
+
+    const matched: AutoReplyBinding[] = [];
+    for (const binding of candidates) {
+      if (!this.matchesValue(message.channel, binding.channel)) continue;
+      if (!this.matchesValue(chatType, binding.chatType)) continue;
+      if (!this.matchesValue(chatId, binding.chatId)) continue;
+      if (!this.matchesValue(threadId, binding.threadId)) continue;
+      if (!this.matchesValue(fromId, binding.fromId)) continue;
+      if (!this.matchesValue(accountId, binding.accountId)) continue;
+      if (!this.matchesMetadata(message.metadata, binding.metadata)) continue;
+      matched.push(binding);
+    }
+
+    if (matched.length === 0) return undefined;
+
+    matched.sort((left, right) => {
+      const leftPriority = Number(left.priority ?? 0);
+      const rightPriority = Number(right.priority ?? 0);
+      if (rightPriority !== leftPriority) return rightPriority - leftPriority;
+      return this.bindingSpecificity(right) - this.bindingSpecificity(left);
+    });
+
+    return matched[0];
+  }
+
+  private sanitizeSessionSegment(value: string): string {
+    const cleaned = value.trim().replace(/[^a-zA-Z0-9._-]+/g, '_');
+    return cleaned.slice(0, 120) || 'unknown';
+  }
+
+  private resolveSessionAnchor(message: IncomingMessage, scope: AutoReplySessionScope): string {
+    const metadata = message.metadata || {};
+    const fromId = String(
+      message.from?.id
+      || metadata.senderId
+      || metadata.userId
+      || metadata.authorId
+      || 'unknown'
+    );
+    const chatId = String(message.chat?.id || metadata.chatId || fromId);
+    const threadId = String(message.threadId || metadata.threadId || metadata.threadTs || '');
+
+    if (scope === 'from') return `from-${fromId}`;
+    if (scope === 'chat') return `chat-${chatId}`;
+    if (scope === 'thread') return threadId ? `thread-${threadId}` : `chat-${chatId}`;
+    if (threadId) return `chat-${chatId}-thread-${threadId}`;
+    return `chat-${chatId}`;
+  }
+
+  private resolveRoute(message: IncomingMessage): {
+    agentId: string;
+    sessionId: string;
+    sessionKey: string;
+    routeKey: string;
+    bindingId?: string;
+  } {
+    const metadata = message.metadata || {};
+    const binding = this.selectBinding(message);
+    const agentId = binding?.agentId || this.config.defaultAgent;
+    const scope = binding?.sessionScope || this.config.defaultSessionScope || 'chat-thread';
+    const accountId = String(metadata.accountId || 'default');
+    const anchor = this.resolveSessionAnchor(message, scope);
+    const routeKey = binding?.id ? `binding-${binding.id}` : 'binding-default';
+
+    const sessionId = [
+      'channel',
+      this.sanitizeSessionSegment(message.channel),
+      this.sanitizeSessionSegment(accountId),
+      this.sanitizeSessionSegment(scope),
+      this.sanitizeSessionSegment(anchor),
+      this.sanitizeSessionSegment(routeKey),
+    ].join('-');
+
+    return {
+      agentId,
+      sessionId,
+      sessionKey: sessionId,
+      routeKey,
+      bindingId: binding?.id,
+    };
   }
 
   /**
@@ -117,8 +258,9 @@ export class AutoReplyHandler {
       return {};
     }
 
-    const sessionKey = `channel-${message.channel}-${message.from.id}`;
-    const sessionId = `channel-${message.channel}-${message.from.id}`;
+    const route = this.resolveRoute(message);
+    const sessionKey = route.sessionKey;
+    const sessionId = route.sessionId;
 
     // Track session
     this.sessions.set(sessionKey, {
@@ -137,7 +279,14 @@ export class AutoReplyHandler {
 
         if (commandResult) {
           await sendReply(commandResult);
-          return { content: commandResult.text };
+          return {
+            content: commandResult.text,
+            route: {
+              agentId: route.agentId,
+              sessionId: route.sessionId,
+              bindingId: route.bindingId,
+            },
+          };
         }
       }
 
@@ -161,7 +310,7 @@ export class AutoReplyHandler {
       // Run agent
       const result = await this.orchestrator.run({
         sessionId,
-        agentId: this.config.defaultAgent,
+        agentId: route.agentId,
         message: message.text || '[Media message]',
         stream: false,
       });
@@ -169,14 +318,26 @@ export class AutoReplyHandler {
       // Mark run complete
       typingController.markRunComplete();
 
-      // Send final reply
+      const parsedReply = parseReplyControls(result.content || '', {
+        currentMessageId: message.id,
+      });
+
+      // Send final reply with runtime-governance control parsing
       if (result.content) {
-        const payload: ReplyPayload = {
-          text: result.content,
-          replyToMessageId: this.config.replyToMessage ? message.id : undefined,
-          threadId: message.threadId,
-        };
-        dispatcher.sendFinalReply(payload);
+        const parsed = parsedReply;
+        if (parsed.suppress) {
+          console.log(`[AutoReply] Suppressed outbound message (${parsed.reason || 'policy'}) for session=${sessionId}`);
+        } else {
+          const replyToMessageId = parsed.replyToMessageId
+            ?? (this.config.replyToMessage ? message.id : undefined);
+
+          const payload: ReplyPayload = {
+            text: parsed.content,
+            replyToMessageId,
+            threadId: message.threadId,
+          };
+          dispatcher.sendFinalReply(payload);
+        }
       }
 
       // Mark dispatcher complete and wait
@@ -184,11 +345,16 @@ export class AutoReplyHandler {
       await dispatcher.waitForIdle();
 
       return {
-        content: result.content,
+        content: parsedReply.content,
         toolCalls: result.toolCalls?.map(tc => ({
           name: tc.name,
           args: tc.arguments,
         })),
+        route: {
+          agentId: route.agentId,
+          sessionId: route.sessionId,
+          bindingId: route.bindingId,
+        },
       };
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);

@@ -52,12 +52,45 @@ export interface IncomingMessage {
   canDetectMention?: boolean;
   /** Command prefix if present (/command) */
   command?: string;
+  /** Raw channel metadata for routing/bindings */
+  metadata?: Record<string, unknown>;
+}
+
+export type AutoReplySessionScope = 'from' | 'chat' | 'thread' | 'chat-thread';
+
+export interface AutoReplyBinding {
+  /** Optional stable ID for observability/debugging */
+  id?: string;
+  /** Disable a binding without removing it */
+  enabled?: boolean;
+  /** Higher number = higher precedence (default 0) */
+  priority?: number;
+  /** Match specific channel */
+  channel?: 'telegram' | 'discord' | 'slack' | 'signal' | string;
+  /** Match chat kind */
+  chatType?: 'private' | 'group' | 'channel';
+  /** Match chat IDs (single or list) */
+  chatId?: string | string[];
+  /** Match thread IDs (single or list) */
+  threadId?: string | string[];
+  /** Match sender IDs (single or list) */
+  fromId?: string | string[];
+  /** Match connected account/bot identity (single or list) */
+  accountId?: string | string[];
+  /** Match raw metadata keys by exact value */
+  metadata?: Record<string, string | string[]>;
+  /** Agent selected when this binding matches */
+  agentId: string;
+  /** Session grouping mode for this binding */
+  sessionScope?: AutoReplySessionScope;
 }
 
 export interface AutoReplyConfig {
   enabled: boolean;
   defaultAgent: string;
   allowedChannels: string[];
+  bindings?: AutoReplyBinding[];
+  defaultSessionScope?: AutoReplySessionScope;
   /** Require mention in group chats */
   requireMention?: boolean;
   /** Typing indicator interval (seconds) */

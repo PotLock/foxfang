@@ -17,6 +17,7 @@ import { parse } from 'url';
 import { getConfigPath, loadConfig, loadConfigWithCredentials, saveConfig } from '../config/index';
 import { initializeProviders } from '../providers/index';
 import { AgentOrchestrator } from '../agents/orchestrator';
+import { agentRegistry, hydrateAgentRegistryFromConfig } from '../agents/registry';
 import { SessionManager } from '../sessions/manager';
 import { initializeTools } from '../tools/index';
 import { setDefaultProvider } from '../agents/runtime';
@@ -115,6 +116,24 @@ type SetupPayload = {
   defaultProvider?: string;
   defaultModel?: string;
   providers?: ProviderSetupInput[];
+  autoReply?: {
+    defaultAgent?: string;
+    defaultSessionScope?: string;
+    bindings?: Array<{
+      id?: string;
+      enabled?: boolean;
+      priority?: number;
+      channel?: string;
+      chatType?: string;
+      chatId?: string | string[];
+      threadId?: string | string[];
+      fromId?: string | string[];
+      accountId?: string | string[];
+      metadata?: Record<string, string | string[]>;
+      agentId?: string;
+      sessionScope?: string;
+    }>;
+  };
   channels?: {
     telegram?: ChannelSetupInput;
     discord?: ChannelSetupInput;
@@ -286,6 +305,7 @@ class GatewayServer {
 
     if (method === 'GET' && pathname === '/setup/status') {
       const config = await loadConfigWithCredentials();
+      const availableAgents = await this.resolveAvailableAgents(config);
       const configPath = await getConfigPath().catch(() => '');
       const githubToken = await getGitHubToken().catch(() => null);
       const githubUsername = githubToken?.username || config.github?.username || '';
@@ -335,6 +355,12 @@ class GatewayServer {
             groupActivation: this.resolveChannelGroupActivation(config, 'signal'),
           },
         },
+        autoReply: {
+          defaultAgent: this.resolveAutoReplyDefaultAgent(config),
+          defaultSessionScope: this.resolveAutoReplyDefaultSessionScope(config),
+          bindings: this.resolveAutoReplyBindings(config),
+        },
+        availableAgents,
         webTools: {
           hasBraveSearchApiKey: Boolean(braveSearchApiKey),
           hasFirecrawlApiKey: Boolean(firecrawlApiKey),
@@ -957,6 +983,33 @@ class GatewayServer {
     return channels;
   }
 
+  private normalizeAutoReply(input: SetupPayload['autoReply'] | undefined, existing: any): any {
+    const current = existing && typeof existing === 'object' ? { ...existing } : {};
+    if (!input || typeof input !== 'object') {
+      return current;
+    }
+
+    const defaultAgent = this.sanitizeString(input.defaultAgent);
+    if (defaultAgent) {
+      current.defaultAgent = defaultAgent;
+    }
+
+    const scopeRaw = this.sanitizeString(input.defaultSessionScope).toLowerCase();
+    if (scopeRaw === 'from' || scopeRaw === 'chat' || scopeRaw === 'thread' || scopeRaw === 'chat-thread') {
+      current.defaultSessionScope = scopeRaw;
+    }
+
+    if (Array.isArray(input.bindings)) {
+      current.bindings = input.bindings;
+    }
+
+    const wrapped = { autoReply: current };
+    const normalizedBindings = this.resolveAutoReplyBindings(wrapped);
+    current.bindings = normalizedBindings;
+
+    return current;
+  }
+
   private normalizeGroupActivation(
     activationInput?: string,
     requireMentionInput?: boolean
@@ -1006,6 +1059,154 @@ class GatewayServer {
       slack: this.resolveChannelGroupActivation(config, 'slack') === 'mention',
       signal: this.resolveChannelGroupActivation(config, 'signal') === 'mention',
     };
+  }
+
+  private resolveAutoReplyDefaultAgent(config: any): string {
+    const value = this.sanitizeString(config?.autoReply?.defaultAgent);
+    return value || 'orchestrator';
+  }
+
+  private resolveAutoReplyDefaultSessionScope(config: any): 'from' | 'chat' | 'thread' | 'chat-thread' {
+    const value = this.sanitizeString(config?.autoReply?.defaultSessionScope).toLowerCase();
+    if (value === 'from' || value === 'chat' || value === 'thread' || value === 'chat-thread') {
+      return value;
+    }
+    return 'chat-thread';
+  }
+
+  private async resolveAvailableAgents(config: any): Promise<string[]> {
+    try {
+      await hydrateAgentRegistryFromConfig();
+    } catch {
+      // Ignore hydration errors; continue with config-only fallback below.
+    }
+
+    const ids = new Set<string>(['orchestrator']);
+    for (const agent of agentRegistry.list()) {
+      if (agent.id) ids.add(agent.id);
+    }
+
+    const configured = Array.isArray(config?.agents) ? config.agents : [];
+    for (const agent of configured) {
+      const id = this.sanitizeString(agent?.id);
+      if (id) ids.add(id);
+    }
+
+    const bindings = Array.isArray(config?.autoReply?.bindings) ? config.autoReply.bindings : [];
+    for (const binding of bindings) {
+      const id = this.sanitizeString(binding?.agentId);
+      if (id) ids.add(id);
+    }
+
+    return Array.from(ids).sort((a, b) => {
+      if (a === 'orchestrator') return -1;
+      if (b === 'orchestrator') return 1;
+      return a.localeCompare(b);
+    });
+  }
+
+  private sanitizeBindingStringList(value: unknown): string[] {
+    if (typeof value === 'string') {
+      const item = this.sanitizeString(value);
+      return item ? [item] : [];
+    }
+    if (!Array.isArray(value)) return [];
+    const items = value
+      .map((item) => this.sanitizeString(item))
+      .filter(Boolean);
+    return Array.from(new Set(items));
+  }
+
+  private resolveAutoReplyBindings(config: any): Array<{
+    id?: string;
+    enabled?: boolean;
+    priority?: number;
+    channel?: string;
+    chatType?: 'private' | 'group' | 'channel';
+    chatId?: string | string[];
+    threadId?: string | string[];
+    fromId?: string | string[];
+    accountId?: string | string[];
+    metadata?: Record<string, string | string[]>;
+    agentId: string;
+    sessionScope?: 'from' | 'chat' | 'thread' | 'chat-thread';
+  }> {
+    const rawBindings = Array.isArray(config?.autoReply?.bindings) ? config.autoReply.bindings : [];
+    const normalized: Array<{
+      id?: string;
+      enabled?: boolean;
+      priority?: number;
+      channel?: string;
+      chatType?: 'private' | 'group' | 'channel';
+      chatId?: string | string[];
+      threadId?: string | string[];
+      fromId?: string | string[];
+      accountId?: string | string[];
+      metadata?: Record<string, string | string[]>;
+      agentId: string;
+      sessionScope?: 'from' | 'chat' | 'thread' | 'chat-thread';
+    }> = [];
+
+    for (const candidate of rawBindings) {
+      if (!candidate || typeof candidate !== 'object') continue;
+      const binding = candidate as Record<string, unknown>;
+      const agentId = this.sanitizeString(binding.agentId);
+      if (!agentId) continue;
+
+      const chatTypeRaw = this.sanitizeString(binding.chatType).toLowerCase();
+      const chatType: 'private' | 'group' | 'channel' | undefined =
+        (chatTypeRaw === 'private' || chatTypeRaw === 'group' || chatTypeRaw === 'channel')
+        ? chatTypeRaw
+        : undefined;
+
+      const scopeRaw = this.sanitizeString(binding.sessionScope).toLowerCase();
+      const sessionScope: 'from' | 'chat' | 'thread' | 'chat-thread' | undefined = (
+        scopeRaw === 'from'
+        || scopeRaw === 'chat'
+        || scopeRaw === 'thread'
+        || scopeRaw === 'chat-thread'
+      )
+        ? scopeRaw
+        : undefined;
+
+      const metadataRaw = binding.metadata;
+      const metadata: Record<string, string | string[]> = {};
+      if (metadataRaw && typeof metadataRaw === 'object' && !Array.isArray(metadataRaw)) {
+        for (const [key, value] of Object.entries(metadataRaw as Record<string, unknown>)) {
+          const cleanKey = this.sanitizeString(key);
+          if (!cleanKey) continue;
+          const list = this.sanitizeBindingStringList(value);
+          if (list.length === 0) continue;
+          metadata[cleanKey] = list.length === 1 ? list[0] : list;
+        }
+      }
+
+      const oneOrMany = (input: unknown): string | string[] | undefined => {
+        const list = this.sanitizeBindingStringList(input);
+        if (list.length === 0) return undefined;
+        return list.length === 1 ? list[0] : list;
+      };
+
+      const priorityNum = Number(binding.priority);
+      const normalizedBinding = {
+        id: this.sanitizeString(binding.id) || undefined,
+        enabled: binding.enabled === false ? false : true,
+        priority: Number.isFinite(priorityNum) ? priorityNum : 0,
+        channel: this.sanitizeString(binding.channel) || undefined,
+        chatType,
+        chatId: oneOrMany(binding.chatId),
+        threadId: oneOrMany(binding.threadId),
+        fromId: oneOrMany(binding.fromId),
+        accountId: oneOrMany(binding.accountId),
+        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+        agentId,
+        sessionScope,
+      };
+
+      normalized.push(normalizedBinding);
+    }
+
+    return normalized;
   }
 
   private getDefaultSignalHttpUrl(): string {
@@ -1357,6 +1558,8 @@ class GatewayServer {
       config.channels = nextChannels as any;
     }
 
+    config.autoReply = this.normalizeAutoReply(payload.autoReply, config.autoReply);
+
     if (config.channels?.signal?.enabled) {
       const signalPhone = this.sanitizeString(config.channels.signal.phoneNumber);
       if (!signalPhone) {
@@ -1433,10 +1636,15 @@ class GatewayServer {
     this.enabledChannels = await this.resolveEnabledChannels();
     const config = await loadConfig().catch(() => ({} as any));
     const requireMentionByChannel = this.resolveRequireMentionByChannel(config);
+    const autoReplyDefaultAgent = this.resolveAutoReplyDefaultAgent(config);
+    const autoReplyDefaultSessionScope = this.resolveAutoReplyDefaultSessionScope(config);
+    const autoReplyBindings = this.resolveAutoReplyBindings(config);
     this.channelManager = new ChannelManager(this.enabledChannels, {
       autoReply: {
         enabled: true,
-        defaultAgent: 'orchestrator',
+        defaultAgent: autoReplyDefaultAgent,
+        defaultSessionScope: autoReplyDefaultSessionScope,
+        bindings: autoReplyBindings,
         requireMention: false,
         requireMentionByChannel,
         replyToMessage: true,
@@ -1448,6 +1656,9 @@ class GatewayServer {
       `discord=${requireMentionByChannel.discord ? 'mention' : 'always'}, ` +
       `slack=${requireMentionByChannel.slack ? 'mention' : 'always'}, ` +
       `signal=${requireMentionByChannel.signal ? 'mention' : 'always'}`
+    );
+    console.log(
+      `[Gateway] Auto-reply default agent=${autoReplyDefaultAgent}, sessionScope=${autoReplyDefaultSessionScope}, bindings=${autoReplyBindings.length}`
     );
 
     // Initialize agents

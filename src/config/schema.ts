@@ -99,14 +99,14 @@ export interface ObservabilityConfig {
 }
 
 export interface AgentRoutingRuleConfig {
-  agentId: 'content-specialist' | 'strategy-lead' | 'growth-analyst';
+  agentId: string;
   taskType: string;
   keywords: string[];
   needsReview?: boolean;
 }
 
 export interface AgentRoutingConfig {
-  defaultAgent?: 'content-specialist' | 'strategy-lead' | 'growth-analyst';
+  defaultAgent?: string;
   rules?: AgentRoutingRuleConfig[];
   outputModeHints?: {
     short?: string[];
@@ -135,6 +135,22 @@ export interface AgentRuntimeConfig {
 export interface AutoReplyConfig {
   requireMentionInGroups?: boolean;
   groupActivation?: 'mention' | 'always';
+  defaultAgent?: string;
+  defaultSessionScope?: 'from' | 'chat' | 'thread' | 'chat-thread';
+  bindings?: Array<{
+    id?: string;
+    enabled?: boolean;
+    priority?: number;
+    channel?: 'telegram' | 'discord' | 'slack' | 'signal' | string;
+    chatType?: 'private' | 'group' | 'channel';
+    chatId?: string | string[];
+    threadId?: string | string[];
+    fromId?: string | string[];
+    accountId?: string | string[];
+    metadata?: Record<string, string | string[]>;
+    agentId: string;
+    sessionScope?: 'from' | 'chat' | 'thread' | 'chat-thread';
+  }>;
 }
 
 // Twitter OAuth configuration
@@ -205,6 +221,21 @@ export interface AppConfig {
   firecrawl?: FirecrawlConfig;
   braveSearch?: BraveSearchConfig;
   github?: GitHubConfig;
+  agents?: Array<{
+    id: string;
+    name?: string;
+    role?: string;
+    description?: string;
+    systemPrompt?: string;
+    tools?: string[];
+    model?: string;
+    provider?: string;
+    executionProfile?: {
+      modelTier?: 'small' | 'medium' | 'large';
+      verbosity?: 'low' | 'normal' | 'high';
+      reasoningDepth?: 'light' | 'normal' | 'deep';
+    };
+  }>;
 
   // Agent defaults
   defaultSystemPrompt?: string;

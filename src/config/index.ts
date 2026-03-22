@@ -53,6 +53,25 @@ export interface AppConfig {
     requireMentionInGroups?: boolean;
     /** Activation mode for group conversations */
     groupActivation?: 'mention' | 'always';
+    /** Fallback agent when no binding matches */
+    defaultAgent?: string;
+    /** Default session grouping scope when no binding overrides it */
+    defaultSessionScope?: 'from' | 'chat' | 'thread' | 'chat-thread';
+    /** Optional route bindings by channel/account/chat/thread */
+    bindings?: Array<{
+      id?: string;
+      enabled?: boolean;
+      priority?: number;
+      channel?: 'telegram' | 'discord' | 'slack' | 'signal' | string;
+      chatType?: 'private' | 'group' | 'channel';
+      chatId?: string | string[];
+      threadId?: string | string[];
+      fromId?: string | string[];
+      accountId?: string | string[];
+      metadata?: Record<string, string | string[]>;
+      agentId: string;
+      sessionScope?: 'from' | 'chat' | 'thread' | 'chat-thread';
+    }>;
   };
   observability: { enabled: boolean };
   agentRuntime?: {
@@ -68,9 +87,9 @@ export interface AppConfig {
     toolCompressionThresholdChars?: number;
     toolCacheTtlMs?: number;
     routing?: {
-      defaultAgent?: 'content-specialist' | 'strategy-lead' | 'growth-analyst';
+      defaultAgent?: string;
       rules?: Array<{
-        agentId: 'content-specialist' | 'strategy-lead' | 'growth-analyst';
+        agentId: string;
         taskType: string;
         keywords: string[];
         needsReview?: boolean;
@@ -92,6 +111,21 @@ export interface AppConfig {
   braveSearch?: { apiKey?: string; apiKeyRef?: string };
   firecrawl?: { apiKey?: string; apiKeyRef?: string; baseUrl?: string };
   github?: { connected?: boolean; username?: string; connectedAt?: string };
+  agents?: Array<{
+    id: string;
+    name?: string;
+    role?: string;
+    description?: string;
+    systemPrompt?: string;
+    tools?: string[];
+    model?: string;
+    provider?: string;
+    executionProfile?: {
+      modelTier?: 'small' | 'medium' | 'large';
+      verbosity?: 'low' | 'normal' | 'high';
+      reasoningDepth?: 'light' | 'normal' | 'deep';
+    };
+  }>;
 }
 
 export interface ProviderConfig {
@@ -117,6 +151,9 @@ const defaultConfig: AppConfig = {
   autoReply: {
     requireMentionInGroups: false,
     groupActivation: 'always',
+    defaultAgent: 'orchestrator',
+    defaultSessionScope: 'chat-thread',
+    bindings: [],
   },
   observability: { enabled: true },
   agentRuntime: {
@@ -132,7 +169,6 @@ const defaultConfig: AppConfig = {
     toolCompressionThresholdChars: 1500,
     toolCacheTtlMs: 24 * 60 * 60 * 1000,
     routing: {
-      defaultAgent: 'content-specialist',
       rules: [],
       outputModeHints: {
         short: ['short', 'brief', 'summary'],
@@ -147,6 +183,7 @@ const defaultConfig: AppConfig = {
   cron: { enabled: true, pollIntervalMs: 60000 },
   security: { allowedOrigins: ['http://localhost:3000'] },
   gateway: { port: 8787, host: '0.0.0.0', enableCors: true, maxRequestSize: '10mb' },
+  agents: [],
 };
 
 export async function loadConfig(): Promise<AppConfig> {

@@ -17,7 +17,7 @@ import {
   RunRequest,
   RunResponse,
 } from './types';
-import { agentRegistry } from './registry';
+import { agentRegistry, ensureAgentRegistered, hydrateAgentRegistryFromConfig } from './registry';
 import { parseDirectives, runAgent, runAgentStream } from './runtime';
 import { resolveTokenBudget } from './budget';
 import { buildCompactContext, buildHandoffPacket, buildOutputSpec, classifyRoute } from './routing';
@@ -25,7 +25,7 @@ import { SessionManager } from '../sessions/manager';
 import { toolRegistry } from '../tools/index';
 import { buildContext, Context } from '../context-engine';
 import { storeMemory } from '../memory/database';
-import { WorkspaceManager } from '../workspace/manager';
+import { createWorkspaceManager, WorkspaceManager } from '../workspace/manager';
 import { assembleContext } from '../context/assembler';
 import { buildRollingSessionSummary, formatSessionSummary } from '../sessions/summary';
 import { addAgentUsage, addToolTelemetry, createRequestTrace, flushRequestTrace } from '../observability/request-trace';
@@ -267,6 +267,48 @@ function buildBrandBrief(context: Context): string | undefined {
   return compact.slice(0, 1200);
 }
 
+function scoreReviewerCandidate(params: {
+  candidate: {
+    id: string;
+    role: string;
+    description: string;
+    executionProfile?: {
+      modelTier: 'small' | 'medium' | 'large';
+      verbosity: 'low' | 'normal' | 'high';
+      reasoningDepth: 'light' | 'normal' | 'deep';
+    };
+  };
+  primaryAgent: string;
+}): number {
+  const { candidate, primaryAgent } = params;
+  if (candidate.id === primaryAgent) return -1;
+  if (candidate.id === 'orchestrator') return -1;
+
+  const text = `${candidate.id} ${candidate.role} ${candidate.description}`.toLowerCase();
+  let score = 0;
+  if (/(review|reviewer|analyst|analysis|audit|qa|quality|critic)/i.test(text)) score += 8;
+  if (candidate.executionProfile?.verbosity === 'low') score += 2;
+  if (candidate.executionProfile?.modelTier === 'small') score += 1;
+  if (candidate.executionProfile?.reasoningDepth === 'normal') score += 1;
+  return score;
+}
+
+function sanitizeSegment(value: string, maxLength = 60): string {
+  return value
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]+/g, '_')
+    .slice(0, maxLength);
+}
+
+function stableHash(value: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+  }
+  return (hash >>> 0).toString(36);
+}
+
 export class AgentOrchestrator {
   private sessionManager: SessionManager;
   private workspaceManager?: WorkspaceManager;
@@ -278,6 +320,58 @@ export class AgentOrchestrator {
 
   setWorkspaceManager(workspaceManager: WorkspaceManager): void {
     this.workspaceManager = workspaceManager;
+  }
+
+  private buildSubAgentSessionId(parentSessionId: string, agentId: string): string {
+    return `${parentSessionId}__agent__${sanitizeSegment(agentId, 40)}`;
+  }
+
+  private async resolveReviewerAgentId(primaryAgent: string): Promise<string | undefined> {
+    await hydrateAgentRegistryFromConfig();
+    const candidates = agentRegistry.list().filter((agent) => (
+      agent.id !== 'orchestrator' && agent.id !== primaryAgent
+    ));
+    if (candidates.length === 0) return undefined;
+
+    const ranked = candidates
+      .map((candidate) => ({
+        id: candidate.id,
+        score: scoreReviewerCandidate({
+          candidate: {
+            id: candidate.id,
+            role: String(candidate.role || ''),
+            description: candidate.description || '',
+            executionProfile: candidate.executionProfile,
+          },
+          primaryAgent,
+        }),
+      }))
+      .sort((a, b) => b.score - a.score);
+
+    return ranked[0]?.id || candidates[0]?.id;
+  }
+
+  private resolveScopedWorkspace(params: {
+    agentId: string;
+    sessionSeed: string;
+    projectId?: string;
+    userId?: string;
+  }): WorkspaceManager | undefined {
+    if (!this.workspaceManager) return undefined;
+    const workspaceInfo = this.workspaceManager.getWorkspaceInfo?.();
+    if (!workspaceInfo?.homeDir) return this.workspaceManager;
+
+    const seedHash = stableHash(params.sessionSeed).slice(0, 10);
+    const scopedProjectId = params.projectId
+      ? `${sanitizeSegment(params.projectId, 30)}-${seedHash}`
+      : `binding-${seedHash}`;
+
+    return createWorkspaceManager(
+      params.userId || 'default_user',
+      workspaceInfo.homeDir,
+      scopedProjectId,
+      params.agentId,
+    );
   }
 
   async process(request: AgentRequest): Promise<AgentResponse> {
@@ -359,15 +453,22 @@ export class AgentOrchestrator {
     context: Context,
     trace: ReturnType<typeof createRequestTrace>,
   ): Promise<RunResponse> {
+    const directAgent = await ensureAgentRegistered(request.agentId);
+    const isSubAgentSession = request.sessionId.includes('__agent__');
     const agentContext: AgentContext = {
       sessionId: request.sessionId,
       projectId: request.projectId,
       userId: 'default_user',
       messages,
-      tools: agentRegistry.get(request.agentId)?.tools || [],
+      tools: directAgent.tools || [],
       brandContext: buildBrandBrief(context),
       relevantMemories: extractRelevantMemories(context).slice(0, 5),
-      workspace: this.workspaceManager,
+      workspace: this.resolveScopedWorkspace({
+        agentId: request.agentId,
+        sessionSeed: request.sessionId,
+        projectId: request.projectId,
+      }),
+      promptMode: isSubAgentSession ? 'minimal' : 'full',
       budget: resolveTokenBudget({ agentId: request.agentId, mode: 'balanced' }),
     };
 
@@ -381,13 +482,17 @@ export class AgentOrchestrator {
       : undefined);
     addToolTelemetry(trace, result.toolTelemetry);
 
+    const currentDelegationDepth = request.delegationDepth ?? 0;
+    const maxDelegations = Math.max(0, agentContext.budget?.maxDelegations ?? 1);
     const directives = parseDirectives(result.content);
-    if (directives.length > 0 && trace.numberOfDelegations < 1) {
+    if (directives.length > 0 && currentDelegationDepth < maxDelegations) {
       const directive = directives[0];
       if (directive.type === 'MESSAGE_AGENT' && directive.target) {
         trace.numberOfDelegations += 1;
         return this.run({
           ...request,
+          delegationDepth: currentDelegationDepth + 1,
+          sessionId: this.buildSubAgentSessionId(request.sessionId, directive.target),
           agentId: directive.target,
           message: undefined,
           messages: [
@@ -403,9 +508,19 @@ export class AgentOrchestrator {
       }
     }
 
-    if (result.content.length > 50) {
+    let directContent = result.content;
+    if (directives.length > 0 && currentDelegationDepth >= maxDelegations) {
+      const stripped = directContent.replace(/MESSAGE_AGENT:\s*[^\n]+/gi, '').trim();
+      directContent = stripped || 'Delegation limit reached. Please clarify the exact next step to continue.';
+    }
+    const yieldDirective = directives.find((directive) => directive.type === 'YIELD');
+    if ((!directContent || !directContent.trim()) && yieldDirective?.payload) {
+      directContent = yieldDirective.payload;
+    }
+
+    if (directContent.length > 50) {
       storeMemory(
-        `Agent ${request.agentId}: ${result.content.slice(0, 200)}...`,
+        `Agent ${request.agentId}: ${directContent.slice(0, 200)}...`,
         'pattern',
         { projectId: request.projectId, importance: 7 },
       );
@@ -413,15 +528,15 @@ export class AgentOrchestrator {
 
     await this.sessionManager.addMessage(request.sessionId, {
       role: 'assistant',
-      content: result.content,
+      content: directContent,
       timestamp: Date.now(),
     });
 
     return {
-      content: result.content,
+      content: directContent,
       messages: [
         ...messages,
-        { role: 'assistant', content: result.content, timestamp: new Date() },
+        { role: 'assistant', content: directContent, timestamp: new Date() },
       ],
       toolCalls: result.toolCalls,
     };
@@ -467,11 +582,10 @@ export class AgentOrchestrator {
         timestamp: new Date(),
       },
     ];
-    const specialistTools = route.needsTools
-      ? (agentRegistry.get(route.primaryAgent)?.tools || [])
-      : [];
+    const primaryAgent = await ensureAgentRegistered(route.primaryAgent);
+    const specialistTools = route.needsTools ? (primaryAgent.tools || []) : [];
     const specialistContext: AgentContext = {
-      sessionId: request.sessionId,
+      sessionId: this.buildSubAgentSessionId(request.sessionId, route.primaryAgent),
       projectId: request.projectId,
       userId: 'default_user',
       messages: specialistMessages,
@@ -484,16 +598,28 @@ export class AgentOrchestrator {
       sourceSnippets: assembled.snippets,
       systemAddendum: assembled.systemAddendum,
       reasoningMode: route.outputMode === 'deep' ? 'deep' : route.outputMode === 'short' ? 'fast' : 'balanced',
+      promptMode: 'full',
       budget: resolveTokenBudget({
         agentId: route.primaryAgent,
         mode: route.outputMode === 'deep' ? 'deep' : route.outputMode === 'short' ? 'fast' : 'balanced',
       }),
-      workspace: this.workspaceManager,
+      workspace: this.resolveScopedWorkspace({
+        agentId: route.primaryAgent,
+        sessionSeed: request.sessionId,
+        projectId: request.projectId,
+      }),
     };
 
     if (request.stream) {
       return this.runStreaming(route.primaryAgent, specialistContext);
     }
+
+    const touchedSubSessions = new Set<string>([specialistContext.sessionId]);
+    await this.sessionManager.addMessage(specialistContext.sessionId, {
+      role: 'user',
+      content: specialistMessages[specialistMessages.length - 1]?.content || '',
+      timestamp: Date.now(),
+    });
 
     let primaryResult = await runAgent(route.primaryAgent, specialistContext);
     addAgentUsage(trace, route.primaryAgent, primaryResult.usage
@@ -504,8 +630,11 @@ export class AgentOrchestrator {
     let finalContent = normalizeDeliverableOutput(primaryResult.content);
     let reviewPasses = 0;
 
-    const shouldRunReviewer = route.needsReview && route.primaryAgent !== 'growth-analyst';
-    if (shouldRunReviewer) {
+    const reviewerAgentId = route.needsReview
+      ? await this.resolveReviewerAgentId(route.primaryAgent)
+      : undefined;
+    const shouldRunReviewer = Boolean(reviewerAgentId && reviewerAgentId !== route.primaryAgent);
+    if (shouldRunReviewer && reviewerAgentId) {
       reviewPasses += 1;
       const reviewPrompt = buildReviewPrompt({
         handoff,
@@ -513,23 +642,39 @@ export class AgentOrchestrator {
         draft: finalContent,
       });
       const reviewContext: AgentContext = {
-        sessionId: request.sessionId,
+        sessionId: this.buildSubAgentSessionId(request.sessionId, reviewerAgentId),
         projectId: request.projectId,
         userId: 'default_user',
         messages: [{ role: 'user', content: reviewPrompt, timestamp: new Date() }],
-        tools: agentRegistry.get('growth-analyst')?.tools || [],
+        tools: (await ensureAgentRegistered(reviewerAgentId)).tools || [],
         handoff,
         outputSpec,
-        budget: resolveTokenBudget({ agentId: 'growth-analyst', mode: 'balanced' }),
-        workspace: this.workspaceManager,
+        promptMode: 'minimal',
+        budget: resolveTokenBudget({ agentId: reviewerAgentId, mode: 'balanced' }),
+        workspace: this.resolveScopedWorkspace({
+          agentId: reviewerAgentId,
+          sessionSeed: request.sessionId,
+          projectId: request.projectId,
+        }),
       };
-      const reviewRun = await runAgent('growth-analyst', reviewContext);
-      addAgentUsage(trace, 'growth-analyst', reviewRun.usage
+      touchedSubSessions.add(reviewContext.sessionId);
+      await this.sessionManager.addMessage(reviewContext.sessionId, {
+        role: 'user',
+        content: reviewPrompt,
+        timestamp: Date.now(),
+      });
+      const reviewRun = await runAgent(reviewerAgentId, reviewContext);
+      addAgentUsage(trace, reviewerAgentId, reviewRun.usage
         ? { promptTokens: reviewRun.usage.promptTokens, completionTokens: reviewRun.usage.completionTokens }
         : undefined);
       addToolTelemetry(trace, reviewRun.toolTelemetry);
 
       const review = parseReviewResult(reviewRun.content);
+      await this.sessionManager.addMessage(reviewContext.sessionId, {
+        role: 'assistant',
+        content: reviewRun.content,
+        timestamp: Date.now(),
+      });
       if (review.verdict === 'revise' && review.recommendedEdits.length > 0) {
         const rewriteMessage = [
           `Return output only inside ${DELIVERABLE_OPEN_TAG}...${DELIVERABLE_CLOSE_TAG}.`,
@@ -545,6 +690,11 @@ export class AgentOrchestrator {
           messages: [{ role: 'user', content: rewriteMessage, timestamp: new Date() }],
           budget: resolveTokenBudget({ agentId: route.primaryAgent, mode: 'balanced' }),
         };
+        await this.sessionManager.addMessage(specialistContext.sessionId, {
+          role: 'user',
+          content: rewriteMessage,
+          timestamp: Date.now(),
+        });
         const rewriteRun = await runAgent(route.primaryAgent, rewriteContext);
         addAgentUsage(trace, route.primaryAgent, rewriteRun.usage
           ? { promptTokens: rewriteRun.usage.promptTokens, completionTokens: rewriteRun.usage.completionTokens }
@@ -582,6 +732,11 @@ export class AgentOrchestrator {
         ],
         budget: resolveTokenBudget({ agentId: route.primaryAgent, mode: 'balanced' }),
       };
+      await this.sessionManager.addMessage(specialistContext.sessionId, {
+        role: 'user',
+        content: miniFixContext.messages[0]?.content || '',
+        timestamp: Date.now(),
+      });
       const miniFixRun = await runAgent(route.primaryAgent, miniFixContext);
       addAgentUsage(trace, route.primaryAgent, miniFixRun.usage
         ? { promptTokens: miniFixRun.usage.promptTokens, completionTokens: miniFixRun.usage.completionTokens }
@@ -589,6 +744,12 @@ export class AgentOrchestrator {
       addToolTelemetry(trace, miniFixRun.toolTelemetry);
       finalContent = normalizeDeliverableOutput(miniFixRun.content);
     }
+
+    await this.sessionManager.addMessage(specialistContext.sessionId, {
+      role: 'assistant',
+      content: finalContent,
+      timestamp: Date.now(),
+    });
 
     if (finalContent.length > 50) {
       storeMemory(
@@ -603,6 +764,8 @@ export class AgentOrchestrator {
       content: finalContent,
       timestamp: Date.now(),
     });
+
+    await Promise.all(Array.from(touchedSubSessions).map((sessionId) => this.refreshSessionSummary(sessionId)));
 
     return {
       content: finalContent,
@@ -623,10 +786,7 @@ export class AgentOrchestrator {
   }
 
   private async runStreaming(agentId: string, context: AgentContext): Promise<RunResponse> {
-    const agent = agentRegistry.get(agentId);
-    if (!agent) {
-      throw new Error(`Agent not found: ${agentId}`);
-    }
+    await ensureAgentRegistered(agentId);
 
     const stream = runAgentStream(agentId, context);
 

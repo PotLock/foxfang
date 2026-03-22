@@ -6,17 +6,17 @@ import { join } from 'path';
 import { resolveFoxFangHome } from '../config/defaults';
 import { loadConfig } from '../config/index';
 import { getProvider, getProviderConfig } from '../providers/index';
-import { agentRegistry } from './registry';
+import { agentRegistry, hydrateAgentRegistryFromConfig } from './registry';
 
 type RoutingRule = {
-  agentId: AgentRoute['primaryAgent'];
+  agentId: string;
   taskType: string;
   keywords: string[];
   needsReview?: boolean;
 };
 
 type RoutingPolicy = {
-  defaultAgent: AgentRoute['primaryAgent'];
+  defaultAgent: string;
   rules: RoutingRule[];
   outputModeHints: {
     short: string[];
@@ -34,7 +34,7 @@ type ConfigRoutingShape = {
 };
 
 const DEFAULT_ROUTING_POLICY: RoutingPolicy = {
-  defaultAgent: 'content-specialist',
+  defaultAgent: 'orchestrator',
   rules: [],
   outputModeHints: {
     short: ['short', 'brief', 'summary'],
@@ -44,6 +44,14 @@ const DEFAULT_ROUTING_POLICY: RoutingPolicy = {
   reviewTriggers: ['review', 'optimize', 'improve', 'analyze', 'audit'],
   highStakesTriggers: ['launch', 'critical', 'important', 'brand-sensitive', 'public'],
 };
+
+function resolveFallbackPrimaryAgent(): string {
+  const candidates = agentRegistry
+    .list()
+    .map((agent) => agent.id)
+    .filter((id) => id !== 'orchestrator');
+  return candidates[0] || 'orchestrator';
+}
 
 function normalizeText(value: string): string {
   return value.toLowerCase();
@@ -56,7 +64,7 @@ function sanitizeRule(value: unknown): RoutingRule | null {
   const taskType = obj.taskType;
   const keywords = obj.keywords;
   if (
-    (agentId !== 'content-specialist' && agentId !== 'strategy-lead' && agentId !== 'growth-analyst')
+    (typeof agentId !== 'string' || !agentId.trim())
     || typeof taskType !== 'string'
     || !Array.isArray(keywords)
   ) {
@@ -67,7 +75,7 @@ function sanitizeRule(value: unknown): RoutingRule | null {
     .filter(Boolean);
   if (cleanedKeywords.length === 0) return null;
   return {
-    agentId,
+    agentId: agentId.trim(),
     taskType: taskType.trim() || 'general',
     keywords: cleanedKeywords,
     needsReview: obj.needsReview === true,
@@ -80,7 +88,7 @@ function normalizeStringArray(value: unknown, fallback: string[]): string[] {
   return cleaned.length > 0 ? cleaned : fallback;
 }
 
-function loadRoutingPolicy(): RoutingPolicy {
+function loadRoutingPolicy(fallbackDefaultAgent: string): RoutingPolicy {
   const candidates = [
     join(resolveFoxFangHome(), 'foxfang.json'),
     join(process.cwd(), '.foxfang', 'foxfang.json'),
@@ -98,13 +106,9 @@ function loadRoutingPolicy(): RoutingPolicy {
         ? configured.rules.map(sanitizeRule).filter((rule): rule is RoutingRule => Boolean(rule))
         : [];
       const defaultAgent = configured.defaultAgent;
-      const safeDefaultAgent = (
-        defaultAgent === 'content-specialist'
-        || defaultAgent === 'strategy-lead'
-        || defaultAgent === 'growth-analyst'
-      )
+      const safeDefaultAgent = typeof defaultAgent === 'string' && defaultAgent.trim()
         ? defaultAgent
-        : DEFAULT_ROUTING_POLICY.defaultAgent;
+        : fallbackDefaultAgent;
 
       return {
         defaultAgent: safeDefaultAgent,
@@ -121,7 +125,10 @@ function loadRoutingPolicy(): RoutingPolicy {
       // Try next candidate
     }
   }
-  return DEFAULT_ROUTING_POLICY;
+  return {
+    ...DEFAULT_ROUTING_POLICY,
+    defaultAgent: fallbackDefaultAgent,
+  };
 }
 
 function detectOutputMode(text: string, policy: RoutingPolicy): 'short' | 'normal' | 'deep' {
@@ -191,12 +198,12 @@ function inferTaskType(params: {
   const explicitReview = params.policy.reviewTriggers.some((hint) => normalized.includes(hint));
   if (explicitReview) return 'review';
   const explicitStrategy = params.policy.rules.some((rule) => (
-    rule.agentId === 'strategy-lead'
+    rule.taskType.toLowerCase() === 'strategy'
     && rule.keywords.some((hint) => normalized.includes(hint))
   ));
   if (explicitStrategy) return 'strategy';
   const explicitContent = params.policy.rules.some((rule) => (
-    rule.agentId === 'content-specialist'
+    rule.taskType.toLowerCase() === 'content'
     && rule.keywords.some((hint) => normalized.includes(hint))
   ));
   if (explicitContent) return 'content';
@@ -206,7 +213,7 @@ function inferTaskType(params: {
 function resolvePrimaryAgent(params: {
   matchedRule?: RoutingRule;
   policy: RoutingPolicy;
-}): AgentRoute['primaryAgent'] {
+}): string {
   if (params.matchedRule) return params.matchedRule.agentId;
   return params.policy.defaultAgent;
 }
@@ -239,10 +246,9 @@ function classifyRouteHeuristic(message: string, policy: RoutingPolicy): AgentRo
 }
 
 function normalizePrimaryAgent(value: unknown): AgentRoute['primaryAgent'] | undefined {
-  if (value === 'content-specialist' || value === 'strategy-lead' || value === 'growth-analyst') {
-    return value;
-  }
-  return undefined;
+  if (typeof value !== 'string') return undefined;
+  const cleaned = value.trim();
+  return cleaned || undefined;
 }
 
 function normalizeOutputMode(value: unknown): AgentRoute['outputMode'] | undefined {
@@ -282,6 +288,7 @@ async function classifyRouteWithModel(params: {
   policy: RoutingPolicy;
 }): Promise<Partial<AgentRoute> | null> {
   try {
+    await hydrateAgentRegistryFromConfig();
     const config = await loadConfig();
     const preferredProviderId = config.defaultProvider;
     let providerId = preferredProviderId;
@@ -309,13 +316,16 @@ async function classifyRouteWithModel(params: {
         role: agent.role,
         description: agent.description,
       }));
+    if (agents.length === 0) {
+      return null;
+    }
 
     const systemPrompt = [
       'You are a strict task router.',
       'Classify user intent into one primary agent and routing flags.',
       'Return JSON only. No markdown. No prose.',
       'JSON schema:',
-      '{"primaryAgent":"content-specialist|strategy-lead|growth-analyst","taskType":"string","needsTools":boolean,"needsReview":boolean,"outputMode":"short|normal|deep"}',
+      `{"primaryAgent":"${agents.map((agent) => agent.id).join('|')}","taskType":"string","needsTools":boolean,"needsReview":boolean,"outputMode":"short|normal|deep"}`,
     ].join('\n');
 
     const userPrompt = [
@@ -357,7 +367,9 @@ async function classifyRouteWithModel(params: {
 }
 
 export async function classifyRoute(message: string): Promise<AgentRoute> {
-  const policy = loadRoutingPolicy();
+  await hydrateAgentRegistryFromConfig();
+  const fallbackDefaultAgent = resolveFallbackPrimaryAgent();
+  const policy = loadRoutingPolicy(fallbackDefaultAgent);
   const heuristic = classifyRouteHeuristic(message, policy);
 
   // If explicit routing rules already matched, keep deterministic behavior.

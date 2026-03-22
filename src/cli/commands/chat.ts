@@ -113,9 +113,11 @@ export async function registerChatCommand(program: Command): Promise<void> {
         
         if (message === '/agents') {
           console.log(chalk.cyan('Available agents:'));
-          console.log('  - orchestrator (Routes tasks to specialists)');
-          console.log('  - content-specialist');
-          console.log('  - growth-analyst');
+          const agents = orchestrator.getAvailableAgents();
+          for (const agent of agents) {
+            const hint = agent.description ? ` (${agent.description})` : '';
+            console.log(`  - ${agent.id}${hint}`);
+          }
           console.log();
           rl.prompt();
           return;

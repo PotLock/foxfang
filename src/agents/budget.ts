@@ -13,7 +13,7 @@ export function resolveTokenBudget(params: {
   const mode = params.mode || 'balanced';
   const mult = modeMultiplier(mode);
 
-  const baseByAgent: Record<string, Omit<TokenBudget, 'remainingInputTokens' | 'remainingOutputTokens'>> = {
+  const baseByProfile: Record<'orchestrator' | 'specialist' | 'reviewer', Omit<TokenBudget, 'remainingInputTokens' | 'remainingOutputTokens'>> = {
     orchestrator: {
       requestMaxInputTokens: 800,
       requestMaxOutputTokens: 450,
@@ -21,21 +21,14 @@ export function resolveTokenBudget(params: {
       maxDelegations: 1,
       maxReviewPasses: 0,
     },
-    'content-specialist': {
+    specialist: {
       requestMaxInputTokens: 2500,
       requestMaxOutputTokens: 1400,
       maxToolIterations: 5,
       maxDelegations: 0,
       maxReviewPasses: 1,
     },
-    'strategy-lead': {
-      requestMaxInputTokens: 2500,
-      requestMaxOutputTokens: 1400,
-      maxToolIterations: 5,
-      maxDelegations: 0,
-      maxReviewPasses: 1,
-    },
-    'growth-analyst': {
+    reviewer: {
       requestMaxInputTokens: 1200,
       requestMaxOutputTokens: 800,
       maxToolIterations: 3,
@@ -44,8 +37,14 @@ export function resolveTokenBudget(params: {
     },
   };
 
-  const fallback = baseByAgent['content-specialist'];
-  const base = baseByAgent[params.agentId] || fallback;
+  const normalizedAgentId = (params.agentId || '').toLowerCase();
+  const profile = normalizedAgentId === 'orchestrator'
+    ? 'orchestrator'
+    : /(review|reviewer|analyst|analysis|audit|qa|quality|critic)/i.test(normalizedAgentId)
+      ? 'reviewer'
+      : 'specialist';
+
+  const base = baseByProfile[profile];
 
   const requestMaxInputTokens = Math.floor(base.requestMaxInputTokens * mult);
   const requestMaxOutputTokens = Math.floor(base.requestMaxOutputTokens * mult);

@@ -4,6 +4,7 @@
  * Manages available agents and their configurations.
  */
 
+import { loadConfig } from '../config/index';
 import { Agent, AgentRole } from './types';
 
 const defaultAgents: Agent[] = [
@@ -29,16 +30,12 @@ GitHub WORKFLOW:
 
 CONFIRMATION KEYWORDS: "create it", "confirm", "yes", "go ahead", "do it", "proceed" = user wants to proceed with the action you just previewed
 
-Available specialists:
-- content-specialist: Creates marketing content, drafts posts, writes copy
-- strategy-lead: Plans campaigns, researches, creates content calendars  
-- growth-analyst: Reviews content quality, suggests optimizations
-
+Agent catalog is dynamic and can be extended via foxfang.json and channel bindings.
 When routing to another agent, use: MESSAGE_AGENT: <agent-id> | <brief description of task>`,
     tools: [
       'create_brand', 'list_brands', 'get_brand',
       'create_project', 'list_projects', 'get_project',
-      'memory_recall',
+      'memory_recall', 'memory_search', 'memory_get',
       'skills_list', 'skills_add',
       'github_connect', 'github_create_issue', 'github_create_pr', 'github_list_issues', 'github_list_prs',
     ],
@@ -66,7 +63,7 @@ When content is ready for review, mark it as complete.`,
     tools: [
       'web_search', 'brave_search', 'firecrawl_search', 'firecrawl_scrape',
       'fetch_tweet', 'fetch_user_tweets', 'fetch_url',
-      'memory_recall', 'memory_store',
+      'memory_recall', 'memory_store', 'memory_search', 'memory_get',
       'create_task', 'list_tasks', 'update_task_status',
       'skills_list', 'skills_add',
       'expand_cached_result', 'get_cached_snippet',
@@ -96,7 +93,7 @@ Create tasks to track strategic initiatives.`,
     tools: [
       'web_search', 'brave_search', 'firecrawl_search', 'firecrawl_scrape',
       'fetch_tweet', 'fetch_user_tweets', 'fetch_url',
-      'memory_recall', 'memory_store',
+      'memory_recall', 'memory_store', 'memory_search', 'memory_get',
       'create_task', 'list_tasks', 'get_project',
       'skills_list', 'skills_add',
       'expand_cached_result', 'get_cached_snippet',
@@ -124,7 +121,7 @@ Provide specific, actionable feedback.
 Track content performance through tasks.`,
     tools: [
       'web_search', 'fetch_url',
-      'memory_recall', 'memory_store',
+      'memory_recall', 'memory_store', 'memory_search', 'memory_get',
       'create_task', 'list_tasks', 'update_task_status',
       'skills_list', 'skills_add',
       'expand_cached_result', 'get_cached_snippet',
@@ -137,8 +134,79 @@ Track content performance through tasks.`,
   },
 ];
 
+function titleCaseFromId(id: string): string {
+  return id
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+    || id;
+}
+
+function sanitizeString(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function sanitizeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => sanitizeString(item))
+    .filter(Boolean);
+}
+
+function sanitizeExecutionProfile(value: unknown): Agent['executionProfile'] | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const profile = value as Record<string, unknown>;
+  const modelTier = profile.modelTier;
+  const verbosity = profile.verbosity;
+  const reasoningDepth = profile.reasoningDepth;
+  if (
+    (modelTier !== 'small' && modelTier !== 'medium' && modelTier !== 'large')
+    || (verbosity !== 'low' && verbosity !== 'normal' && verbosity !== 'high')
+    || (reasoningDepth !== 'light' && reasoningDepth !== 'normal' && reasoningDepth !== 'deep')
+  ) {
+    return undefined;
+  }
+  return {
+    modelTier,
+    verbosity,
+    reasoningDepth,
+  };
+}
+
+function sanitizeConfigAgent(value: unknown): Agent | null {
+  if (!value || typeof value !== 'object') return null;
+  const raw = value as Record<string, unknown>;
+  const id = sanitizeString(raw.id);
+  if (!id) return null;
+
+  const name = sanitizeString(raw.name) || titleCaseFromId(id);
+  const role = sanitizeString(raw.role) || (id === 'orchestrator' ? 'orchestrator' : 'specialist');
+  const description = sanitizeString(raw.description) || `Dynamic agent: ${name}`;
+  const systemPrompt = sanitizeString(raw.systemPrompt)
+    || `You are ${name} (${id}). Follow user instructions and provide clear, grounded outputs.`;
+  const tools = sanitizeStringArray(raw.tools);
+  const model = sanitizeString(raw.model) || undefined;
+  const provider = sanitizeString(raw.provider) || undefined;
+  const executionProfile = sanitizeExecutionProfile(raw.executionProfile);
+
+  return {
+    id,
+    name,
+    role,
+    description,
+    systemPrompt,
+    tools,
+    ...(model ? { model } : {}),
+    ...(provider ? { provider } : {}),
+    ...(executionProfile ? { executionProfile } : {}),
+  };
+}
+
 class AgentRegistry {
   private agents: Map<string, Agent> = new Map();
+  private configHydrated = false;
+  private hydratePromise?: Promise<void>;
 
   constructor() {
     for (const agent of defaultAgents) {
@@ -161,6 +229,59 @@ class AgentRegistry {
   register(agent: Agent): void {
     this.agents.set(agent.id, agent);
   }
+
+  ensure(agentId: string): Agent {
+    const existing = this.get(agentId);
+    if (existing) return existing;
+
+    const fallback: Agent = {
+      id: agentId,
+      name: titleCaseFromId(agentId),
+      role: agentId === 'orchestrator' ? 'orchestrator' : 'specialist',
+      description: `Auto-generated fallback agent for "${agentId}"`,
+      systemPrompt: `You are ${titleCaseFromId(agentId)} (${agentId}). Follow user instructions and provide clear, grounded outputs.`,
+      tools: [],
+    };
+    this.register(fallback);
+    return fallback;
+  }
+
+  async hydrateFromConfig(force = false): Promise<void> {
+    if (this.configHydrated && !force) return;
+    if (this.hydratePromise && !force) {
+      await this.hydratePromise;
+      return;
+    }
+
+    this.hydratePromise = (async () => {
+      try {
+        const config = await loadConfig();
+        const configuredAgents = Array.isArray((config as any)?.agents) ? (config as any).agents : [];
+        for (const candidate of configuredAgents) {
+          const sanitized = sanitizeConfigAgent(candidate);
+          if (!sanitized) continue;
+          this.register(sanitized);
+        }
+      } catch {
+        // Ignore config hydration failures to keep registry resilient.
+      } finally {
+        this.configHydrated = true;
+      }
+    })();
+
+    await this.hydratePromise.finally(() => {
+      this.hydratePromise = undefined;
+    });
+  }
 }
 
 export const agentRegistry = new AgentRegistry();
+
+export async function hydrateAgentRegistryFromConfig(force = false): Promise<void> {
+  await agentRegistry.hydrateFromConfig(force);
+}
+
+export async function ensureAgentRegistered(agentId: string): Promise<Agent> {
+  await agentRegistry.hydrateFromConfig();
+  return agentRegistry.ensure(agentId);
+}

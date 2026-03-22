@@ -22,6 +22,13 @@
     .channel-name { font-size: 14px; font-weight: 700; color: #111827; margin: 0; }
     .channel-hint { margin-top: 4px; font-size: 12px; color: #6b7280; }
     .channel-state { width: 180px; }
+    .binding-list { display: grid; gap: 10px; margin-top: 12px; }
+    .binding-item { border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px; background: #fcfcfd; }
+    .binding-item .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .binding-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .binding-title { font-weight: 700; font-size: 13px; color: #111827; }
+    .binding-remove { background: #7f1d1d; color: #fff; padding: 6px 10px; border-radius: 8px; font-size: 12px; }
+    .checkbox-inline { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #374151; }
     .inline { display: flex; align-items: center; gap: 8px; font-size: 14px; }
     .actions { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
     button { background: #111827; color: #fff; border: 0; border-radius: 10px; padding: 10px 14px; cursor: pointer; font-weight: 600; }
@@ -37,6 +44,7 @@
     code { background: #f3f4f6; border-radius: 6px; padding: 2px 6px; }
     @media (max-width: 760px) {
       .grid { grid-template-columns: 1fr; }
+      .binding-item .grid { grid-template-columns: 1fr; }
       .channel-title { flex-direction: column; }
       .channel-state { width: 100%; }
     }
@@ -229,6 +237,32 @@
       </div>
 
       <div class="card">
+        <h2>Auto-Reply Routing</h2>
+        <div class="models-note">Configure fallback routing and binding-based routing by channel/account/chat/thread.</div>
+        <div class="grid">
+          <label>
+            Default Agent (fallback)
+            <select id="autoReplyDefaultAgent">
+              <option value="orchestrator">orchestrator</option>
+            </select>
+          </label>
+          <label>
+            Default Session Scope
+            <select id="autoReplyDefaultSessionScope">
+              <option value="chat-thread">chat-thread</option>
+              <option value="chat">chat</option>
+              <option value="thread">thread</option>
+              <option value="from">from</option>
+            </select>
+          </label>
+        </div>
+        <div class="actions">
+          <button type="button" id="addBindingBtn">Add Binding</button>
+        </div>
+        <div id="bindingsList" class="binding-list"></div>
+      </div>
+
+      <div class="card">
         <h2>Web Tools (optional)</h2>
         <div class="grid">
           <label>
@@ -344,6 +378,10 @@
     const signalSetupStatusEl = document.getElementById('signalSetupStatus');
     const signalAccountsStatusEl = document.getElementById('signalAccountsStatus');
     const signalQrImageEl = document.getElementById('signalQrImage');
+    const autoReplyDefaultAgentEl = document.getElementById('autoReplyDefaultAgent');
+    const autoReplyDefaultSessionScopeEl = document.getElementById('autoReplyDefaultSessionScope');
+    const addBindingBtn = document.getElementById('addBindingBtn');
+    const bindingsListEl = document.getElementById('bindingsList');
     const channelSavedState = {
       telegramHasBotToken: false,
       discordHasBotToken: false,
@@ -352,6 +390,255 @@
       signalHasPhoneNumber: false,
     };
     let githubPopup = null;
+    let availableAgentIds = ['orchestrator'];
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function normalizeAgentIds(input) {
+      const ids = Array.isArray(input)
+        ? input.map((item) => String(item || '').trim()).filter(Boolean)
+        : [];
+      if (!ids.includes('orchestrator')) ids.unshift('orchestrator');
+      return [...new Set(ids)];
+    }
+
+    function buildAgentOptionsMarkup(selectedValue) {
+      const selected = String(selectedValue || '').trim();
+      const ids = normalizeAgentIds(availableAgentIds);
+      if (selected && !ids.includes(selected)) {
+        ids.push(selected);
+      }
+      return ids
+        .map((id) => `<option value="${escapeHtml(id)}">${escapeHtml(id)}</option>`)
+        .join('');
+    }
+
+    function setAvailableAgents(agentIds) {
+      availableAgentIds = normalizeAgentIds(agentIds);
+
+      const currentDefault = autoReplyDefaultAgentEl.value || 'orchestrator';
+      autoReplyDefaultAgentEl.innerHTML = buildAgentOptionsMarkup(currentDefault);
+      autoReplyDefaultAgentEl.value = availableAgentIds.includes(currentDefault)
+        ? currentDefault
+        : availableAgentIds[0];
+
+      const bindingSelects = Array.from(bindingsListEl.querySelectorAll('select[data-key="agentId"]'));
+      for (const selectEl of bindingSelects) {
+        const current = selectEl.value || 'orchestrator';
+        selectEl.innerHTML = buildAgentOptionsMarkup(current);
+        selectEl.value = availableAgentIds.includes(current) ? current : availableAgentIds[0];
+      }
+    }
+
+    function toCsv(value) {
+      if (!value) return '';
+      if (Array.isArray(value)) return value.join(',');
+      return String(value);
+    }
+
+    function parseCsv(value) {
+      return String(value || '')
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+
+    function toSingleOrArray(list) {
+      if (!Array.isArray(list) || list.length === 0) return undefined;
+      if (list.length === 1) return list[0];
+      return list;
+    }
+
+    function metadataToText(metadata) {
+      if (!metadata || typeof metadata !== 'object') return '';
+      return Object.entries(metadata)
+        .map(([key, value]) => `${key}=${toCsv(value)}`)
+        .join('; ');
+    }
+
+    function textToMetadata(value) {
+      const result = {};
+      const chunks = String(value || '')
+        .split(';')
+        .map((chunk) => chunk.trim())
+        .filter(Boolean);
+      for (const chunk of chunks) {
+        const index = chunk.indexOf('=');
+        if (index <= 0) continue;
+        const key = chunk.slice(0, index).trim();
+        const raw = chunk.slice(index + 1).trim();
+        if (!key || !raw) continue;
+        const list = parseCsv(raw);
+        if (!list.length) continue;
+        result[key] = list.length === 1 ? list[0] : list;
+      }
+      return Object.keys(result).length ? result : undefined;
+    }
+
+    function createBindingRow(binding = {}) {
+      const selectedAgentId = String(binding.agentId || 'orchestrator').trim() || 'orchestrator';
+      const row = document.createElement('div');
+      row.className = 'binding-item';
+      row.innerHTML = `
+        <div class="binding-header">
+          <div class="binding-title">Binding</div>
+          <button type="button" class="binding-remove">Remove</button>
+        </div>
+        <div class="grid">
+          <label>
+            ID (optional)
+            <input data-key="id" placeholder="discord-growth-thread" />
+          </label>
+          <label>
+            Priority
+            <input data-key="priority" type="number" value="0" />
+          </label>
+          <label>
+            Agent
+            <select data-key="agentId">
+              ${buildAgentOptionsMarkup(selectedAgentId)}
+            </select>
+          </label>
+          <label>
+            Channel
+            <select data-key="channel">
+              <option value="">*</option>
+              <option value="telegram">telegram</option>
+              <option value="discord">discord</option>
+              <option value="slack">slack</option>
+              <option value="signal">signal</option>
+            </select>
+          </label>
+          <label>
+            Chat Type
+            <select data-key="chatType">
+              <option value="">*</option>
+              <option value="private">private</option>
+              <option value="group">group</option>
+              <option value="channel">channel</option>
+            </select>
+          </label>
+          <label>
+            Session Scope
+            <select data-key="sessionScope">
+              <option value="chat-thread">chat-thread</option>
+              <option value="chat">chat</option>
+              <option value="thread">thread</option>
+              <option value="from">from</option>
+            </select>
+          </label>
+          <label>
+            chatId (comma)
+            <input data-key="chatId" placeholder="123,456" />
+          </label>
+          <label>
+            threadId (comma)
+            <input data-key="threadId" placeholder="thread-a,thread-b" />
+          </label>
+          <label>
+            fromId (comma)
+            <input data-key="fromId" placeholder="user-1,user-2" />
+          </label>
+          <label>
+            accountId (comma)
+            <input data-key="accountId" placeholder="bot-id or phone" />
+          </label>
+          <label>
+            metadata (k=v1,v2; k2=v3)
+            <input data-key="metadata" placeholder="guildId=123; channelId=456" />
+          </label>
+          <label class="checkbox-inline">
+            <input data-key="enabled" type="checkbox" />
+            Enabled
+          </label>
+        </div>
+      `;
+
+      const removeBtn = row.querySelector('.binding-remove');
+      removeBtn.addEventListener('click', () => {
+        row.remove();
+      });
+
+      const set = (key, value) => {
+        const el = row.querySelector(`[data-key="${key}"]`);
+        if (!el) return;
+        if (el.type === 'checkbox') {
+          el.checked = Boolean(value);
+          return;
+        }
+        el.value = value == null ? '' : String(value);
+      };
+
+      set('id', binding.id || '');
+      set('priority', Number.isFinite(Number(binding.priority)) ? Number(binding.priority) : 0);
+      set('agentId', binding.agentId || 'orchestrator');
+      set('channel', binding.channel || '');
+      set('chatType', binding.chatType || '');
+      set('sessionScope', binding.sessionScope || 'chat-thread');
+      set('chatId', toCsv(binding.chatId));
+      set('threadId', toCsv(binding.threadId));
+      set('fromId', toCsv(binding.fromId));
+      set('accountId', toCsv(binding.accountId));
+      set('metadata', metadataToText(binding.metadata));
+      set('enabled', binding.enabled !== false);
+
+      return row;
+    }
+
+    function setBindings(bindings) {
+      bindingsListEl.innerHTML = '';
+      const items = Array.isArray(bindings) ? bindings : [];
+      for (const binding of items) {
+        bindingsListEl.appendChild(createBindingRow(binding || {}));
+      }
+    }
+
+    function collectBindings() {
+      const rows = Array.from(bindingsListEl.querySelectorAll('.binding-item'));
+      const result = [];
+      for (const row of rows) {
+        const read = (key) => row.querySelector(`[data-key="${key}"]`);
+        const readValue = (key) => String(read(key)?.value || '').trim();
+        const readList = (key) => parseCsv(readValue(key));
+        const enabled = Boolean(read('enabled')?.checked);
+        const priorityValue = Number(readValue('priority') || '0');
+        const binding = {
+          enabled,
+          priority: Number.isFinite(priorityValue) ? priorityValue : 0,
+          agentId: readValue('agentId') || 'orchestrator',
+          sessionScope: readValue('sessionScope') || 'chat-thread',
+        };
+
+        const id = readValue('id');
+        if (id) binding.id = id;
+        const channel = readValue('channel');
+        if (channel) binding.channel = channel;
+        const chatType = readValue('chatType');
+        if (chatType) binding.chatType = chatType;
+
+        const chatId = toSingleOrArray(readList('chatId'));
+        if (chatId !== undefined) binding.chatId = chatId;
+        const threadId = toSingleOrArray(readList('threadId'));
+        if (threadId !== undefined) binding.threadId = threadId;
+        const fromId = toSingleOrArray(readList('fromId'));
+        if (fromId !== undefined) binding.fromId = fromId;
+        const accountId = toSingleOrArray(readList('accountId'));
+        if (accountId !== undefined) binding.accountId = accountId;
+
+        const metadata = textToMetadata(readValue('metadata'));
+        if (metadata) binding.metadata = metadata;
+
+        result.push(binding);
+      }
+      return result;
+    }
 
     function setStatus(message, type) {
       statusEl.textContent = message;
@@ -810,6 +1097,18 @@
           signalSetupPhoneEl.value = data.channels.signal?.phoneNumber || signalSetupPhoneEl.value || '';
         }
 
+      if (data.autoReply) {
+          setAvailableAgents(data.availableAgents || ['orchestrator']);
+          autoReplyDefaultAgentEl.value = data.autoReply.defaultAgent || 'orchestrator';
+          autoReplyDefaultSessionScopeEl.value = data.autoReply.defaultSessionScope || 'chat-thread';
+          setBindings(Array.isArray(data.autoReply.bindings) ? data.autoReply.bindings : []);
+        } else {
+          setAvailableAgents(data.availableAgents || ['orchestrator']);
+          autoReplyDefaultAgentEl.value = 'orchestrator';
+          autoReplyDefaultSessionScopeEl.value = 'chat-thread';
+          setBindings([]);
+        }
+
         if (data.webTools) {
           braveSearchApiKeyEl.value = '';
           braveSearchApiKeyEl.placeholder = data.webTools.hasBraveSearchApiKey ? 'saved — leave blank to keep' : 'BS-...';
@@ -887,6 +1186,9 @@
     githubDisconnectBtn.addEventListener('click', disconnectGitHub);
     refreshConfigBtn.addEventListener('click', () => {
       void loadStatus();
+    });
+    addBindingBtn.addEventListener('click', () => {
+      bindingsListEl.appendChild(createBindingRow({}));
     });
 
     window.addEventListener('message', async (event) => {
@@ -969,6 +1271,11 @@
             groupActivation: signalGroupActivationEl.value === 'mention' ? 'mention' : 'always',
             requireMentionInGroups: signalGroupActivationEl.value === 'mention',
           },
+        },
+        autoReply: {
+          defaultAgent: autoReplyDefaultAgentEl.value || 'orchestrator',
+          defaultSessionScope: autoReplyDefaultSessionScopeEl.value || 'chat-thread',
+          bindings: collectBindings(),
         },
         braveSearchApiKey: braveSearchApiKeyEl.value.trim(),
         firecrawlApiKey: firecrawlApiKeyEl.value.trim(),

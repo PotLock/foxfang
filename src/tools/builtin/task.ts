@@ -20,7 +20,7 @@ export class CreateTaskTool implements Tool {
       description: { type: 'string', description: 'Task description' },
       priority: { type: 'string', description: 'Priority: low, medium, high' },
       due_date: { type: 'string', description: 'Due date (YYYY-MM-DD)' },
-      assignee: { type: 'string', description: 'Who should do this: user, content-specialist, strategy-lead, growth-analyst' },
+      assignee: { type: 'string', description: 'Who should do this (for example: user or any configured agent id)' },
       tags: { type: 'string', description: 'Tags (comma separated)' },
     },
     required: ['project_id', 'title'],
@@ -191,7 +191,7 @@ export class AssignTaskTool implements Tool {
     type: 'object' as const,
     properties: {
       task_id: { type: 'string', description: 'Task ID' },
-      assignee: { type: 'string', description: 'Assign to: user, content-specialist, strategy-lead, growth-analyst' },
+      assignee: { type: 'string', description: 'Assign to: user or any configured agent id' },
     },
     required: ['task_id', 'assignee'],
   };

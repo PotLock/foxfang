@@ -4,9 +4,10 @@
  * Core type definitions for the agent system.
  */
 
-export type AgentRole = 'orchestrator' | 'content-specialist' | 'strategy-lead' | 'growth-analyst';
+export type AgentRole = 'orchestrator' | (string & {});
 
 export type ReasoningMode = 'fast' | 'balanced' | 'deep';
+export type PromptMode = 'full' | 'minimal' | 'none';
 
 export type AgentExecutionProfile = {
   modelTier: 'small' | 'medium' | 'large';
@@ -15,7 +16,7 @@ export type AgentExecutionProfile = {
 };
 
 export type AgentRoute = {
-  primaryAgent: 'content-specialist' | 'strategy-lead' | 'growth-analyst';
+  primaryAgent: string;
   needsTools: boolean;
   needsReview: boolean;
   taskType: string;
@@ -86,6 +87,7 @@ export type CompactToolResult = {
 
 export type RequestTrace = {
   requestId: string;
+  createdAt: string;
   agentsInvoked: string[];
   totalInputTokens: number;
   totalOutputTokens: number;
@@ -156,6 +158,7 @@ export interface AgentContext {
   sourceSnippets?: string[];
   systemAddendum?: string;
   reasoningMode?: ReasoningMode;
+  promptMode?: PromptMode;
   budget?: TokenBudget;
   trace?: RequestTrace;
   workspace?: WorkspaceManagerLike; // For workspace file injection
@@ -193,6 +196,8 @@ export interface RunRequest {
   provider?: string;
   systemPrompt?: string;
   stream?: boolean;
+  /** Internal recursion/delegation counter for governance controls */
+  delegationDepth?: number;
 }
 
 export interface StreamChunk {

@@ -17,13 +17,15 @@ import { SlackAdapter } from './adapters/slack';
 import type { ChannelAdapter, ChannelMessage, ChannelResponse } from './types';
 import type { AgentOrchestrator } from '../agents/orchestrator';
 import type { WorkspaceManager } from '../workspace/manager';
-import { AutoReplyHandler, IncomingMessage } from '../auto-reply';
+import { AutoReplyBinding, AutoReplyHandler, IncomingMessage } from '../auto-reply';
 
 export interface ChannelManagerConfig {
   /** Auto-reply configuration */
   autoReply: {
     enabled: boolean;
     defaultAgent: string;
+    defaultSessionScope?: 'from' | 'chat' | 'thread' | 'chat-thread';
+    bindings?: AutoReplyBinding[];
     /** Require mention in groups */
     requireMention?: boolean;
     /** Per-channel mention policy in groups/channels */
@@ -51,6 +53,8 @@ export class ChannelManager {
       autoReply: {
         enabled: true,
         defaultAgent: 'orchestrator',
+        defaultSessionScope: 'chat-thread',
+        bindings: [],
         requireMention: false,
         requireMentionByChannel: {},
         replyToMessage: true,
@@ -71,6 +75,8 @@ export class ChannelManager {
         enabled: true,
         allowedChannels: this.enabledChannels,
         defaultAgent: this.config.autoReply.defaultAgent,
+        defaultSessionScope: this.config.autoReply.defaultSessionScope,
+        bindings: this.config.autoReply.bindings || [],
         requireMention: this.config.autoReply.requireMention,
         replyToMessage: this.config.autoReply.replyToMessage,
         typingIntervalSeconds: this.config.typingIntervalSeconds,
@@ -234,6 +240,10 @@ export class ChannelManager {
       timestamp: new Date(),
       wasMentioned: msg.metadata?.wasMentioned,
       canDetectMention: msg.metadata?.canDetectMention,
+      metadata: {
+        ...(msg.metadata || {}),
+        accountId: this.resolveAccountId(msg.channel, adapter),
+      },
     };
 
     try {
@@ -267,6 +277,12 @@ export class ChannelManager {
       }
 
       if (result.content) {
+        if (result.route) {
+          console.log(
+            `[ChannelManager] 🧠 routed agent=${result.route.agentId} session=${result.route.sessionId}` +
+            `${result.route.bindingId ? ` binding=${result.route.bindingId}` : ''}`
+          );
+        }
         // Show agent response preview
         const responsePreview = result.content.substring(0, 50).replace(/\n/g, ' ');
         console.log(`[ChannelManager] 🤖 ${responsePreview}${result.content.length > 50 ? '...' : ''}`);
@@ -374,6 +390,26 @@ export class ChannelManager {
     if (typeof maybeInfo.name === 'string' && maybeInfo.name.trim()) {
       return maybeInfo.name.trim();
     }
+    return undefined;
+  }
+
+  private resolveAccountId(channel: string, adapter: ChannelAdapter): string | undefined {
+    if (channel === 'signal') {
+      const signalPhone = (adapter as any).phoneNumber;
+      if (typeof signalPhone === 'string' && signalPhone.trim()) {
+        return signalPhone.trim();
+      }
+    }
+
+    const maybeInfo = (adapter as any).getBotInfo?.();
+    if (!maybeInfo || typeof maybeInfo !== 'object') return undefined;
+
+    const id = (maybeInfo as any).id;
+    if (typeof id === 'string' && id.trim()) return id.trim();
+
+    const username = (maybeInfo as any).username ?? (maybeInfo as any).name;
+    if (typeof username === 'string' && username.trim()) return username.trim();
+
     return undefined;
   }
 

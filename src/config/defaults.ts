@@ -73,6 +73,13 @@ export const defaultConfig: AppConfig = {
   observability: {
     enabled: true
   },
+  autoReply: {
+    requireMentionInGroups: false,
+    groupActivation: 'always',
+    defaultAgent: 'orchestrator',
+    defaultSessionScope: 'chat-thread',
+    bindings: [],
+  },
   agentRuntime: {
     defaultReasoningMode: 'balanced',
     maxRecentMessages: 4,
@@ -86,7 +93,6 @@ export const defaultConfig: AppConfig = {
     toolCompressionThresholdChars: 1500,
     toolCacheTtlMs: 24 * 60 * 60 * 1000,
     routing: {
-      defaultAgent: 'content-specialist',
       rules: [],
       outputModeHints: {
         short: ['short', 'brief', 'summary'],

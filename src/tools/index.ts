@@ -76,7 +76,7 @@ export function initializeTools(config: Record<string, any>): void {
   const { FetchUrlTool } = require('./builtin/fetch_url');
   const { FirecrawlSearchTool, FirecrawlScrapeTool } = require('./builtin/firecrawl');
   const { BraveSearchTool } = require('./builtin/brave_search');
-  const { MemoryStoreTool, MemoryRecallTool } = require('./builtin/memory');
+  const { MemoryStoreTool, MemoryRecallTool, MemorySearchTool, MemoryGetTool } = require('./builtin/memory');
   const { CreateBrandTool, ListBrandsTool, GetBrandTool } = require('./builtin/brand');
   const { CreateProjectTool, ListProjectsTool, GetProjectTool } = require('./builtin/project');
   const { CreateTaskTool, ListTasksTool, GetTaskTool, UpdateTaskStatusTool } = require('./builtin/task');
@@ -98,6 +98,8 @@ export function initializeTools(config: Record<string, any>): void {
   // Memory tools
   toolRegistry.register(new MemoryStoreTool());
   toolRegistry.register(new MemoryRecallTool());
+  toolRegistry.register(new MemorySearchTool());
+  toolRegistry.register(new MemoryGetTool());
   
   // Brand management tools
   toolRegistry.register(new CreateBrandTool());

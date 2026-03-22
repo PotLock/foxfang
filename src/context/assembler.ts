@@ -10,24 +10,35 @@ export type AssembledContext = {
   outputSpec: OutputSpec;
 };
 
-function buildAddendum(agentId: string): string {
-  if (agentId === 'content-specialist') {
+function buildAddendum(params: {
+  agentId: string;
+  taskType: string;
+  outputSpec: OutputSpec;
+}): string {
+  const agentHint = params.agentId.toLowerCase();
+  const taskType = params.taskType.toLowerCase();
+  const looksLikeReviewer = /(review|analyst|audit|qa|quality|critic)/i.test(`${agentHint} ${taskType}`);
+  const looksLikeStrategist = params.outputSpec.format === 'plan' || /(strategy|planner|plan|campaign)/i.test(`${agentHint} ${taskType}`);
+
+  if (looksLikeReviewer) {
     return [
-      'Prioritize strong hook, clarity, and brand voice consistency.',
-      'Keep writing specific and concrete; avoid generic filler.',
-      'Do not fabricate metrics, outcomes, or proof points not present in provided facts.',
-      'For rewrite requests, return final copy only without commentary wrappers.',
+      'Return concise, structured critique focused on objective and constraints.',
+      'Avoid full rewrites unless explicitly required.',
     ].join('\n');
   }
-  if (agentId === 'strategy-lead') {
+
+  if (looksLikeStrategist) {
     return [
       'Prioritize audience insights, positioning, and practical sequencing.',
       'Use concise rationale for each recommendation.',
     ].join('\n');
   }
+
   return [
-    'Return concise, structured critique focused on objective and constraints.',
-    'Avoid full rewrites unless explicitly required.',
+    'Prioritize strong hook, clarity, and brand voice consistency.',
+    'Keep writing specific and concrete; avoid generic filler.',
+    'Do not fabricate metrics, outcomes, or proof points not present in provided facts.',
+    'For rewrite requests, return final copy only without commentary wrappers.',
   ].join('\n');
 }
 
@@ -41,7 +52,11 @@ export function assembleContext(params: {
   outputSpec: OutputSpec;
 }): AssembledContext {
   return {
-    systemAddendum: buildAddendum(params.agentId),
+    systemAddendum: buildAddendum({
+      agentId: params.agentId,
+      taskType: params.handoff.taskGoal,
+      outputSpec: params.outputSpec,
+    }),
     sessionSummary: params.sessionSummary,
     recentMessages: params.recentMessages.slice(-4),
     handoff: params.handoff,

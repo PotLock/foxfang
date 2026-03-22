@@ -17,6 +17,7 @@ import { initDatabase } from '../../database/sqlite';
 import { runMigrations } from '../../compat';
 import { saveCredential, deleteCredential, isKeychainAvailable, migrateFromConfig } from '../../credentials/index';
 import { isGitHubConnected, saveGitHubToken, startGitHubOAuthFlow } from '../../integrations/github';
+import { agentRegistry, hydrateAgentRegistryFromConfig } from '../../agents/registry';
 
 // Available providers with metadata
 const AVAILABLE_PROVIDERS = [
@@ -86,6 +87,9 @@ const AVAILABLE_PROVIDERS = [
 ];
 
 type SetupTarget = 'all' | 'providers' | 'channels';
+type BindingSessionScope = 'from' | 'chat' | 'thread' | 'chat-thread';
+type BindingChatType = 'private' | 'group' | 'channel';
+type AgentSelectOption = { value: string; label: string; hint?: string };
 
 function normalizeSetupTarget(target?: string): SetupTarget | null {
   const normalized = (target || 'all').trim().toLowerCase();
@@ -116,6 +120,383 @@ function resolveChannelGroupActivation(
     return config.autoReply.requireMentionInGroups ? 'mention' : 'always';
   }
   return 'always';
+}
+
+function ensureAutoReplyConfig(config: any): void {
+  if (!config.autoReply || typeof config.autoReply !== 'object') {
+    config.autoReply = {};
+  }
+  if (!Array.isArray(config.autoReply.bindings)) {
+    config.autoReply.bindings = [];
+  }
+}
+
+async function buildAgentSelectOptions(config: any): Promise<AgentSelectOption[]> {
+  try {
+    await hydrateAgentRegistryFromConfig();
+  } catch {
+    // Keep setup resilient even if agent hydration fails.
+  }
+
+  const ids = new Set<string>();
+  ids.add('orchestrator');
+  for (const agent of agentRegistry.list()) {
+    if (agent.id) ids.add(agent.id);
+  }
+
+  const configuredAgents = Array.isArray(config?.agents) ? config.agents : [];
+  for (const candidate of configuredAgents) {
+    const id = String(candidate?.id || '').trim();
+    if (id) ids.add(id);
+  }
+
+  const bindings = Array.isArray(config?.autoReply?.bindings) ? config.autoReply.bindings : [];
+  for (const binding of bindings) {
+    const id = String(binding?.agentId || '').trim();
+    if (id) ids.add(id);
+  }
+
+  const options: AgentSelectOption[] = Array.from(ids).map((id) => {
+    const meta = agentRegistry.get(id);
+    const hint = meta?.description ? meta.description.slice(0, 72) : undefined;
+    return {
+      value: id,
+      label: id,
+      ...(hint ? { hint } : {}),
+    };
+  });
+
+  options.sort((a, b) => {
+    if (a.value === 'orchestrator') return -1;
+    if (b.value === 'orchestrator') return 1;
+    return a.value.localeCompare(b.value);
+  });
+  return options;
+}
+
+function asCsv(value?: string | string[]): string {
+  if (!value) return '';
+  if (Array.isArray(value)) return value.join(',');
+  return String(value);
+}
+
+function parseCsv(value: string): string[] {
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function toSingleOrArray(items: string[]): string | string[] | undefined {
+  if (items.length === 0) return undefined;
+  if (items.length === 1) return items[0];
+  return items;
+}
+
+function serializeMetadata(metadata?: Record<string, string | string[]>): string {
+  if (!metadata || Object.keys(metadata).length === 0) return '';
+  return Object.entries(metadata)
+    .map(([key, value]) => `${key}=${asCsv(value)}`)
+    .join('; ');
+}
+
+function parseMetadata(input: string): Record<string, string | string[]> | undefined {
+  const result: Record<string, string | string[]> = {};
+  const chunks = String(input || '')
+    .split(';')
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
+  for (const chunk of chunks) {
+    const index = chunk.indexOf('=');
+    if (index <= 0) continue;
+    const key = chunk.slice(0, index).trim();
+    const rawValue = chunk.slice(index + 1).trim();
+    if (!key || !rawValue) continue;
+    const list = parseCsv(rawValue);
+    if (list.length === 0) continue;
+    result[key] = list.length === 1 ? list[0] : list;
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function formatBindingLabel(binding: any, index: number): string {
+  const id = String(binding?.id || `binding-${index + 1}`);
+  const channel = binding?.channel || '*';
+  const agent = binding?.agentId || 'orchestrator';
+  const scope = binding?.sessionScope || 'chat-thread';
+  const status = binding?.enabled === false ? 'off' : 'on';
+  return `${id} [${status}] ${channel} -> ${agent} (${scope})`;
+}
+
+function printBindings(bindings: any[]): void {
+  if (bindings.length === 0) {
+    console.log(chalk.dim('No auto-reply bindings configured.'));
+    return;
+  }
+  console.log(chalk.cyan('\nCurrent auto-reply bindings:\n'));
+  bindings.forEach((binding, index) => {
+    console.log(`${index + 1}. ${formatBindingLabel(binding, index)}`);
+    if (binding.chatType) console.log(chalk.dim(`   chatType=${binding.chatType}`));
+    if (binding.chatId) console.log(chalk.dim(`   chatId=${asCsv(binding.chatId)}`));
+    if (binding.threadId) console.log(chalk.dim(`   threadId=${asCsv(binding.threadId)}`));
+    if (binding.fromId) console.log(chalk.dim(`   fromId=${asCsv(binding.fromId)}`));
+    if (binding.accountId) console.log(chalk.dim(`   accountId=${asCsv(binding.accountId)}`));
+    if (binding.priority !== undefined) console.log(chalk.dim(`   priority=${binding.priority}`));
+    if (binding.metadata && Object.keys(binding.metadata).length > 0) {
+      console.log(chalk.dim(`   metadata=${serializeMetadata(binding.metadata)}`));
+    }
+  });
+  console.log('');
+}
+
+async function promptBindingInput(existing: any | undefined, agentOptions: AgentSelectOption[]): Promise<any | null> {
+  const idInput = await text({
+    message: 'Binding ID (optional, for easier management):',
+    placeholder: 'discord-growth-thread',
+    defaultValue: String(existing?.id || ''),
+  });
+  if (isCancel(idInput)) return null;
+
+  const enabled = await confirm({
+    message: 'Enable this binding?',
+    initialValue: existing?.enabled !== false,
+  });
+  if (isCancel(enabled)) return null;
+
+  const currentAgent = String(existing?.agentId || 'orchestrator').trim() || 'orchestrator';
+  const resolvedAgentOptions = agentOptions.some((option) => option.value === currentAgent)
+    ? agentOptions
+    : [
+      ...agentOptions,
+      { value: currentAgent, label: currentAgent },
+    ];
+
+  const agentId = await select({
+    message: 'Target agent:',
+    options: resolvedAgentOptions,
+    initialValue: currentAgent,
+  }) as string;
+  if (isCancel(agentId)) return null;
+
+  const channel = await select({
+    message: 'Channel filter:',
+    options: [
+      { value: '', label: 'Any channel (*)' },
+      { value: 'telegram', label: 'telegram' },
+      { value: 'discord', label: 'discord' },
+      { value: 'slack', label: 'slack' },
+      { value: 'signal', label: 'signal' },
+    ],
+    initialValue: String(existing?.channel || ''),
+  }) as string;
+  if (isCancel(channel)) return null;
+
+  const chatType = await select({
+    message: 'Chat type filter:',
+    options: [
+      { value: '', label: 'Any chat type (*)' },
+      { value: 'private', label: 'private' },
+      { value: 'group', label: 'group' },
+      { value: 'channel', label: 'channel' },
+    ],
+    initialValue: String(existing?.chatType || ''),
+  }) as string;
+  if (isCancel(chatType)) return null;
+
+  const sessionScope = await select({
+    message: 'Session scope for this binding:',
+    options: [
+      { value: 'chat-thread', label: 'chat-thread' },
+      { value: 'chat', label: 'chat' },
+      { value: 'thread', label: 'thread' },
+      { value: 'from', label: 'from' },
+    ],
+    initialValue: String(existing?.sessionScope || 'chat-thread'),
+  }) as BindingSessionScope;
+  if (isCancel(sessionScope)) return null;
+
+  const priorityInput = await text({
+    message: 'Priority (higher wins):',
+    placeholder: '0',
+    defaultValue: String(existing?.priority ?? 0),
+    validate: (value) => {
+      const parsed = Number(String(value || '').trim());
+      if (!Number.isFinite(parsed)) return 'Please enter a number';
+      return undefined;
+    },
+  });
+  if (isCancel(priorityInput)) return null;
+
+  const chatIdInput = await text({
+    message: 'chatId filter (comma separated, empty for any):',
+    placeholder: '1234567890, 9876543210',
+    defaultValue: asCsv(existing?.chatId),
+  });
+  if (isCancel(chatIdInput)) return null;
+
+  const threadIdInput = await text({
+    message: 'threadId filter (comma separated, empty for any):',
+    placeholder: 'thread-1,thread-2',
+    defaultValue: asCsv(existing?.threadId),
+  });
+  if (isCancel(threadIdInput)) return null;
+
+  const fromIdInput = await text({
+    message: 'fromId filter (comma separated, empty for any):',
+    placeholder: 'user-id-1,user-id-2',
+    defaultValue: asCsv(existing?.fromId),
+  });
+  if (isCancel(fromIdInput)) return null;
+
+  const accountIdInput = await text({
+    message: 'accountId filter (comma separated, empty for any):',
+    placeholder: 'bot-id-or-phone',
+    defaultValue: asCsv(existing?.accountId),
+  });
+  if (isCancel(accountIdInput)) return null;
+
+  const metadataInput = await text({
+    message: 'metadata filter (k=v1,v2; k2=v3) optional:',
+    placeholder: 'guildId=123; channelId=456,789',
+    defaultValue: serializeMetadata(existing?.metadata),
+  });
+  if (isCancel(metadataInput)) return null;
+
+  const chatIds = parseCsv(chatIdInput as string);
+  const threadIds = parseCsv(threadIdInput as string);
+  const fromIds = parseCsv(fromIdInput as string);
+  const accountIds = parseCsv(accountIdInput as string);
+
+  const binding: any = {
+    enabled: enabled === true,
+    priority: Number(priorityInput),
+    agentId,
+    sessionScope,
+  };
+
+  const cleanId = String(idInput || '').trim();
+  if (cleanId) binding.id = cleanId;
+  if (channel) binding.channel = channel;
+  if (chatType) binding.chatType = chatType as BindingChatType;
+  const chatIdValue = toSingleOrArray(chatIds);
+  if (chatIdValue !== undefined) binding.chatId = chatIdValue;
+  const threadIdValue = toSingleOrArray(threadIds);
+  if (threadIdValue !== undefined) binding.threadId = threadIdValue;
+  const fromIdValue = toSingleOrArray(fromIds);
+  if (fromIdValue !== undefined) binding.fromId = fromIdValue;
+  const accountIdValue = toSingleOrArray(accountIds);
+  if (accountIdValue !== undefined) binding.accountId = accountIdValue;
+  const metadata = parseMetadata(metadataInput as string);
+  if (metadata) binding.metadata = metadata;
+
+  return binding;
+}
+
+async function runBindingsWizard() {
+  intro(chalk.cyan('Auto-Reply Bindings Wizard'));
+  const config = await loadConfig();
+  ensureAutoReplyConfig(config);
+  const autoReply = config.autoReply as NonNullable<typeof config.autoReply>;
+  let agentOptions = await buildAgentSelectOptions(config);
+
+  while (true) {
+    const bindings = autoReply.bindings as any[];
+    printBindings(bindings);
+
+    const action = await select({
+      message: 'Bindings action:',
+      options: [
+        { value: 'add', label: 'Add binding' },
+        { value: 'edit', label: 'Edit binding' },
+        { value: 'remove', label: 'Remove binding' },
+        { value: 'clear', label: 'Clear all bindings' },
+        { value: 'done', label: 'Done' },
+      ],
+    }) as string;
+
+    if (isCancel(action) || action === 'done') break;
+
+    if (action === 'add') {
+      const next = await promptBindingInput(undefined, agentOptions);
+      if (next) {
+        bindings.push(next);
+        await saveConfig(config);
+        agentOptions = await buildAgentSelectOptions(config);
+        console.log(chalk.green('✓ Binding added'));
+      }
+      continue;
+    }
+
+    if (action === 'edit') {
+      if (bindings.length === 0) {
+        console.log(chalk.yellow('No bindings to edit.'));
+        continue;
+      }
+      const targetIndex = await select({
+        message: 'Select binding to edit:',
+        options: bindings.map((binding, index) => ({
+          value: String(index),
+          label: formatBindingLabel(binding, index),
+        })),
+      }) as string;
+      if (isCancel(targetIndex)) continue;
+      const index = Number(targetIndex);
+      const next = await promptBindingInput(bindings[index], agentOptions);
+      if (next) {
+        bindings[index] = next;
+        await saveConfig(config);
+        agentOptions = await buildAgentSelectOptions(config);
+        console.log(chalk.green('✓ Binding updated'));
+      }
+      continue;
+    }
+
+    if (action === 'remove') {
+      if (bindings.length === 0) {
+        console.log(chalk.yellow('No bindings to remove.'));
+        continue;
+      }
+      const targetIndex = await select({
+        message: 'Select binding to remove:',
+        options: bindings.map((binding, index) => ({
+          value: String(index),
+          label: formatBindingLabel(binding, index),
+        })),
+      }) as string;
+      if (isCancel(targetIndex)) continue;
+      const index = Number(targetIndex);
+      const target = bindings[index];
+      const confirmed = await confirm({
+        message: `Remove binding "${formatBindingLabel(target, index)}"?`,
+        initialValue: false,
+      });
+      if (isCancel(confirmed) || confirmed !== true) continue;
+      bindings.splice(index, 1);
+      await saveConfig(config);
+      agentOptions = await buildAgentSelectOptions(config);
+      console.log(chalk.green('✓ Binding removed'));
+      continue;
+    }
+
+    if (action === 'clear') {
+      if (bindings.length === 0) {
+        console.log(chalk.yellow('Bindings are already empty.'));
+        continue;
+      }
+      const confirmed = await confirm({
+        message: 'Remove all bindings?',
+        initialValue: false,
+      });
+      if (isCancel(confirmed) || confirmed !== true) continue;
+      autoReply.bindings = [];
+      await saveConfig(config);
+      agentOptions = await buildAgentSelectOptions(config);
+      console.log(chalk.green('✓ All bindings removed'));
+      continue;
+    }
+  }
+
+  outro(chalk.green('Bindings wizard complete.'));
 }
 
 async function configureChannelGroupReplyMode(
@@ -195,6 +576,11 @@ export async function registerWizardCommand(program: Command): Promise<void> {
     .command('channels')
     .description('Channel setup wizard')
     .action(runChannelsWizard);
+
+  wizard
+    .command('bindings')
+    .description('Configure auto-reply bindings (route by channel/account/chat/thread)')
+    .action(runBindingsWizard);
 }
 
 async function runProvidersWizard() {
@@ -401,6 +787,37 @@ async function runSetupWizard() {
     initialValue: true,
   });
 
+  const agentOptions = await buildAgentSelectOptions(config);
+  const currentAutoReplyDefaultAgent = String(config.autoReply?.defaultAgent || 'orchestrator').trim() || 'orchestrator';
+  const resolvedDefaultAgentOptions = agentOptions.some((option) => option.value === currentAutoReplyDefaultAgent)
+    ? agentOptions
+    : [...agentOptions, { value: currentAutoReplyDefaultAgent, label: currentAutoReplyDefaultAgent }];
+  const autoReplyDefaultAgent = await select({
+    message: 'Default auto-reply agent (fallback when no binding matches):',
+    options: resolvedDefaultAgentOptions,
+    initialValue: currentAutoReplyDefaultAgent,
+  }) as string;
+  if (isCancel(autoReplyDefaultAgent)) {
+    outro(chalk.yellow('Setup cancelled.'));
+    return;
+  }
+
+  const currentAutoReplySessionScope = String(config.autoReply?.defaultSessionScope || 'chat-thread').trim() || 'chat-thread';
+  const autoReplyDefaultSessionScope = await select({
+    message: 'Default auto-reply session scope:',
+    options: [
+      { value: 'chat-thread', label: 'chat-thread', hint: 'Best default for channels with threads' },
+      { value: 'chat', label: 'chat', hint: 'One session per chat/channel' },
+      { value: 'thread', label: 'thread', hint: 'One session per thread when available' },
+      { value: 'from', label: 'from', hint: 'One session per sender' },
+    ],
+    initialValue: currentAutoReplySessionScope,
+  }) as string;
+  if (isCancel(autoReplyDefaultSessionScope)) {
+    outro(chalk.yellow('Setup cancelled.'));
+    return;
+  }
+
   const currentToolCacheTtlMs = Number(config.agentRuntime?.toolCacheTtlMs);
   const currentToolCacheTtlHours = Number.isFinite(currentToolCacheTtlMs) && currentToolCacheTtlMs > 0
     ? Math.max(1, Math.round(currentToolCacheTtlMs / (60 * 60 * 1000)))
@@ -478,6 +895,12 @@ async function runSetupWizard() {
   config.defaultModel = defaultProviderConfig.defaultModel;
   config.workspace = { homeDir: workspaceDir as string };
   config.daemon = { enabled: enableDaemon as boolean, port: 8787, host: '127.0.0.1' };
+  config.autoReply = {
+    ...(config.autoReply || {}),
+    defaultAgent: autoReplyDefaultAgent,
+    defaultSessionScope: autoReplyDefaultSessionScope as 'from' | 'chat' | 'thread' | 'chat-thread',
+    bindings: Array.isArray(config.autoReply?.bindings) ? config.autoReply.bindings : [],
+  };
   config.agentRuntime = {
     ...(config.agentRuntime || {}),
     toolCacheTtlMs,
