@@ -7,6 +7,7 @@ import { resolveFoxFangHome } from '../config/defaults';
 import { loadConfig } from '../config/index';
 import { getProvider, getProviderConfig } from '../providers/index';
 import { agentRegistry, hydrateAgentRegistryFromConfig } from './registry';
+import { buildRoutingSystemPrompt, buildRoutingUserPrompt } from './routing-prompt';
 
 type RoutingRule = {
   agentId: string;
@@ -18,13 +19,6 @@ type RoutingRule = {
 type RoutingPolicy = {
   defaultAgent: string;
   rules: RoutingRule[];
-  outputModeHints: {
-    short: string[];
-    deep: string[];
-  };
-  toolTriggers: string[];
-  reviewTriggers: string[];
-  highStakesTriggers: string[];
 };
 
 type ConfigRoutingShape = {
@@ -36,13 +30,6 @@ type ConfigRoutingShape = {
 const DEFAULT_ROUTING_POLICY: RoutingPolicy = {
   defaultAgent: 'orchestrator',
   rules: [],
-  outputModeHints: {
-    short: ['short', 'brief', 'summary'],
-    deep: ['deep', 'detailed', 'in-depth'],
-  },
-  toolTriggers: ['search', 'research', 'source', 'read link', 'check url'],
-  reviewTriggers: ['review', 'optimize', 'improve', 'analyze', 'audit'],
-  highStakesTriggers: ['launch', 'critical', 'important', 'brand-sensitive', 'public'],
 };
 
 function resolveFallbackPrimaryAgent(): string {
@@ -51,10 +38,6 @@ function resolveFallbackPrimaryAgent(): string {
     .map((agent) => agent.id)
     .filter((id) => id !== 'orchestrator');
   return candidates[0] || 'orchestrator';
-}
-
-function normalizeText(value: string): string {
-  return value.toLowerCase();
 }
 
 function sanitizeRule(value: unknown): RoutingRule | null {
@@ -82,12 +65,6 @@ function sanitizeRule(value: unknown): RoutingRule | null {
   };
 }
 
-function normalizeStringArray(value: unknown, fallback: string[]): string[] {
-  if (!Array.isArray(value)) return fallback;
-  const cleaned = value.map((item) => String(item).trim().toLowerCase()).filter(Boolean);
-  return cleaned.length > 0 ? cleaned : fallback;
-}
-
 function loadRoutingPolicy(fallbackDefaultAgent: string): RoutingPolicy {
   const candidates = [
     join(resolveFoxFangHome(), 'foxfang.json'),
@@ -113,13 +90,6 @@ function loadRoutingPolicy(fallbackDefaultAgent: string): RoutingPolicy {
       return {
         defaultAgent: safeDefaultAgent,
         rules: parsedRules.length > 0 ? parsedRules : DEFAULT_ROUTING_POLICY.rules,
-        outputModeHints: {
-          short: normalizeStringArray(configured.outputModeHints?.short, DEFAULT_ROUTING_POLICY.outputModeHints.short),
-          deep: normalizeStringArray(configured.outputModeHints?.deep, DEFAULT_ROUTING_POLICY.outputModeHints.deep),
-        },
-        toolTriggers: normalizeStringArray(configured.toolTriggers, DEFAULT_ROUTING_POLICY.toolTriggers),
-        reviewTriggers: normalizeStringArray(configured.reviewTriggers, DEFAULT_ROUTING_POLICY.reviewTriggers),
-        highStakesTriggers: normalizeStringArray(configured.highStakesTriggers, DEFAULT_ROUTING_POLICY.highStakesTriggers),
       };
     } catch {
       // Try next candidate
@@ -131,118 +101,26 @@ function loadRoutingPolicy(fallbackDefaultAgent: string): RoutingPolicy {
   };
 }
 
-function detectOutputMode(text: string, policy: RoutingPolicy): 'short' | 'normal' | 'deep' {
-  const normalized = normalizeText(text);
-  if (policy.outputModeHints.deep.some((hint) => normalized.includes(hint))) {
-    return 'deep';
-  }
-  if (policy.outputModeHints.short.some((hint) => normalized.includes(hint))) {
-    return 'short';
-  }
-  return 'normal';
-}
-
-function detectNeedsTools(text: string, policy: RoutingPolicy): boolean {
-  const normalized = normalizeText(text);
-  return (
-    /https?:\/\/[^\s]+/i.test(text)
-    || policy.toolTriggers.some((hint) => normalized.includes(hint))
-  );
-}
-
-function detectNeedsReview(params: {
-  text: string;
-  outputMode: 'short' | 'normal' | 'deep';
-  policy: RoutingPolicy;
-  matchedRule?: RoutingRule;
-}): boolean {
-  const normalized = normalizeText(params.text);
-  const explicitReview = params.policy.reviewTriggers.some((hint) => normalized.includes(hint));
-  const highStakes = params.policy.highStakesTriggers.some((hint) => normalized.includes(hint));
-  const forcedByRule = params.matchedRule?.needsReview === true;
-  const deepMode = params.outputMode === 'deep';
-  return explicitReview || highStakes || forcedByRule || deepMode;
-}
-
-function scoreRule(normalizedMessage: string, rule: RoutingRule): number {
-  let score = 0;
-  for (const keyword of rule.keywords) {
-    if (!keyword) continue;
-    if (normalizedMessage.includes(keyword)) {
-      score += keyword.includes(' ') ? 2 : 1;
-    }
-  }
-  return score;
-}
-
-function resolveMatchedRule(message: string, policy: RoutingPolicy): RoutingRule | undefined {
-  const normalized = normalizeText(message);
+/**
+ * Simple rule-based matching for deterministic config rules only.
+ * Returns the matched rule or undefined.
+ */
+function matchConfigRule(message: string, policy: RoutingPolicy): RoutingRule | undefined {
+  if (policy.rules.length === 0) return undefined;
+  const normalized = message.toLowerCase();
   let best: { rule: RoutingRule; score: number } | null = null;
   for (const rule of policy.rules) {
-    const score = scoreRule(normalized, rule);
-    if (score <= 0) continue;
-    if (!best || score > best.score) {
+    let score = 0;
+    for (const keyword of rule.keywords) {
+      if (normalized.includes(keyword)) {
+        score += keyword.includes(' ') ? 2 : 1;
+      }
+    }
+    if (score > 0 && (!best || score > best.score)) {
       best = { rule, score };
     }
   }
   return best?.rule;
-}
-
-function inferTaskType(params: {
-  message: string;
-  policy: RoutingPolicy;
-  matchedRule?: RoutingRule;
-}): string {
-  if (params.matchedRule) return params.matchedRule.taskType;
-  const normalized = normalizeText(params.message);
-  const explicitReview = params.policy.reviewTriggers.some((hint) => normalized.includes(hint));
-  if (explicitReview) return 'review';
-  const explicitStrategy = params.policy.rules.some((rule) => (
-    rule.taskType.toLowerCase() === 'strategy'
-    && rule.keywords.some((hint) => normalized.includes(hint))
-  ));
-  if (explicitStrategy) return 'strategy';
-  const explicitContent = params.policy.rules.some((rule) => (
-    rule.taskType.toLowerCase() === 'content'
-    && rule.keywords.some((hint) => normalized.includes(hint))
-  ));
-  if (explicitContent) return 'content';
-  return 'general';
-}
-
-function resolvePrimaryAgent(params: {
-  matchedRule?: RoutingRule;
-  policy: RoutingPolicy;
-}): string {
-  if (params.matchedRule) return params.matchedRule.agentId;
-  return params.policy.defaultAgent;
-}
-
-function classifyRouteHeuristic(message: string, policy: RoutingPolicy): AgentRoute {
-  const outputMode = detectOutputMode(message, policy);
-  const matchedRule = resolveMatchedRule(message, policy);
-  const taskType = inferTaskType({
-    message,
-    policy,
-    matchedRule,
-  });
-  const primaryAgent = resolvePrimaryAgent({
-    matchedRule,
-    policy,
-  });
-
-  return {
-    primaryAgent,
-    needsTools: detectNeedsTools(message, policy),
-    needsReview: detectNeedsReview({
-      text: message,
-      outputMode,
-      policy,
-      matchedRule,
-    }),
-    taskType,
-    outputMode,
-  };
 }
 
 function normalizePrimaryAgent(value: unknown): AgentRoute['primaryAgent'] | undefined {
@@ -283,10 +161,13 @@ function extractJsonObject(text: string): Record<string, unknown> | null {
   return null;
 }
 
+/**
+ * Primary routing path: ask the LLM to classify the route.
+ */
 async function classifyRouteWithModel(params: {
   message: string;
   policy: RoutingPolicy;
-}): Promise<Partial<AgentRoute> | null> {
+}): Promise<AgentRoute | null> {
   try {
     await hydrateAgentRegistryFromConfig();
     const config = await loadConfig();
@@ -308,36 +189,25 @@ async function classifyRouteWithModel(params: {
     if (!provider) return null;
 
     const providerConfig = providerId ? getProviderConfig(providerId) : undefined;
-    const model = providerConfig?.defaultModel || config.defaultModel || 'gpt-4o-mini';
+    const model = providerConfig?.smallModel || providerConfig?.defaultModel || config.defaultModel || 'gpt-4o-mini';
     const agents = agentRegistry.list()
       .filter((agent) => agent.id !== 'orchestrator')
       .map((agent) => ({
         id: agent.id,
-        role: agent.role,
+        role: String(agent.role || ''),
         description: agent.description,
       }));
     if (agents.length === 0) {
       return null;
     }
 
-    const systemPrompt = [
-      'You are a strict task router.',
-      'Classify user intent into one primary agent and routing flags.',
-      'Return JSON only. No markdown. No prose.',
-      'JSON schema:',
-      `{"primaryAgent":"${agents.map((agent) => agent.id).join('|')}","taskType":"string","needsTools":boolean,"needsReview":boolean,"outputMode":"short|normal|deep"}`,
-    ].join('\n');
-
-    const userPrompt = [
-      `User message: ${params.message}`,
-      `Default agent: ${params.policy.defaultAgent}`,
-      `Configured routing rules: ${JSON.stringify(params.policy.rules.map((rule) => ({ agentId: rule.agentId, taskType: rule.taskType })))}`,
-      `Review triggers: ${JSON.stringify(params.policy.reviewTriggers)}`,
-      `High-stakes triggers: ${JSON.stringify(params.policy.highStakesTriggers)}`,
-      `Output mode hints: ${JSON.stringify(params.policy.outputModeHints)}`,
-      `Available agents: ${JSON.stringify(agents)}`,
-      'Select the best single primaryAgent.',
-    ].join('\n');
+    const systemPrompt = buildRoutingSystemPrompt(agents.map((a) => a.id));
+    const userPrompt = buildRoutingUserPrompt({
+      message: params.message,
+      defaultAgent: params.policy.defaultAgent,
+      agents,
+      rules: params.policy.rules.map((rule) => ({ agentId: rule.agentId, taskType: rule.taskType })),
+    });
 
     const response = await provider.chat({
       model,
@@ -354,59 +224,56 @@ async function classifyRouteWithModel(params: {
     const outputMode = normalizeOutputMode(parsed.outputMode);
     const taskType = normalizeTaskType(parsed.taskType);
 
+    if (!primaryAgent) return null;
+
     return {
-      ...(primaryAgent ? { primaryAgent } : {}),
-      ...(taskType ? { taskType } : {}),
-      ...(typeof parsed.needsTools === 'boolean' ? { needsTools: parsed.needsTools } : {}),
-      ...(typeof parsed.needsReview === 'boolean' ? { needsReview: parsed.needsReview } : {}),
-      ...(outputMode ? { outputMode } : {}),
+      primaryAgent,
+      taskType: taskType || 'general',
+      needsTools: typeof parsed.needsTools === 'boolean' ? parsed.needsTools : false,
+      needsReview: typeof parsed.needsReview === 'boolean' ? parsed.needsReview : false,
+      outputMode: outputMode || 'normal',
     };
   } catch {
     return null;
   }
 }
 
+/**
+ * Offline fallback when no provider is available.
+ */
+function buildFallbackRoute(policy: RoutingPolicy, matchedRule?: RoutingRule): AgentRoute {
+  return {
+    primaryAgent: matchedRule?.agentId || policy.defaultAgent,
+    taskType: matchedRule?.taskType || 'general',
+    needsTools: false,
+    needsReview: matchedRule?.needsReview === true,
+    outputMode: 'normal',
+  };
+}
+
 export async function classifyRoute(message: string): Promise<AgentRoute> {
   await hydrateAgentRegistryFromConfig();
   const fallbackDefaultAgent = resolveFallbackPrimaryAgent();
   const policy = loadRoutingPolicy(fallbackDefaultAgent);
-  const heuristic = classifyRouteHeuristic(message, policy);
 
-  // If explicit routing rules already matched, keep deterministic behavior.
-  if (policy.rules.length > 0 && heuristic.taskType !== 'general') {
-    return heuristic;
+  // If an explicit config rule matches, use it deterministically.
+  const matchedRule = matchConfigRule(message, policy);
+  if (matchedRule) {
+    return {
+      primaryAgent: matchedRule.agentId,
+      taskType: matchedRule.taskType,
+      needsTools: false,
+      needsReview: matchedRule.needsReview === true,
+      outputMode: 'normal',
+    };
   }
 
+  // Primary path: LLM routing.
   const modelRoute = await classifyRouteWithModel({ message, policy });
-  if (!modelRoute) return heuristic;
+  if (modelRoute) return modelRoute;
 
-  return {
-    primaryAgent: modelRoute.primaryAgent || heuristic.primaryAgent,
-    needsTools: modelRoute.needsTools ?? heuristic.needsTools,
-    needsReview: modelRoute.needsReview ?? heuristic.needsReview,
-    taskType: modelRoute.taskType || heuristic.taskType,
-    outputMode: modelRoute.outputMode || heuristic.outputMode,
-  };
-}
-
-function pickTargetAudience(message: string, context?: Context): string | undefined {
-  const normalized = message.toLowerCase();
-  if (normalized.includes('linkedin')) return 'LinkedIn audience';
-  if (normalized.includes('twitter') || normalized.includes('x.com')) return 'X/Twitter audience';
-  if (normalized.includes('email')) return 'Email subscribers';
-  if (context?.projectContext?.brandName) {
-    return `${context.projectContext.brandName} target audience`;
-  }
-  return undefined;
-}
-
-function inferExpectedOutput(message: string): string {
-  const normalized = message.toLowerCase();
-  if (normalized.includes('thread')) return 'A complete thread with hook, body tweets, and CTA.';
-  if (normalized.includes('email')) return 'A polished marketing email with subject, body, and CTA.';
-  if (normalized.includes('plan')) return 'A concrete plan with steps, rationale, and priorities.';
-  if (normalized.includes('review')) return 'A structured review with clear issues and recommended edits.';
-  return 'A complete response that directly solves the user request.';
+  // Offline fallback.
+  return buildFallbackRoute(policy);
 }
 
 function extractProjectFacts(context?: Context): string[] {
@@ -448,24 +315,16 @@ export function buildHandoffPacket(params: {
 
   return {
     userIntent: message,
-    taskGoal: inferExpectedOutput(message),
-    targetAudience: pickTargetAudience(message, context),
+    taskGoal: `Complete the user's request: ${message.slice(0, 200)}`,
     brandVoice: extractBrandVoice(context),
     constraints,
     keyFacts,
     sourceSnippets: [],
-    expectedOutput: inferExpectedOutput(message),
+    expectedOutput: `A complete response that directly solves the user's request.`,
   };
 }
 
-export function buildOutputSpec(message: string, route: AgentRoute): OutputSpec {
-  const normalized = message.toLowerCase();
-  let format: OutputSpec['format'] = 'article';
-  if (normalized.includes('json')) format = 'json';
-  else if (normalized.includes('thread')) format = 'thread';
-  else if (normalized.includes('plan')) format = 'plan';
-  else if (normalized.includes('bullet')) format = 'bullet';
-
+export function buildOutputSpec(_message: string, route: AgentRoute): OutputSpec {
   const lengthMap: Record<AgentRoute['outputMode'], OutputSpec['length']> = {
     short: 'short',
     normal: 'medium',
@@ -473,12 +332,8 @@ export function buildOutputSpec(message: string, route: AgentRoute): OutputSpec 
   };
 
   return {
-    format,
+    format: 'article',
     length: lengthMap[route.outputMode],
-    sections: route.taskType === 'review'
-      ? ['Verdict', 'Issues', 'Recommended Edits']
-      : undefined,
-    mustInclude: ['Direct answer', 'Actionable details'],
   };
 }
 

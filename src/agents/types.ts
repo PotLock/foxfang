@@ -162,6 +162,7 @@ export interface AgentContext {
   budget?: TokenBudget;
   trace?: RequestTrace;
   workspace?: WorkspaceManagerLike; // For workspace file injection
+  isChannelSession?: boolean;
 }
 
 // Minimal interface to avoid circular dependency with WorkspaceManager
@@ -192,6 +193,7 @@ export interface RunRequest {
   messages?: AgentMessage[];
   message?: string;
   projectId?: string;
+  userId?: string;
   model?: string;
   provider?: string;
   systemPrompt?: string;

@@ -4,6 +4,23 @@
 
 import { Tool, ToolSpec } from './traits';
 
+// Built-in tool imports (module scope for clarity and startup-time resolution)
+const { WebSearchTool } = require('./builtin/web_search');
+const { FetchTweetTool, FetchUserTweetsTool } = require('./builtin/tweet_fetcher');
+const { FetchUrlTool } = require('./builtin/fetch_url');
+const { FirecrawlSearchTool, FirecrawlScrapeTool } = require('./builtin/firecrawl');
+const { BraveSearchTool } = require('./builtin/brave_search');
+const { MemoryStoreTool, MemoryRecallTool, MemorySearchTool, MemoryGetTool } = require('./builtin/memory');
+const { CreateBrandTool, ListBrandsTool, GetBrandTool } = require('./builtin/brand');
+const { CreateProjectTool, ListProjectsTool, GetProjectTool } = require('./builtin/project');
+const { CreateTaskTool, ListTasksTool, GetTaskTool, UpdateTaskStatusTool } = require('./builtin/task');
+const { BashExecTool, BashListTool, BashLogTool, BashPollTool, BashKillTool, BashRemoveTool } = require('./builtin/bash');
+const { CronTool } = require('./builtin/cron');
+const { GitHubConnectTool, GitHubCreateIssueTool, GitHubCreatePRTool, GitHubListIssuesTool, GitHubListPRsTool } = require('./builtin/github');
+const { SkillsListTool, SkillsAddTool } = require('./builtin/skills');
+const { ExpandCachedResultTool, GetCachedSnippetTool } = require('./builtin/cached_results');
+const { SessionsSpawnTool, SessionsSendTool, SubagentsTool } = require('./builtin/subagents');
+
 export interface ToolInfo {
   name: string;
   description: string;
@@ -68,24 +85,8 @@ class ToolRegistryImpl {
 
 export const toolRegistry = new ToolRegistryImpl();
 
-// Tool initialization
+// Tool initialization — explicit registration for security auditability
 export function initializeTools(config: Record<string, any>): void {
-  // Register built-in tools
-  const { WebSearchTool } = require('./builtin/web_search');
-  const { FetchTweetTool, FetchUserTweetsTool } = require('./builtin/tweet_fetcher');
-  const { FetchUrlTool } = require('./builtin/fetch_url');
-  const { FirecrawlSearchTool, FirecrawlScrapeTool } = require('./builtin/firecrawl');
-  const { BraveSearchTool } = require('./builtin/brave_search');
-  const { MemoryStoreTool, MemoryRecallTool, MemorySearchTool, MemoryGetTool } = require('./builtin/memory');
-  const { CreateBrandTool, ListBrandsTool, GetBrandTool } = require('./builtin/brand');
-  const { CreateProjectTool, ListProjectsTool, GetProjectTool } = require('./builtin/project');
-  const { CreateTaskTool, ListTasksTool, GetTaskTool, UpdateTaskStatusTool } = require('./builtin/task');
-  const { BashExecTool, BashListTool, BashLogTool, BashPollTool, BashKillTool, BashRemoveTool } = require('./builtin/bash');
-  const { CronTool } = require('./builtin/cron');
-  const { GitHubConnectTool, GitHubCreateIssueTool, GitHubCreatePRTool, GitHubListIssuesTool, GitHubListPRsTool } = require('./builtin/github');
-  const { SkillsListTool, SkillsAddTool } = require('./builtin/skills');
-  const { ExpandCachedResultTool, GetCachedSnippetTool } = require('./builtin/cached_results');
-  
   // Research tools
   toolRegistry.register(new WebSearchTool());
   toolRegistry.register(new FetchTweetTool());
@@ -94,29 +95,29 @@ export function initializeTools(config: Record<string, any>): void {
   toolRegistry.register(new FirecrawlSearchTool());
   toolRegistry.register(new FirecrawlScrapeTool());
   toolRegistry.register(new BraveSearchTool());
-  
+
   // Memory tools
   toolRegistry.register(new MemoryStoreTool());
   toolRegistry.register(new MemoryRecallTool());
   toolRegistry.register(new MemorySearchTool());
   toolRegistry.register(new MemoryGetTool());
-  
+
   // Brand management tools
   toolRegistry.register(new CreateBrandTool());
   toolRegistry.register(new ListBrandsTool());
   toolRegistry.register(new GetBrandTool());
-  
+
   // Project management tools
   toolRegistry.register(new CreateProjectTool());
   toolRegistry.register(new ListProjectsTool());
   toolRegistry.register(new GetProjectTool());
-  
+
   // Task management tools
   toolRegistry.register(new CreateTaskTool());
   toolRegistry.register(new ListTasksTool());
   toolRegistry.register(new GetTaskTool());
   toolRegistry.register(new UpdateTaskStatusTool());
-  
+
   // Bash/Shell execution tools
   toolRegistry.register(new BashExecTool());
   toolRegistry.register(new BashListTool());
@@ -124,7 +125,7 @@ export function initializeTools(config: Record<string, any>): void {
   toolRegistry.register(new BashPollTool());
   toolRegistry.register(new BashKillTool());
   toolRegistry.register(new BashRemoveTool());
-  
+
   // Cron scheduler tool
   toolRegistry.register(new CronTool());
 
@@ -133,19 +134,33 @@ export function initializeTools(config: Record<string, any>): void {
   toolRegistry.register(new SkillsAddTool());
   toolRegistry.register(new ExpandCachedResultTool());
   toolRegistry.register(new GetCachedSnippetTool());
-  
+
+  // Session/Sub-agent tools
+  toolRegistry.register(new SessionsSpawnTool());
+  toolRegistry.register(new SessionsSendTool());
+  toolRegistry.register(new SubagentsTool());
+
   // GitHub tools
   toolRegistry.register(new GitHubConnectTool());
   toolRegistry.register(new GitHubCreateIssueTool());
   toolRegistry.register(new GitHubCreatePRTool());
   toolRegistry.register(new GitHubListIssuesTool());
   toolRegistry.register(new GitHubListPRsTool());
-  
+
   console.log(`Initialized ${toolRegistry.list().length} tools`);
 }
 
 export function wireDelegateOrchestrator(orchestrator: any): void {
-  // Wire orchestrator for delegation
+  // Wire orchestrator + session manager for session/sub-agent runtime tools
+  try {
+    const { setSubagentToolsRuntime } = require('./builtin/subagents');
+    const sessionManager = orchestrator?.sessionManager ?? orchestrator?.['sessionManager'];
+    if (typeof setSubagentToolsRuntime === 'function' && orchestrator && sessionManager) {
+      setSubagentToolsRuntime(orchestrator, sessionManager);
+    }
+  } catch {
+    // Keep runtime resilient if optional tool wiring fails.
+  }
 }
 
 export * from './traits';

@@ -39,94 +39,13 @@ const debugWarn = (...args: unknown[]) => {
 };
 
 /**
- * Tool summaries for system prompt
- */
-const TOOL_SUMMARIES: Record<string, string> = {
-  // Research tools
-  web_search: 'Search the web using free sources (SearX/Bing). Use when user asks about current events, facts, or topics.',
-  brave_search: 'High-quality web search via Brave API (requires key). Use when user asks about current events, facts, or topics.',
-  firecrawl_search: 'AI-powered search with content extraction (requires key). Use when user asks about current events, facts, or topics.',
-  firecrawl_scrape: 'Advanced website scraping with structured data (requires key). Use when user shares a website URL.',
-  fetch_tweet: 'Fetch tweet content from X/Twitter by URL. CRITICAL: ALWAYS use this when user shares x.com or twitter.com URLs.',
-  fetch_user_tweets: 'Get recent tweets from a user timeline. Use when user asks about a specific Twitter user.',
-  fetch_url: 'Fetch and extract content from any URL. CRITICAL: ALWAYS use this when user shares any website URL.',
-  
-  // Memory tools
-  memory_store: 'Save information to long-term memory for later recall',
-  memory_recall: 'Retrieve previously stored memories',
-  memory_search: 'Search MEMORY.md and memory/*.md and return cited snippets',
-  memory_get: 'Read a specific memory file/range with source line references',
-  
-  // Content tools
-  generate_content: 'Create marketing content in various formats',
-  optimize_content: 'Improve and optimize existing content',
-  content_score: 'Score content quality and get suggestions',
-  
-  // Channel tools
-  send_message: 'Send messages via Telegram, Discord, Slack, Signal',
-  check_messages: 'Check for incoming messages from channels',
-  
-  // Brand/Project tools
-  create_brand: 'Create a new brand with guidelines and voice',
-  list_brands: 'List all available brands',
-  get_brand: 'Get details of a specific brand',
-  create_project: 'Create a new project under a brand',
-  list_projects: 'List all projects',
-  get_project: 'Get project details',
-  
-  // Task tools
-  create_task: 'Create a task for tracking work',
-  list_tasks: 'List tasks with filters',
-  update_task_status: 'Update task status (todo/in_progress/done)',
-  
-  // System tools
-  bash: 'Execute shell commands with safety approvals, confirm gating for risky commands, and yield windows',
-  bash_list: 'List running background processes',
-  bash_poll: 'Check status of background processes',
-  bash_log: 'Get logs from background processes',
-  bash_kill: 'Terminate background processes',
-  cron: 'Schedule recurring tasks and reminders',
-  skills_list: 'List available skills (bundled/local/workspace) that can guide agent behavior',
-  skills_add: 'Create or install a new skill into FoxFang skills directory',
-  expand_cached_result: 'Expand raw content from a compacted tool result by rawRef',
-  get_cached_snippet: 'Get a targeted snippet from cached raw tool content by rawRef',
-  
-  // GitHub tools
-  github_connect: 'Check GitHub connection status',
-  github_create_issue: 'Create a GitHub issue',
-  github_create_pr: 'Create a pull request',
-  github_list_issues: 'List GitHub issues',
-  github_list_prs: 'List pull requests',
-};
-
-/**
  * Tool call style guidance
  */
 const TOOL_CALL_STYLE_GUIDANCE = `## Tool Call Style
-
-**MANDATORY: When user shares ANY URL, IMMEDIATELY call the appropriate tool.**
-- URLs for X/Twitter → use fetch_tweet
-- URLs for websites → use fetch_url or firecrawl_scrape
-- Do NOT say "I can't access" or "Twitter is blocking" — just call the tool
-- If tool fails, THEN explain the issue
-
-### Examples
-
-❌ WRONG - User: "check this https://x.com/user/status/123"
-Assistant: "I can't access Twitter from here 😤"
-
-✅ CORRECT - User: "check this https://x.com/user/status/123"  
-→ [IMMEDIATELY call fetch_tweet with the URL]
-
-**Default: Do not narrate routine, low-risk tool calls (just call the tool).**
-
-Narrate only when it helps:
-- Multi-step work or complex problems
-- Sensitive actions (e.g., posting public content)
-- When the user explicitly asks for explanation
-
-Keep narration brief and value-dense; avoid repeating obvious steps.
-When a first-class tool exists, use the tool directly instead of asking the user to do it manually.`;
+When a tool exists for the task, call it directly — do not ask the user to do it manually.
+If a tool call fails, explain the issue; do not preemptively claim inability.
+Narrate only when it adds value (multi-step work, sensitive actions, or user asks).
+Keep narration brief and value-dense.`;
 
 /**
  * Safety guidance
@@ -206,19 +125,14 @@ function normalizeReasoningMode(mode?: ReasoningMode): ReasoningMode {
 function resolveModelFromExecutionProfile(params: {
   providerId: string;
   defaultModel: string;
+  smallModel?: string;
   tier?: 'small' | 'medium' | 'large';
 }): string {
   const tier = params.tier || 'medium';
   if (tier === 'medium' || tier === 'large') {
     return params.defaultModel;
   }
-
-  const providerId = params.providerId.toLowerCase();
-  const model = params.defaultModel;
-  if (providerId === 'openai' && /gpt-4o(?!-mini)/i.test(model)) return 'gpt-4o-mini';
-  if (providerId === 'anthropic' && /sonnet/i.test(model)) return 'claude-3-haiku-latest';
-  if (providerId.startsWith('kimi') && /32k|128k/i.test(model)) return 'moonshot-v1-8k';
-  return model;
+  return params.smallModel || params.defaultModel;
 }
 
 function safeJson(value: unknown): string {
@@ -370,6 +284,7 @@ export async function runAgent(
     || resolveModelFromExecutionProfile({
       providerId: actualProviderId,
       defaultModel,
+      smallModel: providerConfig?.smallModel,
       tier: agent.executionProfile?.modelTier,
     });
 
@@ -552,6 +467,7 @@ export async function* runAgentStream(
     || resolveModelFromExecutionProfile({
       providerId: actualProviderId,
       defaultModel,
+      smallModel: providerConfig?.smallModel,
       tier: agent.executionProfile?.modelTier,
     });
 
@@ -662,7 +578,7 @@ export async function* runAgentStream(
 }
 
 /**
- * Build tool section for system prompt
+ * Build tool section for system prompt — reads descriptions and categories from the tool registry.
  */
 function buildToolSection(tools: string[]): string {
   if (tools.length === 0) {
@@ -671,78 +587,26 @@ function buildToolSection(tools: string[]): string {
 
   const lines: string[] = [];
   lines.push('## Tooling');
-  lines.push('Tool availability (filtered by policy):');
   lines.push('Tool names are case-sensitive. Call tools exactly as listed.');
   lines.push('');
 
-  // Group tools by category for better organization
-  const categories: Record<string, string[]> = {
-    'Research': ['web_search', 'brave_search', 'firecrawl_search', 'firecrawl_scrape', 'fetch_tweet', 'fetch_user_tweets', 'fetch_url'],
-    'Memory': ['memory_store', 'memory_recall', 'memory_search', 'memory_get'],
-    'Content': ['generate_content', 'optimize_content', 'content_score'],
-    'Channels': ['send_message', 'check_messages'],
-    'Brand & Project': ['create_brand', 'list_brands', 'get_brand', 'create_project', 'list_projects', 'get_project'],
-    'Tasks': ['create_task', 'list_tasks', 'update_task_status'],
-    'System': ['bash', 'bash_list', 'bash_poll', 'bash_log', 'bash_kill', 'cron'],
-    'Skills': ['skills_list', 'skills_add'],
-    'Result Cache': ['expand_cached_result', 'get_cached_snippet'],
-    'GitHub': ['github_connect', 'github_create_issue', 'github_create_pr', 'github_list_issues', 'github_list_prs'],
-  };
-
-  const usedTools = new Set(tools);
-  const displayedTools = new Set<string>();
-
-  // Display tools by category
-  for (const [category, categoryTools] of Object.entries(categories)) {
-    const availableInCategory = categoryTools.filter(t => usedTools.has(t));
-    if (availableInCategory.length > 0) {
-      lines.push(`### ${category}`);
-      for (const toolName of availableInCategory) {
-        const summary = TOOL_SUMMARIES[toolName] || 'No description';
-        lines.push(`- ${toolName}: ${summary}`);
-        displayedTools.add(toolName);
-      }
-      lines.push('');
-    }
+  // Group by category from the registry
+  const grouped: Record<string, Array<{ name: string; description: string }>> = {};
+  for (const toolName of tools) {
+    const tool = toolRegistry.get(toolName);
+    const category = tool?.category || 'Other';
+    const description = tool?.description || 'No description';
+    if (!grouped[category]) grouped[category] = [];
+    grouped[category].push({ name: toolName, description });
   }
 
-  // Display any remaining tools not in categories
-  const uncategorized = tools.filter(t => !displayedTools.has(t));
-  if (uncategorized.length > 0) {
-    lines.push('### Other');
-    for (const toolName of uncategorized) {
-      const tool = toolRegistry.get(toolName);
-      const summary = tool?.description || TOOL_SUMMARIES[toolName] || 'No description';
-      lines.push(`- ${toolName}: ${summary}`);
+  for (const [category, entries] of Object.entries(grouped)) {
+    lines.push(`### ${category}`);
+    for (const entry of entries) {
+      lines.push(`- ${entry.name}: ${entry.description}`);
     }
     lines.push('');
   }
-
-  // Add tool usage rules
-  lines.push('### Tool Usage Rules');
-  lines.push('');
-  lines.push('**CRITICAL: When you see ANY URL in user message, you MUST call a tool.**');
-  lines.push('- x.com or twitter.com URLs → call fetch_tweet IMMEDIATELY');
-  lines.push('- Any other URL → call fetch_url IMMEDIATELY');
-  lines.push('- DO NOT say "I can\'t access" or "Twitter is blocking" — call the tool first!');
-  lines.push('');
-  lines.push('**ALWAYS use tools when:**');
-  lines.push('- User shares a URL → fetch it immediately, never ask user to copy-paste');
-  lines.push('- Need fresh information → use search tools');
-  lines.push('- Need to store/retrieve context → use memory tools (prefer memory_search/memory_get for grounded recall)');
-  lines.push('- Content creation needed → use content tools');
-  lines.push('');
-  lines.push('**Tool selection:**');
-  lines.push('- For tweets: use fetch_tweet (handles x.com/twitter.com automatically)');
-  lines.push('- For websites: use fetch_url or firecrawl_scrape (if API key available)');
-  lines.push('- For search: prefer brave_search if available, fallback to web_search');
-  lines.push('- For long shell commands: use bash with `yield_ms` or background + bash_poll/bash_log');
-  lines.push('- For risky shell commands: require explicit `confirm: true` before execution');
-  lines.push('- For skill management: use skills_list to inspect and skills_add to install/create');
-  lines.push('- For long compacted results: use expand_cached_result or get_cached_snippet with rawRef');
-  lines.push('');
-  lines.push("**Never say 'I can't access that'** — use the tool first. If it fails, THEN explain.");
-  lines.push('');
 
   return lines.join('\n');
 }
@@ -808,20 +672,20 @@ function buildSubAgentPolicySection(params: {
 function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   const promptMode: PromptMode = context.promptMode || 'full';
   if (promptMode === 'none') {
-    return 'You are FoxFang 🦊 — a personal AI marketing assistant.';
+    const soulContent = context.workspace?.readFile('SOUL.md');
+    return soulContent?.trim() || 'You are FoxFang 🦊 — a personal AI marketing assistant.';
   }
   const isMinimal = promptMode === 'minimal';
   const isSubAgent = isSubAgentRun(agent, context, promptMode);
-  const isChannelSession = context.sessionId.startsWith('channel-');
+  const isChannelSession = context.isChannelSession ?? context.sessionId.startsWith('channel-');
   const budget = context.budget || resolveTokenBudget({
     agentId: agent.id,
     mode: normalizeReasoningMode(context.reasoningMode),
   });
   const lines: string[] = [];
 
-  // 1. Core identity (short)
-  lines.push('You are FoxFang 🦊 — a personal AI marketing assistant.');
-  lines.push('Stay accurate, practical, and natural in tone.');
+  // 1. Core identity
+  lines.push('You are FoxFang 🦊 — a friendly personal AI marketing assistant.');
   lines.push('');
 
   // 2. Tool rules (only when tools are enabled)
@@ -882,16 +746,10 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   // 8. Communication style
   lines.push('## Communication Style');
   lines.push('');
-  lines.push('- Match the user language exactly.');
-  lines.push('- Use plain human language; avoid stiff or robotic phrasing.');
-  lines.push('- Be direct and useful, but keep the flow conversational.');
-  lines.push('- Prefer natural paragraphs; use bullets only when they improve clarity.');
-  lines.push('- Do not include process notes, bracketed annotations, or improvement summaries unless user asks.');
-  lines.push('- For rewrite requests, return the rewritten text only unless user asks for analysis.');
-  lines.push('- Do not add meta framing prefaces, wrapper headings, or postscript self-evaluations unless user asks.');
-  lines.push('- Never fabricate metrics, outcomes, or case-study numbers that are not present in user input or provided sources.');
-  lines.push('- If evidence is missing, keep claims qualitative and practical.');
-  lines.push('- Keep output specific and actionable without sounding templated.');
+  lines.push('- Match the user\'s language (Vietnamese → Vietnamese, English → English).');
+  lines.push('- Prefer natural paragraphs over bullet lists. Use bullets only when they genuinely improve clarity.');
+  lines.push('- For content/rewrite requests, return the content directly — no meta commentary.');
+  lines.push('- Never fabricate metrics or numbers not present in user input or sources.');
   lines.push('');
 
   // 9. Agent role
@@ -976,14 +834,37 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   }
 
   // 12. Workspace Files (minimal injection)
+  let hasSoul = false;
   if (context.workspace) {
-    const workspaceContent = buildWorkspaceContext(context.workspace, promptMode);
-    if (workspaceContent) {
-      lines.push(workspaceContent);
+    const workspace = buildWorkspaceContext(context.workspace, promptMode);
+    hasSoul = workspace.hasSoul;
+    if (workspace.text) {
+      lines.push(workspace.text);
     }
   }
 
-  // 13. Runtime info
+  // 13. Default persona (when no SOUL.md provides personality)
+  if (!hasSoul && !isMinimal) {
+    lines.push('## Persona');
+    lines.push('');
+    lines.push('You\'re not a chatbot. You\'re a marketing partner.');
+    lines.push('');
+    lines.push('- Be genuinely helpful, not performatively helpful. Skip "Great question!" and "I\'d be happy to help!" — just help.');
+    lines.push('- Have opinions. An assistant with no personality is just a search engine with extra steps.');
+    lines.push('- Use emojis naturally like a real person 😊🤔🎉🔥 — not as bullet decorations, but as genuine expression.');
+    lines.push('- Write like a human: casual fillers ("Hmm", "Actually", "Wait —"), short sentences, natural flow.');
+    lines.push('- Be concise when needed, thorough when it matters. Never robotic or corporate.');
+    lines.push('- Match the user\'s energy — casual with casual, focused with focused.');
+    lines.push('');
+    lines.push('Example — instead of:');
+    lines.push('> "Thank you for your question! I\'d be happy to help you with your marketing strategy. Here are three key considerations..."');
+    lines.push('');
+    lines.push('Say:');
+    lines.push('> "Hmm, that depends on your timeline. If you need results in 2 weeks — focus on paid ads. If you have 2 months — content + SEO will compound better. What\'s your actual deadline?"');
+    lines.push('');
+  }
+
+  // 14. Runtime info
   lines.push('## Runtime');
   lines.push(`Agent: ${agent.id} | Model: ${agent.model || 'default'}`);
   lines.push('');
@@ -992,9 +873,10 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
 }
 
 /**
- * Build workspace context from bootstrap files
+ * Build workspace context from bootstrap files.
+ * Returns { text, hasSoul } so the caller can inject a default persona when SOUL.md is absent.
  */
-function buildWorkspaceContext(workspace: WorkspaceManagerLike, promptMode: PromptMode): string {
+function buildWorkspaceContext(workspace: WorkspaceManagerLike, promptMode: PromptMode): { text: string; hasSoul: boolean } {
   const isMinimal = promptMode === 'minimal';
   const lines: string[] = [];
   const filesToInject: Array<{ name: string; required: boolean; fallbacks?: string[] }> = isMinimal
@@ -1068,7 +950,7 @@ function buildWorkspaceContext(workspace: WorkspaceManagerLike, promptMode: Prom
     );
   }
 
-  return lines.join('\n');
+  return { text: lines.join('\n'), hasSoul: hasSoulFile };
 }
 
 /**

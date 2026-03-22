@@ -12,7 +12,6 @@ import {
   AgentRequest,
   AgentResponse,
   OutputSpec,
-  QualityCheck,
   ReviewResult,
   RunRequest,
   RunResponse,
@@ -30,75 +29,10 @@ import { assembleContext } from '../context/assembler';
 import { buildRollingSessionSummary, formatSessionSummary } from '../sessions/summary';
 import { addAgentUsage, addToolTelemetry, createRequestTrace, flushRequestTrace } from '../observability/request-trace';
 
-function safeLower(input: string): string {
-  return input.toLowerCase();
-}
-
 function safeTrim(input: string, maxChars = 240): string {
   return input.replace(/\s+/g, ' ').trim().slice(0, maxChars);
 }
 
-function tokenize(text: string): string[] {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .split(/\s+/)
-    .map((token) => token.trim())
-    .filter((token) => token.length >= 4);
-}
-
-function extractSalientTerms(text: string, limit: number): string[] {
-  const counts = new Map<string, number>();
-  for (const token of tokenize(text)) {
-    counts.set(token, (counts.get(token) || 0) + 1);
-  }
-  return Array.from(counts.entries())
-    .sort((a, b) => b[1] - a[1])
-    .map(([token]) => token)
-    .slice(0, limit);
-}
-
-function estimateLexicalDensity(text: string): number {
-  const tokens = tokenize(text);
-  if (tokens.length === 0) return 0;
-  const unique = new Set(tokens);
-  return unique.size / tokens.length;
-}
-
-function normalizeNumericToken(token: string): string {
-  return token.replace(/,/g, '').replace(/\+$/, '').trim();
-}
-
-function extractNumericTokens(text: string): string[] {
-  const cleaned = text
-    .replace(/^\s*\d+\.\s+/gm, '')
-    .replace(/^\s*[-*]\s+/gm, '');
-  const matches = cleaned.match(/\b\d[\d.,]*\+?\b/g) || [];
-  return matches
-    .map(normalizeNumericToken)
-    .filter((token) => token.length > 0);
-}
-
-function hasStructuredActions(content: string, format: OutputSpec['format']): boolean {
-  const listLike = /(^|\n)\s*(?:[-*]|\d+\.)\s+\S+/m.test(content);
-  if (listLike) return true;
-
-  const paragraphs = content
-    .split(/\n{2,}/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  if (format === 'plan' || format === 'bullet' || format === 'thread') {
-    return paragraphs.length >= 2;
-  }
-
-  const sentenceCount = content
-    .split(/[.!?]\s+/)
-    .map((segment) => segment.trim())
-    .filter(Boolean)
-    .length;
-  return sentenceCount >= 2;
-}
 
 const DELIVERABLE_OPEN_TAG = '<deliverable>';
 const DELIVERABLE_CLOSE_TAG = '</deliverable>';
@@ -144,7 +78,7 @@ function parseReviewResult(text: string): ReviewResult {
         verdict: 'revise',
         issues: [safeTrim(text, 280)],
         strengths: [],
-        recommendedEdits: ['Improve specificity and alignment to the brief.'],
+        recommendedEdits: [safeTrim(text, 280)],
       };
     }
     return fallback;
@@ -165,41 +99,6 @@ function parseReviewResult(text: string): ReviewResult {
   }
 }
 
-function runQualityCheck(content: string, handoff: AgentHandoff, outputSpec: OutputSpec): QualityCheck {
-  const normalized = safeLower(content);
-  const goalTerms = extractSalientTerms([
-    handoff.taskGoal,
-    handoff.expectedOutput,
-    ...handoff.constraints,
-  ].join(' '), 8);
-  const goalMatches = goalTerms.filter((term) => normalized.includes(term)).length;
-  const minLength = outputSpec.length === 'short' ? 60 : outputSpec.length === 'long' ? 220 : 120;
-  const tooShort = content.trim().length < minLength;
-  const tooGeneric = /as an ai|it depends|generic|overall/i.test(content);
-  const lexicalDensity = estimateLexicalDensity(content);
-  const hasStructure = hasStructuredActions(content, outputSpec.format);
-
-  const evidenceText = [
-    handoff.userIntent,
-    handoff.taskGoal,
-    handoff.expectedOutput,
-    ...handoff.keyFacts,
-    ...handoff.sourceSnippets,
-  ].join(' ').toLowerCase();
-
-  const evidenceNumbers = new Set(extractNumericTokens(evidenceText));
-  const contentNumbers = extractNumericTokens(content);
-  const unsupportedNumericClaims = contentNumbers.filter((token) => !evidenceNumbers.has(token));
-
-  return {
-    hasClearGoalMatch: goalMatches >= Math.min(2, goalTerms.length),
-    hasEnoughSpecificity: content.trim().length >= minLength && lexicalDensity >= 0.45,
-    hasActionableContent: hasStructure,
-    hasUnsupportedClaims: unsupportedNumericClaims.length > 0,
-    tooGeneric,
-    tooShort,
-  };
-}
 
 function buildReviewPrompt(params: {
   handoff: AgentHandoff;
@@ -222,14 +121,7 @@ function buildReviewPrompt(params: {
 
 function buildHandoffPrompt(handoff: AgentHandoff, outputSpec: OutputSpec): string {
   const lines: string[] = [];
-  lines.push('Use this handoff packet to complete the task.');
-  lines.push('Output contract: return ONLY one deliverable wrapped in exact tags below.');
-  lines.push(`Start with ${DELIVERABLE_OPEN_TAG} and end with ${DELIVERABLE_CLOSE_TAG}.`);
-  lines.push(`Example: ${DELIVERABLE_OPEN_TAG}Your final user-facing answer here.${DELIVERABLE_CLOSE_TAG}`);
-  lines.push('Do not include commentary outside these tags unless user explicitly asks for explanation.');
-  lines.push('Do not add framing headers, prefaces, or postscript evaluation sections.');
-  lines.push('Do not fabricate metrics, case-study outcomes, or numeric claims unless they are in provided facts/sources.');
-  lines.push('If evidence is missing, use qualitative wording and avoid made-up proof points.');
+  lines.push(`Wrap your final answer in ${DELIVERABLE_OPEN_TAG}...${DELIVERABLE_CLOSE_TAG}. No commentary outside the tags.`);
   lines.push(`Intent: ${handoff.userIntent}`);
   lines.push(`Goal: ${handoff.taskGoal}`);
   if (handoff.targetAudience) lines.push(`Audience: ${handoff.targetAudience}`);
@@ -403,16 +295,7 @@ export class AgentOrchestrator {
       }));
     }
 
-    let enhancedMessage = request.message;
-    if (request.message) {
-      const hasUrl = /https?:\/\/[^\s]+/.test(request.message);
-      const hasTwitterUrl = /https?:\/\/(x\.com|twitter\.com)[^\s]*/.test(request.message);
-      if (hasTwitterUrl) {
-        enhancedMessage = `${request.message}\n\n[Note: Use fetch_tweet tool to read this tweet]`;
-      } else if (hasUrl) {
-        enhancedMessage = `${request.message}\n\n[Note: Use fetch_url tool to read this URL]`;
-      }
-    }
+    const enhancedMessage = request.message;
 
     if (enhancedMessage) {
       messages.push({
@@ -455,10 +338,11 @@ export class AgentOrchestrator {
   ): Promise<RunResponse> {
     const directAgent = await ensureAgentRegistered(request.agentId);
     const isSubAgentSession = request.sessionId.includes('__agent__');
+    const userId = request.userId || 'default_user';
     const agentContext: AgentContext = {
       sessionId: request.sessionId,
       projectId: request.projectId,
-      userId: 'default_user',
+      userId,
       messages,
       tools: directAgent.tools || [],
       brandContext: buildBrandBrief(context),
@@ -549,6 +433,7 @@ export class AgentOrchestrator {
     trace: ReturnType<typeof createRequestTrace>,
   ): Promise<RunResponse> {
     const userMessage = request.message || messages[messages.length - 1]?.content || '';
+    const userId = request.userId || 'default_user';
     const route = await classifyRoute(userMessage);
     const summaryObj = await this.sessionManager.getSessionSummary(request.sessionId);
     const summaryText = formatSessionSummary(summaryObj);
@@ -587,7 +472,7 @@ export class AgentOrchestrator {
     const specialistContext: AgentContext = {
       sessionId: this.buildSubAgentSessionId(request.sessionId, route.primaryAgent),
       projectId: request.projectId,
-      userId: 'default_user',
+      userId,
       messages: specialistMessages,
       tools: specialistTools,
       brandContext: buildBrandBrief(context),
@@ -644,7 +529,7 @@ export class AgentOrchestrator {
       const reviewContext: AgentContext = {
         sessionId: this.buildSubAgentSessionId(request.sessionId, reviewerAgentId),
         projectId: request.projectId,
-        userId: 'default_user',
+        userId,
         messages: [{ role: 'user', content: reviewPrompt, timestamp: new Date() }],
         tools: (await ensureAgentRegistered(reviewerAgentId)).tools || [],
         handoff,
@@ -704,46 +589,6 @@ export class AgentOrchestrator {
       }
     }
     trace.numberOfReviewPasses = reviewPasses;
-
-    const quality = runQualityCheck(finalContent, handoff, outputSpec);
-    const qualityFailed = !quality.hasClearGoalMatch
-      || !quality.hasEnoughSpecificity
-      || !quality.hasActionableContent
-      || quality.hasUnsupportedClaims
-      || quality.tooGeneric
-      || quality.tooShort;
-    if (qualityFailed) {
-      const miniFixContext: AgentContext = {
-        ...specialistContext,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              `Return output only inside ${DELIVERABLE_OPEN_TAG}...${DELIVERABLE_CLOSE_TAG}.`,
-              'Revise this draft to be natural and direct.',
-              'Keep only the user-facing deliverable (no preface, no "improvements" section).',
-              'Remove any invented metrics, outcomes, or unsupported numeric claims.',
-              'Improve specificity with concrete wording, but do not add fake proof points.',
-              '',
-              finalContent,
-            ].join('\n'),
-            timestamp: new Date(),
-          },
-        ],
-        budget: resolveTokenBudget({ agentId: route.primaryAgent, mode: 'balanced' }),
-      };
-      await this.sessionManager.addMessage(specialistContext.sessionId, {
-        role: 'user',
-        content: miniFixContext.messages[0]?.content || '',
-        timestamp: Date.now(),
-      });
-      const miniFixRun = await runAgent(route.primaryAgent, miniFixContext);
-      addAgentUsage(trace, route.primaryAgent, miniFixRun.usage
-        ? { promptTokens: miniFixRun.usage.promptTokens, completionTokens: miniFixRun.usage.completionTokens }
-        : undefined);
-      addToolTelemetry(trace, miniFixRun.toolTelemetry);
-      finalContent = normalizeDeliverableOutput(miniFixRun.content);
-    }
 
     await this.sessionManager.addMessage(specialistContext.sessionId, {
       role: 'assistant',

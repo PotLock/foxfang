@@ -14,6 +14,7 @@ export interface ProviderConfig {
   enabled: boolean;
   baseUrl?: string;
   defaultModel?: string;
+  smallModel?: string;
   models?: string[];
   headers?: Record<string, string>;
   apiType?: string;
