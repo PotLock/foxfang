@@ -18,6 +18,7 @@ import { registerMemoryCommand } from './commands/memory';
 import { registerStatusCommand } from './commands/status';
 import { registerOutreachCommand } from './commands/outreach';
 import { registerDashboardCommand } from './commands/dashboard';
+import { registerCopilotCommand } from './commands/copilot';
 import { getVersion } from './version';
 
 export async function buildProgram(): Promise<Command> {
@@ -50,6 +51,7 @@ export async function buildProgram(): Promise<Command> {
   await registerStatusCommand(program);
   await registerOutreachCommand(program);
   await registerDashboardCommand(program);
+  await registerCopilotCommand(program);
 
   // Add help text
   program.addHelpText('after', `

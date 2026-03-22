@@ -102,6 +102,11 @@ export function initializeProviders(configs: ProviderConfig[]): void {
           const { KimiCodingProvider } = require('./kimi');
           provider = new KimiCodingProvider(config);
           break;
+        case 'github-copilot': {
+          const { GitHubCopilotProvider } = require('./github-copilot');
+          provider = new GitHubCopilotProvider(config);
+          break;
+        }
         case 'openrouter':
         case 'ollama':
         case 'custom': {
