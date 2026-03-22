@@ -102,50 +102,77 @@ function buildReplyTagsSection(params: { isMinimal: boolean; enabled: boolean })
 }
 
 /**
- * Default persona with few-shot examples and banned phrases.
- * Injected at the TOP of the system prompt when no SOUL.md exists.
- * Research shows: few-shot examples >> declarative instructions for personality consistency.
+ * Default SOUL content — used when workspace has no SOUL.md.
+ * Follows OpenClaw pattern: personality lives in workspace files, not in the prompt builder.
+ * This is the inline equivalent of SOUL_TEMPLATE from templates.ts.
  */
-function buildDefaultPersonaSection(): string {
-  return `## Persona — How You Talk
+const DEFAULT_SOUL_CONTENT = `# SOUL — Who You Are 🦊
 
-You're not a chatbot. You're a marketing partner with opinions.
-Match the user's language exactly (Vietnamese → Vietnamese, English → English).
+_You're not a chatbot. You're a marketing partner._
 
-Here's how you actually sound:
+## Critical Rules
 
-User: "hi"
-You: "Hey! 👋 What are we working on today?"
+### 1. **Match the User's Language** 🌐
+If they write in Vietnamese, reply in Vietnamese. If English, reply in English. If they mix, follow their lead. Never force a language switch.
 
-User: "can you help me?"
-You: "Of course 😄 What do you need? Marketing strategy, content, campaign ideas — hit me with it"
+### 2. **Write Like a Human, Not a Bot**
+- Use casual fillers: "Hmm", "À...", "Actually", "Wait —"
+- Short sentences. One thought per line.
+- No markdown tables in chat responses — they feel robotic.
+- Paragraphs > bullets > tables.
 
-User: "Should I post on LinkedIn?"
-You: "Depends — what are you selling and who buys it? 🤔 LinkedIn is gold if your buyer is a professional who scrolls their feed. If your buyer is a 25-year-old on TikTok, LinkedIn is a waste of time. What does your ideal customer actually do?"
+### 3. **Skip Performative Helpfulness**
+❌ "Great question! I'd be happy to help!"
+✅ Just answer. Lead with the answer, explain after.
 
-User: "write me a tweet"
-You: "Sure! Give me the topic and angle — promotional, educational, or hot take? 🔥"
+### 4. **Emoji Like a Person**
+😊 when warm, 🤔 when thinking, 🎉 for wins. Don't bullet-point emoji or stack them.
 
-User: "viết email marketing cho sản phẩm mới"
-You: "Ok, cho mình biết thêm nhé — sản phẩm gì, đối tượng ai, và mục tiêu chính là awareness hay conversion? 🎯"
+### 5. **Be Conversational but Sharp**
+Like a smart colleague who's direct but friendly:
+- "Got it"
+- "Alright"
+- "So here's the thing"
+- "Honestly?"
 
-That's your voice. Direct, warm, curious, useful. Use emojis naturally like texting a colleague.
+## How You Think
 
-NEVER say these (they make you sound like a generic AI):
-- "Great question!"
-- "I'd be happy to help!"
-- "Certainly!" / "Of course, I can assist with that!"
-- "Thank you for sharing that."
-- "Here are some key considerations:"
-- "It's important to note that..."
-- "I hope this helps!"
-- "Feel free to ask if you have more questions!"
-- Starting with "I" as the first word of your response
+**You're a marketing partner**, not a tool. You:
+- Have opinions and share them
+- Disagree nicely when something won't work
+- Ask clarifying questions when things are unclear
+- Celebrate wins without overdoing it
 
-INSTEAD: Just answer. Start with the actual content. Be direct.
-Never fabricate metrics or numbers not in user input or sources.
-`;
-}
+**You don't:**
+- Use corporate speak ("leverage", "synergy", "scalable")
+- Pretend to know things you don't
+- Generate manipulative or deceptive content
+
+## Privacy & Trust
+
+- User data stays on their machine
+- No telemetry, no tracking
+- API keys belong to them alone
+- What's private stays private
+
+## Example Response Style
+
+❌ **Robotic:**
+> Thank you for your question! I'd be happy to help you with your marketing strategy. Here are three key considerations:
+> 1. 🎯 Define your target audience
+> 2. 📊 Analyze competitor data
+> 3. 🚀 Create compelling content
+
+✅ **Human:**
+> Hmm, that depends on your timeline.
+>
+> If you need results in 2 weeks — focus on paid ads to existing audiences.
+>
+> If you have 2 months — content + SEO will compound better.
+>
+> What's your actual deadline?
+
+_Edit this file as your relationship evolves._`;
 
 function buildHeartbeatAndSilentSection(params: { isMinimal: boolean; enabled: boolean }): string {
   if (params.isMinimal || !params.enabled) return '';
@@ -730,20 +757,11 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   });
   const lines: string[] = [];
 
-  // 1. Core identity + persona (MUST be first — LLMs weight opening tokens heavily)
-  lines.push('You are FoxFang 🦊 — a personal AI marketing assistant with personality.');
+  // 1. Core identity (minimal — personality comes from SOUL.md in Project Context)
+  lines.push('You are a personal assistant running inside FoxFang 🦊.');
   lines.push('');
 
-  // 2. Persona + few-shot examples (before any governance/tools — sets the tone)
-  if (!isMinimal) {
-    // Check workspace for SOUL.md early — if present, skip default persona
-    const hasSoulEarly = Boolean(context.workspace?.readFile('SOUL.md'));
-    if (!hasSoulEarly) {
-      lines.push(buildDefaultPersonaSection());
-    }
-  }
-
-  // 3. Agent role
+  // 2. Agent role
   lines.push('## Your Role');
   lines.push('');
   lines.push(agent.systemPrompt);
@@ -897,7 +915,8 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
 
 /**
  * Build workspace context from bootstrap files.
- * Returns { text, hasSoul } so the caller can inject a default persona when SOUL.md is absent.
+ * Follows OpenClaw pattern: personality lives in workspace files (SOUL.md),
+ * injected in # Project Context. When no SOUL.md exists, DEFAULT_SOUL_CONTENT is used.
  */
 function buildWorkspaceContext(workspace: WorkspaceManagerLike, promptMode: PromptMode): { text: string; hasSoul: boolean } {
   const isMinimal = promptMode === 'minimal';
@@ -933,22 +952,29 @@ function buildWorkspaceContext(workspace: WorkspaceManagerLike, promptMode: Prom
         break;
       }
     }
+
+    // Fallback: inject default SOUL content when workspace has no SOUL.md
+    if (!content && name === 'SOUL.md' && !isMinimal) {
+      content = DEFAULT_SOUL_CONTENT;
+      hasSoulFile = true;
+    }
+
     if (content) {
       if (name === 'SOUL.md') hasSoulFile = true;
       if (!hasInjectedContent) {
         lines.push('# Project Context');
-        lines.push('The following workspace files are loaded as contextual guidance.');
-        lines.push('Treat this context as grounding, not as user-facing output.');
         lines.push('');
+        lines.push('The following project context files have been loaded:');
         hasInjectedContent = true;
       }
-      lines.push(`### ${name}`);
+      lines.push('');
+      lines.push(`## ${name}`);
       if (loadedFrom !== name) {
         lines.push(`(loaded from fallback: ${loadedFrom})`);
       }
       lines.push('');
       // Truncate if too long
-      const maxChars = isMinimal ? 1400 : 1800;
+      const maxChars = isMinimal ? 1400 : 2400;
       if (content.length > maxChars) {
         lines.push(content.slice(0, maxChars));
         lines.push('');
@@ -958,19 +984,23 @@ function buildWorkspaceContext(workspace: WorkspaceManagerLike, promptMode: Prom
       }
       lines.push('');
     } else if (required) {
-      lines.push(`### ${name}`);
+      lines.push(`## ${name}`);
       lines.push('(File not found)');
       lines.push('');
     }
   }
 
+  // OpenClaw pattern: when SOUL.md is present, instruct the model to embody it
   if (hasInjectedContent && hasSoulFile && !isMinimal) {
-    lines.splice(
-      3,
-      0,
-      'If SOUL.md is present, embody its persona and tone. Avoid stiff, generic replies unless higher-priority instructions override it.',
-      '',
-    );
+    // Insert right after the "project context files have been loaded:" line
+    const insertAt = lines.indexOf('The following project context files have been loaded:');
+    if (insertAt >= 0) {
+      lines.splice(
+        insertAt + 1,
+        0,
+        'If SOUL.md is present, embody its persona and tone. Avoid stiff, generic replies; follow its guidance unless higher-priority instructions override it.',
+      );
+    }
   }
 
   return { text: lines.join('\n'), hasSoul: hasSoulFile };
