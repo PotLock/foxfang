@@ -30,9 +30,10 @@ export interface CronServiceDeps {
 export class CronService {
   private deps: CronServiceDeps;
   private timer: NodeJS.Timeout | null = null;
-  private runningJobs = new Map<string, CronRunLog>();
+  private runningJobs = new Map<string, CronRunLog | null>();
   private isStarted = false;
-  private checkIntervalMs = 10000; // Check every 10 seconds
+  private static readonly MAX_SLEEP_MS = 60_000;
+  private static readonly MIN_SLEEP_MS = 1_000;
 
   constructor(deps: CronServiceDeps) {
     this.deps = deps;
@@ -92,6 +93,7 @@ export class CronService {
     }
 
     console.log(`[CronService] Added job: ${job.name} (${job.id}) - Next run: ${nextRunAtMs ? new Date(nextRunAtMs).toISOString() : 'never'}`);
+    this.wake();
     return job;
   }
 
@@ -110,6 +112,7 @@ export class CronService {
     }
 
     console.log(`[CronService] Updated job: ${job.name} (${job.id})`);
+    this.wake();
     return job;
   }
 
@@ -122,18 +125,21 @@ export class CronService {
 
     // Kill if running
     const runningLog = this.runningJobs.get(id);
-    if (runningLog) {
-      // Mark as killed
-      updateRunLog(runningLog.id, {
-        status: 'error',
-        error: 'Job removed while running',
-        endedAtMs: Date.now(),
-      });
+    if (this.runningJobs.has(id)) {
+      if (runningLog) {
+        // Mark as killed
+        updateRunLog(runningLog.id, {
+          status: 'error',
+          error: 'Job removed while running',
+          endedAtMs: Date.now(),
+        });
+      }
       this.runningJobs.delete(id);
     }
 
     deleteJob(id);
     console.log(`[CronService] Removed job: ${job.name} (${id})`);
+    this.wake();
     return true;
   }
 
@@ -164,6 +170,7 @@ export class CronService {
       return { success: false, error: 'Job already running' };
     }
 
+    this.runningJobs.set(id, null);
     await this.executeJobInternal(job);
     return { success: true };
   }
@@ -200,12 +207,54 @@ export class CronService {
   private scheduleNextCheck(): void {
     if (!this.isStarted) return;
 
+    const sleepMs = this.computeSleepMs();
+
     this.timer = setTimeout(() => {
       this.checkAndRunJobs().catch(err => {
         console.error('[CronService] Error checking jobs:', err);
         this.deps.onError?.(err);
       });
-    }, this.checkIntervalMs);
+    }, sleepMs);
+  }
+
+  /**
+   * Compute sleep duration until next job check
+   */
+  private computeSleepMs(): number {
+    const jobs = listJobs(false);
+    const now = Date.now();
+
+    let earliestNextRunAtMs: number | null = null;
+    for (const job of jobs) {
+      const nextRunAtMs = job.state.nextRunAtMs;
+      if (!nextRunAtMs) continue;
+      if (earliestNextRunAtMs === null || nextRunAtMs < earliestNextRunAtMs) {
+        earliestNextRunAtMs = nextRunAtMs;
+      }
+    }
+
+    if (earliestNextRunAtMs === null) {
+      return CronService.MAX_SLEEP_MS;
+    }
+
+    const deltaMs = earliestNextRunAtMs - now;
+    if (deltaMs <= 0) {
+      return CronService.MIN_SLEEP_MS;
+    }
+
+    return Math.max(CronService.MIN_SLEEP_MS, Math.min(deltaMs, CronService.MAX_SLEEP_MS));
+  }
+
+  /**
+   * Wake scheduler and re-arm timer with latest schedule
+   */
+  private wake(): void {
+    if (!this.isStarted) return;
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+    this.scheduleNextCheck();
   }
 
   /**
@@ -220,6 +269,8 @@ export class CronService {
     for (const job of pendingJobs) {
       // Skip if already running
       if (this.runningJobs.has(job.id)) continue;
+
+      this.runningJobs.set(job.id, null);
 
       // Execute the job
       this.executeJobInternal(job).catch(err => {

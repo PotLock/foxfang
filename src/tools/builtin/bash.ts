@@ -48,6 +48,7 @@ interface BashSession {
 
 // In-memory session registry
 const sessions = new Map<string, BashSession>();
+const completionWaiters = new Map<string, Set<() => void>>();
 let sessionCounter = 0;
 
 function sleep(ms: number): Promise<void> {
@@ -77,6 +78,44 @@ function cleanupOldSessions(): void {
       sessions.delete(id);
     }
   }
+}
+
+function notifyCompletionWaiters(sessionId: string): void {
+  const waiters = completionWaiters.get(sessionId);
+  if (!waiters) return;
+  completionWaiters.delete(sessionId);
+  for (const resolve of waiters) {
+    resolve();
+  }
+}
+
+async function waitForCompletion(sessionId: string, timeoutMs: number): Promise<boolean> {
+  const session = sessions.get(sessionId);
+  if (!session || session.status !== 'running') {
+    return true;
+  }
+
+  const boundedTimeoutMs = Math.max(1, Math.min(timeoutMs, MAX_TIMEOUT_MS));
+
+  return new Promise<boolean>((resolve) => {
+    const onComplete = () => {
+      clearTimeout(timeoutHandle);
+      resolve(true);
+    };
+
+    const timeoutHandle = setTimeout(() => {
+      const waiters = completionWaiters.get(sessionId);
+      waiters?.delete(onComplete);
+      if (waiters && waiters.size === 0) {
+        completionWaiters.delete(sessionId);
+      }
+      resolve(false);
+    }, boundedTimeoutMs);
+
+    const waiters = completionWaiters.get(sessionId) || new Set<() => void>();
+    waiters.add(onComplete);
+    completionWaiters.set(sessionId, waiters);
+  });
 }
 
 async function executeCommand(
@@ -167,7 +206,7 @@ async function executeCommand(
     child.on('error', (error) => {
       clearTimeout(timeoutHandle);
       session.status = 'failed';
-      sessions.delete(sessionId);
+      notifyCompletionWaiters(sessionId);
       reject(error);
     });
 
@@ -191,6 +230,8 @@ async function executeCommand(
         session.status = code === 0 ? 'completed' : 'failed';
         resolve({ session, output: outputBuffer });
       }
+
+      notifyCompletionWaiters(sessionId);
     });
 
     // If background mode, return immediately with session info
@@ -479,18 +520,31 @@ export class BashPollTool implements Tool {
         type: 'string',
         description: 'Session ID',
       },
+      timeout_ms: {
+        type: 'number',
+        description: 'Optional blocking timeout in milliseconds (max: 600000). If provided and session is running, waits until completion or timeout.',
+        maximum: 600000,
+      },
     },
     required: ['session_id'],
   };
 
-  async execute(args: { session_id: string }): Promise<ToolResult> {
+  async execute(args: { session_id: string; timeout_ms?: number }): Promise<ToolResult> {
     try {
-      const session = sessions.get(args.session_id);
+      let session = sessions.get(args.session_id);
       if (!session) {
         return {
           success: false,
           error: `Session ${args.session_id} not found`,
         };
+      }
+
+      if (session.status === 'running' && args.timeout_ms !== undefined) {
+        const requestedTimeout = Math.floor(Number(args.timeout_ms));
+        if (Number.isFinite(requestedTimeout) && requestedTimeout > 0) {
+          await waitForCompletion(session.id, requestedTimeout);
+        }
+        session = sessions.get(args.session_id) || session;
       }
 
       const runtime = Date.now() - session.startTime;
