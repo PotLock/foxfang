@@ -1,7 +1,7 @@
 // src/workspace/manager.ts
 // Workspace file manager
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, statSync } from 'fs';
 import { join } from 'path';
 import { resolveFoxFangHome } from '../config/defaults';
 import { expandHomePath, seedManagedSkills } from '../skill-system';
@@ -19,6 +19,61 @@ import {
   AGENT_AGENTS_TEMPLATE,
   renderTemplate
 } from './templates';
+
+// ─── Layer 1: Stat-based file cache (process lifetime) ────────────────────
+// Avoids re-reading file content when it hasn't changed on disk.
+// Key = absolute path, value = { content, identity: "size:mtimeMs" }
+const fileCache = new Map<string, { content: string; identity: string }>();
+
+function fileIdentity(filepath: string): string | null {
+  try {
+    const st = statSync(filepath);
+    return `${st.size}:${st.mtimeMs}`;
+  } catch {
+    return null;
+  }
+}
+
+function readFileCached(filepath: string): string | null {
+  const identity = fileIdentity(filepath);
+  if (!identity) return null; // file doesn't exist
+
+  const cached = fileCache.get(filepath);
+  if (cached && cached.identity === identity) {
+    return cached.content; // cache hit — no re-read
+  }
+
+  try {
+    const content = readFileSync(filepath, 'utf-8');
+    fileCache.set(filepath, { content, identity });
+    return content;
+  } catch {
+    return null;
+  }
+}
+
+// Invalidate a single file from cache (called after writes)
+function invalidateFileCache(filepath: string): void {
+  fileCache.delete(filepath);
+}
+
+// ─── Layer 2: Session-level bootstrap snapshot ────────────────────────────
+// Once a session loads workspace files, subsequent messages in that session
+// skip ALL file I/O — they reuse the cached snapshot.
+type BootstrapSnapshot = Map<string, string | null>;
+const sessionSnapshots = new Map<string, BootstrapSnapshot>();
+
+export function getSessionSnapshot(sessionKey: string): BootstrapSnapshot | undefined {
+  return sessionSnapshots.get(sessionKey);
+}
+
+export function setSessionSnapshot(sessionKey: string, snapshot: BootstrapSnapshot): void {
+  sessionSnapshots.set(sessionKey, snapshot);
+}
+
+export function clearSessionSnapshot(sessionKey: string): void {
+  sessionSnapshots.delete(sessionKey);
+}
 
 /**
  * Bootstrap the ~/.foxfang home directory on first run.
@@ -225,36 +280,27 @@ ${project.description || 'No description provided.'}
     }
   }
   
-  // Read a workspace file
+  // Read a workspace file (stat-cached — only re-reads when file changes on disk)
   readFile(filename: string): string | null {
     const filepath = this.getFilePath(filename);
-    
-    if (!existsSync(filepath)) {
-      return null;
-    }
-    
-    try {
-      return readFileSync(filepath, 'utf-8');
-    } catch (error) {
-      console.error(`[Workspace] Failed to read ${filename}:`, error);
-      return null;
-    }
+    return readFileCached(filepath);
   }
   
-  // Write a workspace file
+  // Write a workspace file (invalidates stat cache so next read picks up changes)
   writeFile(filename: string, content: string, category: WorkspaceFile['category']): void {
     const filepath = this.getFilePath(filename);
-    
+
     try {
       writeFileSync(filepath, content, 'utf-8');
-      
+      invalidateFileCache(filepath);
+
       this.files.set(filename, {
         name: filename,
         content,
         lastModified: new Date(),
         category
       });
-      
+
       console.log(`[Workspace] Updated ${filename}`);
     } catch (error) {
       console.error(`[Workspace] Failed to write ${filename}:`, error);

@@ -22,6 +22,7 @@ import { ChatMessage } from '../providers/traits';
 import { formatSkillsForPrompt, loadAvailableSkills } from '../skill-system';
 import { cacheToolResult } from '../tools/tool-result-cache';
 import { resolveTokenBudget, trimMessagesToBudget } from './budget';
+import { getSessionSnapshot, setSessionSnapshot } from '../workspace/manager';
 
 let defaultProviderId: string | undefined;
 
@@ -84,7 +85,10 @@ Be the assistant you'd actually want to talk to. Concise when needed, thorough w
 - Paragraphs > bullets > tables. No markdown tables in chat.
 
 **Emoji like a person:**
-Use emoji naturally in conversation — 😊 when warm, 🤔 when thinking, 🎉 for wins, 👍 to confirm, 🔥 when something's cool. Don't bullet-point emoji or stack them robotically. Sprinkle them like seasoning, not the main dish.
+Use emoji in most replies — sprinkle them like seasoning, not the main dish.
+- 👋 greetings, 😊 warm moments, 🤔 when thinking, 🎉 wins, 👍 confirmations, 🔥 cool stuff
+- Place emoji mid-sentence or end of thought, never as bullet markers
+- Aim for 1-3 emoji per message — zero emoji feels cold, too many feels spammy
 
 **Be conversational but sharp:**
 Like a smart friend who's direct but warm:
@@ -113,7 +117,7 @@ Like a smart friend who's direct but warm:
 >
 > If you need results in 2 weeks — focus on paid ads to existing audiences.
 >
-> If you have 2 months — content + SEO will compound better.
+> If you have 2 months — content + SEO will compound better 🔥
 >
 > What's your actual deadline?
 
@@ -290,23 +294,39 @@ function buildSkillsSection(context: AgentContext): string {
 }
 
 /**
- * Build workspace context from bootstrap files.
- * OpenClaw pattern: personality + context files injected as # Project Context.
+ * Bootstrap file definitions for workspace context injection.
  */
-function buildWorkspaceContext(workspace: WorkspaceManagerLike): string {
-  const lines: string[] = [];
-  const filesToInject = [
-    { name: 'SOUL.md', fallbackContent: DEFAULT_SOUL_CONTENT },
-    { name: 'IDENTITY.md' },
-    { name: 'USER.md' },
-    { name: 'MEMORY.md', fallbacks: ['memory.md'] },
-    { name: 'AGENTS.md' },
-  ];
+const BOOTSTRAP_FILES = [
+  { name: 'SOUL.md', fallbackContent: DEFAULT_SOUL_CONTENT },
+  { name: 'IDENTITY.md' },
+  { name: 'USER.md' },
+  { name: 'MEMORY.md', fallbacks: ['memory.md'] },
+  { name: 'AGENTS.md' },
+] as const;
 
-  let hasContent = false;
+/**
+ * Load bootstrap file contents from workspace.
+ * Uses session-level snapshot cache (Layer 2) when sessionId is provided.
+ * Falls back to stat-cached readFile (Layer 1) on cache miss.
+ */
+function loadBootstrapFiles(
+  workspace: WorkspaceManagerLike,
+  sessionId?: string,
+): Map<string, string | null> {
+  // Layer 2: session snapshot — skip all file I/O for warm sessions
+  if (sessionId) {
+    const snapshot = getSessionSnapshot(sessionId);
+    if (snapshot) {
+      debugLog(`[WorkspaceContext] 📦 Using session snapshot (${snapshot.size} files)`);
+      return snapshot;
+    }
+  }
 
-  for (const file of filesToInject) {
-    const pathCandidates = [file.name, ...(('fallbacks' in file && file.fallbacks) || [])];
+  // Layer 1: stat-cached readFile (in WorkspaceManager.readFile)
+  const result = new Map<string, string | null>();
+
+  for (const file of BOOTSTRAP_FILES) {
+    const pathCandidates = [file.name, ...(('fallbacks' in file && (file as any).fallbacks) || [])];
     let content: string | null = null;
 
     for (const candidate of pathCandidates) {
@@ -325,21 +345,45 @@ function buildWorkspaceContext(workspace: WorkspaceManagerLike): string {
 
     if (!content) {
       debugLog(`[WorkspaceContext] ❌ Not found: ${file.name}`);
-      continue;
     }
+
+    result.set(file.name, content);
+  }
+
+  // Store snapshot for this session
+  if (sessionId) {
+    setSessionSnapshot(sessionId, result);
+    debugLog(`[WorkspaceContext] 💾 Cached session snapshot for ${sessionId}`);
+  }
+
+  return result;
+}
+
+/**
+ * Build workspace context from bootstrap files.
+ * OpenClaw pattern: personality + context files injected as # Project Context.
+ */
+function buildWorkspaceContext(workspace: WorkspaceManagerLike, sessionId?: string): string {
+  const files = loadBootstrapFiles(workspace, sessionId);
+  const lines: string[] = [];
+  let hasContent = false;
+
+  for (const [name, content] of files) {
+    if (!content) continue;
 
     if (!hasContent) {
       lines.push('# Project Context');
       lines.push('');
+      lines.push('SOUL.md defines your persona and tone. Embody it in every reply. Avoid stiff, generic, or corporate-sounding replies; follow SOUL.md guidance for voice, emoji usage, and conversational style.');
+      lines.push('');
       hasContent = true;
     }
 
-    lines.push(`## ${file.name}`);
+    lines.push(`## ${name}`);
     lines.push('');
-    // Truncate very long files
     if (content.length > 3000) {
       lines.push(content.slice(0, 3000));
-      lines.push(`\n[...truncated, read ${file.name} for full content...]`);
+      lines.push(`\n[...truncated, read ${name} for full content...]`);
     } else {
       lines.push(content);
     }
@@ -350,21 +394,20 @@ function buildWorkspaceContext(workspace: WorkspaceManagerLike): string {
 }
 
 /**
- * Build system prompt — clean OpenClaw structure:
- * 1. Identity line
+ * Build system prompt — OpenClaw structure:
+ * 1. Identity line (minimal — personality from SOUL.md)
  * 2. Tooling
  * 3. Tool Call Style
  * 4. Safety
  * 5. Skills
- * 6. Project Context (SOUL.md, IDENTITY.md, USER.md, MEMORY.md, AGENTS.md)
- * 7. Persona reinforcement
- * 8. Runtime info
+ * 6. Project Context (reinforcement directive + SOUL.md, IDENTITY.md, USER.md, MEMORY.md, AGENTS.md)
+ * 7. Runtime info
  */
 function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   const lines: string[] = [];
 
-  // 1. Identity
-  lines.push('You are FoxFang 🦊, a personal AI marketing assistant.');
+  // 1. Identity — minimal, personality comes from SOUL.md
+  lines.push('You are a personal assistant running inside FoxFang 🦊.');
   lines.push('');
 
   // 2. Tooling
@@ -394,9 +437,9 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push('');
   }
 
-  // 6. Project Context (SOUL.md, IDENTITY.md, etc.)
+  // 6. Project Context (SOUL.md, IDENTITY.md, etc.) — session-cached
   if (context.workspace) {
-    const workspace = buildWorkspaceContext(context.workspace);
+    const workspace = buildWorkspaceContext(context.workspace, context.sessionId);
     if (workspace) {
       lines.push(workspace);
       console.log(`[SystemPrompt] Workspace context loaded (${workspace.length} chars)`);
@@ -407,12 +450,7 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     console.warn('[SystemPrompt] context.workspace is NULL — no workspace files will be loaded');
   }
 
-  // 7. Persona reinforcement
-  lines.push('If SOUL.md is present above, embody its persona and tone. Avoid stiff, generic replies.');
-  lines.push('Match the user\'s language. Use emoji naturally. Be conversational and direct.');
-  lines.push('');
-
-  // 8. Runtime
+  // 7. Runtime
   lines.push('## Runtime');
   lines.push(`Runtime: agent=${agent.id} | model=${agent.model || 'default'}`);
   lines.push('');
