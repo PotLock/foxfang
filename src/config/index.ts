@@ -106,7 +106,17 @@ export interface AppConfig {
   heartbeat: { enabled: boolean; intervalMs: number };
   cron: { enabled: boolean; pollIntervalMs: number };
   security: { allowedOrigins: string[] };
-  gateway: { port: number; host: string; enableCors: boolean; maxRequestSize: string };
+  gateway: {
+    port: number;
+    host: string;
+    enableCors: boolean;
+    maxRequestSize: string;
+    auth?: {
+      mode: 'token' | 'password';
+      token?: string;
+      password?: string;
+    };
+  };
   // Optional web tool API keys (now stored in credentials, config keeps only ref)
   braveSearch?: { apiKey?: string; apiKeyRef?: string };
   firecrawl?: { apiKey?: string; apiKeyRef?: string; baseUrl?: string };

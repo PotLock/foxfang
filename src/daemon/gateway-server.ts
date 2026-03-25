@@ -9,7 +9,7 @@
  */
 
 import { createServer, IncomingMessage, ServerResponse } from 'http';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 import { randomBytes } from 'crypto';
 import { WebSocketServer, WebSocket } from 'ws';
@@ -38,8 +38,8 @@ const ENV_CHANNELS = (process.env.FOXFANG_CHANNELS || '')
   .split(',')
   .map((channel) => channel.trim())
   .filter(Boolean);
-const SETUP_USERNAME = process.env.SETUP_USERNAME || '';
-const SETUP_PASSWORD = process.env.SETUP_PASSWORD || '';
+// Gateway auth will be loaded from config dynamically
+let GATEWAY_AUTH: { mode: 'token' | 'password'; token?: string; password?: string } | null = null;
 
 type ProviderPreset = {
   id: string;
@@ -265,23 +265,30 @@ class GatewayServer {
       return;
     }
 
+    // Setup routes (with Basic Auth)
     if (url.pathname.startsWith('/setup')) {
       await this.handleSetupRoute(req, res, method, url.pathname);
       return;
     }
 
-    if (method === 'GET' && url.pathname === '/') {
-      this.sendJson(res, 200, {
-        name: 'foxfang-gateway',
-        status: 'running',
-        websocket: true,
-        health: '/health',
-        setup: '/setup',
-      });
+    // API routes (with Bearer Token Auth)
+    if (url.pathname.startsWith('/api')) {
+      await this.handleApiRoute(req, res, method, url.pathname);
       return;
     }
 
-    this.sendJson(res, 404, { error: 'Not found' });
+    // Serve UI static files (React SPA) - all other routes
+    // Check if requesting a static file (has extension)
+    const hasExtension = /\.[^/]+$/.test(url.pathname);
+    
+    if (hasExtension || url.pathname === '/') {
+      // Serve static file directly
+      const uiPath = url.pathname === '/' ? '/index.html' : url.pathname;
+      await this.serveStaticFile(res, '/ui' + uiPath);
+    } else {
+      // SPA fallback - serve index.html for client-side routes
+      await this.serveStaticFile(res, '/ui/index.html');
+    }
   }
 
   private async handleSetupRoute(
@@ -577,10 +584,174 @@ class GatewayServer {
     this.sendJson(res, 404, { error: 'Setup endpoint not found' });
   }
 
-  private isSetupAuthValid(req: IncomingMessage, res: ServerResponse): boolean {
-    if (!SETUP_USERNAME || !SETUP_PASSWORD) {
+  private async handleApiRoute(
+    req: IncomingMessage,
+    res: ServerResponse,
+    method: string,
+    pathname: string
+  ): Promise<void> {
+    // Auth check for API routes
+    if (!(await this.isApiAuthValid(req, res))) {
+      return;
+    }
+
+    // CORS headers for API
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    if (method === 'OPTIONS') {
+      res.statusCode = 204;
+      res.end();
+      return;
+    }
+
+    // GET /api/auth - Verify token and return user info
+    if (method === 'GET' && pathname === '/api/auth') {
+      this.sendJson(res, 200, {
+        ok: true,
+        authenticated: true,
+        timestamp: new Date().toISOString(),
+      });
+      return;
+    }
+
+    // GET /api/stats - Get dashboard stats
+    if (method === 'GET' && pathname === '/api/stats') {
+      this.sendJson(res, 200, {
+        projects: 5,
+        boards: 12,
+        campaigns: 8,
+        agents: 4,
+        activeTasks: 24,
+        completedTasks: 156,
+      });
+      return;
+    }
+
+    // GET /api/boards - List boards
+    if (method === 'GET' && pathname === '/api/boards') {
+      this.sendJson(res, 200, [
+        { id: 1, name: 'Content Calendar', tasks: 24, status: 'active' },
+        { id: 2, name: 'Q1 Marketing', tasks: 18, status: 'active' },
+        { id: 3, name: 'Social Media', tasks: 32, status: 'active' },
+        { id: 4, name: 'Product Launch', tasks: 45, status: 'paused' },
+      ]);
+      return;
+    }
+
+    // GET /api/campaigns - List campaigns
+    if (method === 'GET' && pathname === '/api/campaigns') {
+      this.sendJson(res, 200, [
+        { id: 1, name: 'Q1 Product Launch', status: 'active', progress: 65, budget: '$5,000' },
+        { id: 2, name: 'Social Media Blitz', status: 'active', progress: 42, budget: '$2,500' },
+      ]);
+      return;
+    }
+
+    // GET /api/agents - List agents
+    if (method === 'GET' && pathname === '/api/agents') {
+      this.sendJson(res, 200, [
+        { id: 1, name: 'Content Specialist', role: 'content-specialist', status: 'online', tasks: 156 },
+        { id: 2, name: 'Strategy Lead', role: 'strategy-lead', status: 'online', tasks: 89 },
+        { id: 3, name: 'Growth Analyst', role: 'growth-analyst', status: 'offline', tasks: 234 },
+      ]);
+      return;
+    }
+
+    // POST /api/gateway/regenerate-token - Generate new gateway token
+    if (method === 'POST' && pathname === '/api/gateway/regenerate-token') {
+      try {
+        const newToken = Array.from({ length: 32 }, () =>
+          'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 62)]
+        ).join('');
+
+        const config = await loadConfigWithCredentials();
+        config.gateway = {
+          ...config.gateway,
+          auth: {
+            ...(config.gateway?.auth || { mode: 'token' }),
+            token: newToken,
+          },
+        };
+        await saveConfig(config);
+
+        this.sendJson(res, 200, {
+          ok: true,
+          token: newToken,
+          message: 'Token regenerated successfully. You will need to login again with the new token.',
+        });
+      } catch (error) {
+        this.sendJson(res, 500, {
+          ok: false,
+          error: error instanceof Error ? error.message : 'Failed to regenerate token',
+        });
+      }
+      return;
+    }
+
+    this.sendJson(res, 404, { error: 'API endpoint not found' });
+  }
+
+  private async isApiAuthValid(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.statusCode = 401;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ error: 'Unauthorized. Provide Bearer token.' }));
+      return false;
+    }
+
+    const token = authHeader.slice(7);
+
+    // Load auth from config
+    try {
+      const config = await loadConfigWithCredentials();
+      const auth = config.gateway?.auth;
+
+      if (!auth || (auth.mode === 'token' && !auth.token) || (auth.mode === 'password' && !auth.password)) {
+        res.statusCode = 503;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({
+          error: 'Gateway auth is not configured. Run `pnpm foxfang wizard` to set up authentication.'
+        }));
+        return false;
+      }
+
+      // Support both token and password modes for API
+      const validToken = auth.mode === 'token' ? auth.token : auth.password;
+
+      if (token !== validToken) {
+        res.statusCode = 401;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ error: 'Invalid token.' }));
+        return false;
+      }
+    } catch (error) {
+      res.statusCode = 500;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ error: 'Failed to validate token.' }));
+      return false;
+    }
+
+    return true;
+  }
+
+  private async isSetupAuthValid(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
+    // Load auth from config
+    let auth: { mode: 'token' | 'password'; token?: string; password?: string } | undefined;
+    try {
+      const config = await loadConfigWithCredentials();
+      auth = config.gateway?.auth;
+    } catch (error) {
+      this.sendJson(res, 500, { error: 'Failed to load configuration.' });
+      return false;
+    }
+
+    if (!auth || (auth.mode === 'token' && !auth.token) || (auth.mode === 'password' && !auth.password)) {
       this.sendJson(res, 503, {
-        error: 'Setup auth is not configured. Set SETUP_USERNAME and SETUP_PASSWORD environment variables.',
+        error: 'Gateway auth is not configured. Run `pnpm foxfang wizard` to set up authentication.',
       });
       return false;
     }
@@ -601,7 +772,11 @@ class GatewayServer {
     const username = decoded.slice(0, separatorIndex);
     const password = decoded.slice(separatorIndex + 1);
 
-    if (username !== SETUP_USERNAME || password !== SETUP_PASSWORD) {
+    // For setup page: username is "admin" or "setup", password is the gateway token/password
+    const validPassword = auth.mode === 'token' ? auth.token : auth.password;
+    const validUsernames = ['admin', 'setup', 'foxfang'];
+
+    if (!validUsernames.includes(username) || password !== validPassword) {
       this.sendSetupAuthChallenge(res);
       return false;
     }
@@ -1754,6 +1929,49 @@ class GatewayServer {
     res.statusCode = statusCode;
     res.setHeader('content-type', 'application/json; charset=utf-8');
     res.end(JSON.stringify(body));
+  }
+
+  private serveStaticFile(res: ServerResponse, pathname: string): void {
+    try {
+      // Security: prevent directory traversal
+      const safePath = pathname.replace(/\.{2,}/g, '').replace(/^\/ui/, '');
+      const filePath = join(__dirname, 'ui', safePath || 'index.html');
+      
+      if (!existsSync(filePath)) {
+        this.sendJson(res, 404, { error: 'Not found' });
+        return;
+      }
+
+      const stat = statSync(filePath);
+      if (stat.isDirectory()) {
+        this.sendJson(res, 403, { error: 'Forbidden' });
+        return;
+      }
+
+      // Determine content type based on file extension
+      const ext = filePath.split('.').pop()?.toLowerCase();
+      const contentTypes: Record<string, string> = {
+        'html': 'text/html',
+        'js': 'application/javascript',
+        'css': 'text/css',
+        'json': 'application/json',
+        'png': 'image/png',
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'gif': 'image/gif',
+        'svg': 'image/svg+xml',
+        'ico': 'image/x-icon',
+      };
+
+      const content = readFileSync(filePath);
+      res.statusCode = 200;
+      res.setHeader('content-type', contentTypes[ext || ''] || 'application/octet-stream');
+      res.setHeader('cache-control', 'public, max-age=3600');
+      res.end(content);
+    } catch (error) {
+      console.error('[Gateway] Error serving static file:', error);
+      this.sendJson(res, 500, { error: 'Internal server error' });
+    }
   }
 
   private async initialize(): Promise<void> {

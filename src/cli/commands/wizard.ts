@@ -961,6 +961,75 @@ async function runSetupWizard() {
     console.log(chalk.green('✓ Notion connected'));
   }
 
+  // Gateway Auth Setup (similar to OpenClaw)
+  console.log(chalk.dim('\n🔐 Gateway Authentication\n'));
+  console.log(chalk.dim('   Protect access to the FoxFang gateway and web UI.\n'));
+
+  const authMode = await select({
+    message: 'Gateway auth mode:',
+    options: [
+      { value: 'token', label: 'Token', hint: 'Recommended (used for API and UI access)' },
+      { value: 'password', label: 'Password', hint: 'Simple password protection' },
+    ],
+    initialValue: 'token',
+  }) as 'token' | 'password';
+
+  if (authMode === 'token') {
+    const generateToken = await confirm({
+      message: 'Auto-generate secure token?',
+      initialValue: true,
+    });
+
+    let gatewayToken: string;
+    if (!isCancel(generateToken) && generateToken) {
+      // Generate secure random token
+      gatewayToken = Array.from({ length: 32 }, () =>
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 62)]
+      ).join('');
+    } else {
+      const customToken = await text({
+        message: 'Enter custom gateway token:',
+        placeholder: 'min-8-chars-recommended',
+        validate: (value) => {
+          if (!value || value.length < 8) return 'Token must be at least 8 characters';
+          return undefined;
+        },
+      });
+      gatewayToken = customToken as string;
+    }
+
+    config.gateway = {
+      ...config.gateway,
+      auth: {
+        mode: 'token',
+        token: gatewayToken,
+      },
+    };
+
+    console.log(chalk.dim('\n   Gateway Token: ') + chalk.yellow(gatewayToken));
+    console.log(chalk.dim('   Save this token - you\'ll need it to access the web UI and API.\n'));
+  } else {
+    // Password mode
+    const gatewayPassword = await text({
+      message: 'Gateway password:',
+      placeholder: 'min-8-characters',
+      validate: (value) => {
+        if (!value || value.length < 8) return 'Password must be at least 8 characters';
+        return undefined;
+      },
+    });
+
+    config.gateway = {
+      ...config.gateway,
+      auth: {
+        mode: 'password',
+        password: gatewayPassword as string,
+      },
+    };
+
+    console.log(chalk.dim('\n   Password set successfully.\n'));
+  }
+
   await saveConfig(config);
   s2.stop('Configuration saved!');
   
