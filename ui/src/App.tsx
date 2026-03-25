@@ -1,13 +1,13 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { useAuth } from './hooks/useAuth'
-import Layout from './components/Layout'
-import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
-import Boards from './pages/Boards'
-import Campaigns from './pages/Campaigns'
-import Agents from './pages/Agents'
-import Settings from './pages/Settings'
+import Layout from './components/Layout/index'
+import Login from './pages/Login/index'
+import Dashboard from './pages/Dashboard/index'
+import Boards from './pages/Boards/index'
+import Campaigns from './pages/Campaigns/index'
+import Agents from './pages/Agents/index'
+import Settings from './pages/Settings/index'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth()
