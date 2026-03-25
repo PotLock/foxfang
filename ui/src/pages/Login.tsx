@@ -9,26 +9,33 @@ export default function Login() {
   const [isAutoLoggingIn, setIsAutoLoggingIn] = useState(false)
   const { login } = useAuth()
 
-  // Check for token in URL on mount
+  // Check for token in URL on mount - only run once
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const urlToken = urlParams.get('token')
     
-    if (urlToken) {
+    if (urlToken && !isAutoLoggingIn) {
       setToken(urlToken)
       setIsAutoLoggingIn(true)
+      
       // Auto-login with the token from URL
-      login(urlToken).then((success) => {
-        if (!success) {
-          setError('Invalid token from URL. Please check and try again.')
+      const attemptAutoLogin = async () => {
+        try {
+          const success = await login(urlToken)
+          if (!success) {
+            setError('Invalid token from URL. Please check the URL or enter token manually.')
+            setIsAutoLoggingIn(false)
+          }
+          // If success, the auth context will handle redirect
+        } catch (err) {
+          setError('Failed to connect to server. Please check if the daemon is running.')
           setIsAutoLoggingIn(false)
         }
-      }).catch(() => {
-        setError('Failed to login with URL token.')
-        setIsAutoLoggingIn(false)
-      })
+      }
+      
+      attemptAutoLogin()
     }
-  }, [login])
+  }, []) // Empty deps - only run once on mount
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
