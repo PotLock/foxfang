@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { useAuth } from './hooks/useAuth'
 import Layout from './components/Layout'
@@ -11,7 +11,15 @@ import Settings from './pages/Settings'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth()
-  return isAuthenticated ? children : <Navigate to="/login" replace />
+  const location = useLocation()
+  
+  // Preserve query params (like token) when redirecting to login
+  if (!isAuthenticated) {
+    const loginUrl = '/login' + location.search
+    return <Navigate to={loginUrl} replace />
+  }
+  
+  return children
 }
 
 function AppContent() {
