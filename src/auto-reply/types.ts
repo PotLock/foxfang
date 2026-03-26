@@ -41,6 +41,13 @@ export interface IncomingMessage {
     url?: string;
     fileId?: string;
     caption?: string;
+    filename?: string;
+    mimeType?: string;
+    size?: number;
+    localPath?: string;
+    extractedText?: string;
+    extractionMethod?: string;
+    extractionError?: string;
   }>;
   /** For replies/threads */
   replyToMessageId?: string;

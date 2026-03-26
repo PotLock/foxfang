@@ -17,6 +17,17 @@ export interface ChannelResponse {
   content: string;
 }
 
+export interface ChannelMediaPayload {
+  /** Remote URL or local file path */
+  url: string;
+  /** Channel-agnostic media hint */
+  type?: 'photo' | 'video' | 'audio' | 'document' | 'voice';
+  /** Optional caption/body */
+  caption?: string;
+  /** Optional filename override */
+  filename?: string;
+}
+
 export interface ChannelAdapter {
   readonly name: string;
   readonly connected: boolean;
@@ -36,6 +47,17 @@ export interface ChannelAdapter {
    * @returns The message ID if available
    */
   send(to: string, content: string, options?: { replyToMessageId?: string; threadId?: string }): Promise<string | void>;
+
+  /**
+   * Send media to channel (if supported by channel adapter)
+   * Options can include replyToMessageId and threadId for channels that support them
+   * @returns The message ID if available
+   */
+  sendMedia?(
+    to: string,
+    media: ChannelMediaPayload,
+    options?: { replyToMessageId?: string; threadId?: string }
+  ): Promise<string | void>;
 
   /**
    * Edit an existing message
