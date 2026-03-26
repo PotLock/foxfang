@@ -16,6 +16,7 @@ const { CreateBrandTool, ListBrandsTool, GetBrandTool } = require('./builtin/bra
 const { BashExecTool, BashLegacyTool, BashListTool, BashLogTool, BashPollTool, BashKillTool, BashRemoveTool } = require('./builtin/bash');
 const { CronTool } = require('./builtin/cron');
 const { GitHubConnectTool, GitHubCreateIssueTool, GitHubCreatePRTool, GitHubListIssuesTool, GitHubListPRsTool } = require('./builtin/github');
+const { GitHubGetRepoTool, GitHubListRepoFilesTool, GitHubGetFileTool, GitHubSearchCodeTool } = require('./builtin/github_repo');
 const { SkillsListTool, SkillsAddTool } = require('./builtin/skills');
 const { ExpandCachedResultTool, GetCachedSnippetTool } = require('./builtin/cached_results');
 const { SessionsSpawnTool, SessionsSendTool, SubagentsTool } = require('./builtin/subagents');
@@ -134,6 +135,10 @@ export function initializeTools(config: Record<string, any>): void {
 
   // GitHub tools
   toolRegistry.register(new GitHubConnectTool());
+  toolRegistry.register(new GitHubGetRepoTool());
+  toolRegistry.register(new GitHubListRepoFilesTool());
+  toolRegistry.register(new GitHubGetFileTool());
+  toolRegistry.register(new GitHubSearchCodeTool());
   toolRegistry.register(new GitHubCreateIssueTool());
   toolRegistry.register(new GitHubCreatePRTool());
   toolRegistry.register(new GitHubListIssuesTool());

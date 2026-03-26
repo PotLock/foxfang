@@ -57,7 +57,7 @@ async function buildGitHubReconnectMessage(): Promise<string> {
  */
 export class GitHubConnectTool implements Tool {
   name = 'github_connect';
-  description = `Check or set GitHub connection status. 
+  description = `Check or set GitHub connection status. This tool is for authentication/setup only, not for reading repo contents directly.
 
 TRIGGER PHRASES: 'github connect', 'connect github', 'check github', 'am i connected to github', 'login to github'
 
@@ -66,6 +66,12 @@ ACTIONS:
 - set: Set GitHub token manually (requires token parameter)
 - oauth: Start OAuth flow via browser (opens browser for authorization)
 - disconnect: Remove GitHub connection
+
+For reading repository metadata, files, or code, use:
+- github_get_repo
+- github_list_repo_files
+- github_get_file
+- github_search_code
 
 If not connected, you can either:
 1. Use OAuth (action: "oauth") - opens browser, no token needed

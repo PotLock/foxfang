@@ -40,6 +40,74 @@ interface Token {
   level?: number; // for headings
 }
 
+function isMarkdownTableAlignmentLine(line: string): boolean {
+  return /^\s*\|?(?:\s*:?-{3,}:?\s*\|)+\s*:?-{3,}:?\s*\|?\s*$/.test(line);
+}
+
+function flattenMarkdownTables(text: string): string {
+  const lines = String(text || '').split('\n');
+  const out: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    const looksLikeTableRow = /^\|.*\|$/.test(trimmed);
+
+    if (!looksLikeTableRow) {
+      out.push(line);
+      continue;
+    }
+
+    const tableBlock: string[] = [line];
+    let j = i + 1;
+    while (j < lines.length && /^\|.*\|$/.test(lines[j].trim())) {
+      tableBlock.push(lines[j]);
+      j++;
+    }
+
+    const flattenedRows = tableBlock
+      .filter((row) => !isMarkdownTableAlignmentLine(row))
+      .map((row) =>
+        row
+          .split('|')
+          .map((cell) => cell.trim())
+          .filter(Boolean),
+      )
+      .filter((cells) => cells.length > 0);
+
+    const firstRowIsEmptyHeader = flattenedRows.length > 0 && flattenedRows[0].every((cell) => !cell);
+    const dataRows = firstRowIsEmptyHeader ? flattenedRows.slice(1) : flattenedRows;
+
+    if (dataRows.length === 0) {
+      i = j - 1;
+      continue;
+    }
+
+    for (const cells of dataRows) {
+      if (cells.length >= 2) {
+        out.push(`${cells[0]}: ${cells.slice(1).join(' | ')}`);
+      } else {
+        out.push(cells[0]);
+      }
+    }
+
+    i = j - 1;
+  }
+
+  return out.join('\n');
+}
+
+function stripDecorativeHorizontalRules(text: string): string {
+  return String(text || '')
+    .split('\n')
+    .filter((line) => !/^\s*(?:---+|\*\*\*+|___+)\s*$/.test(line.trim()))
+    .join('\n');
+}
+
+function normalizeChatMarkdown(text: string): string {
+  return stripDecorativeHorizontalRules(flattenMarkdownTables(text));
+}
+
 // ============================================================================
 // Markdown Parser
 // ============================================================================
@@ -273,7 +341,7 @@ function renderTelegramToken(token: Token): string {
 }
 
 export function markdownToTelegramHtml(text: string): string {
-  const tokens = parseMarkdown(text);
+  const tokens = parseMarkdown(normalizeChatMarkdown(text));
   return tokens.map(renderTelegramToken).join('\n').replace(/\n{3,}/g, '\n\n');
 }
 

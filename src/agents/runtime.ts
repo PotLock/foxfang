@@ -24,6 +24,7 @@ import { formatSkillsForPrompt, loadAvailableSkills, type SkillDefinition } from
 import { cacheToolResult } from '../tools/tool-result-cache';
 import { resolveTokenBudget, trimMessagesToBudget } from './budget';
 import { getSessionSnapshot, setSessionSnapshot } from '../workspace/manager';
+import { extractOwnerRepo } from '../integrations/github';
 
 let defaultProviderId: string | undefined;
 
@@ -68,6 +69,7 @@ Status/progress-only lines like "I need to scroll more" or "let me continue chec
 For direct inspection requests, answer the requested question directly from the latest tool results. Do not end by asking whether the user wants a different approach.`;
 
 const URL_IN_TEXT_REGEX = /https?:\/\/[^\s<>"')\]]+/gi;
+const GITHUB_REPO_URL_REGEX = /https?:\/\/github\.com\/[^\s<>"')\]]+/gi;
 
 export function isProgressOnlyStatusUpdate(content: string): boolean {
   const text = String(content || '').trim();
@@ -168,6 +170,13 @@ function normalizeExtractedUrl(url: string): string {
     .replace(/[),.!?\]]+$/g, '');
 }
 
+function normalizeExtractedRepo(repo: string): string {
+  return String(repo || '')
+    .trim()
+    .replace(/^\/+/, '')
+    .replace(/\/+$/, '');
+}
+
 function extractRecentUrlsFromContext(context: AgentContext): string[] {
   const urls: string[] = [];
   for (const message of (context.messages || []).filter((item) => item.role === 'user').slice(-8)) {
@@ -182,15 +191,62 @@ function extractRecentUrlsFromContext(context: AgentContext): string[] {
   return urls;
 }
 
+function extractRecentGitHubReposFromContext(context: AgentContext): string[] {
+  const repos: string[] = [];
+  for (const message of (context.messages || []).filter((item) => item.role === 'user').slice(-8)) {
+    const content = String(message.content || '');
+    const githubUrls = content.match(GITHUB_REPO_URL_REGEX) || [];
+    for (const githubUrl of githubUrls) {
+      const parsed = extractOwnerRepo(normalizeExtractedUrl(githubUrl));
+      if (!parsed) continue;
+      const normalized = normalizeExtractedRepo(`${parsed.owner}/${parsed.repo}`);
+      if (!normalized || repos.includes(normalized)) continue;
+      repos.push(normalized);
+    }
+
+    if (!/github|repo|repository|codebase/i.test(content)) {
+      continue;
+    }
+
+    const genericMatches = content.match(/\b[a-z0-9_.-]+\/[a-z0-9_.-]+\b/gi) || [];
+    for (const candidate of genericMatches) {
+      const parsed = extractOwnerRepo(candidate);
+      if (!parsed) continue;
+      const normalized = normalizeExtractedRepo(`${parsed.owner}/${parsed.repo}`);
+      if (!normalized || repos.includes(normalized)) continue;
+      repos.push(normalized);
+    }
+  }
+  return repos;
+}
+
 function repairToolCallForContext(
   toolCall: ToolCall,
-  contextHints: { urls: string[] },
+  contextHints: { urls: string[]; repos: string[] },
 ): { toolCall: ToolCall; repaired: boolean; reason?: string } {
   const args = toolCall.arguments && typeof toolCall.arguments === 'object'
     ? { ...toolCall.arguments }
     : {};
   const firstUrl = contextHints.urls[0];
+  const firstRepo = contextHints.repos[0];
   const hasUrl = typeof args.url === 'string' && args.url.trim().length > 0;
+  const hasRepo = typeof args.repo === 'string' && args.repo.trim().length > 0;
+
+  const githubReadTools = new Set([
+    'github_get_repo',
+    'github_list_repo_files',
+    'github_get_file',
+    'github_search_code',
+  ]);
+
+  if (firstRepo && githubReadTools.has(toolCall.name) && !hasRepo) {
+    args.repo = firstRepo;
+    return {
+      toolCall: { ...toolCall, arguments: args },
+      repaired: true,
+      reason: `inferred repo from conversation (${firstRepo})`,
+    };
+  }
 
   if (!firstUrl) {
     return { toolCall: { ...toolCall, arguments: args }, repaired: false };
@@ -261,6 +317,50 @@ function looksLikeVisualBrowserIntent(context: AgentContext): boolean {
   );
 }
 
+function looksLikeGitHubRepoIntent(context: AgentContext): boolean {
+  const intent = collectRecentUserIntent(context, 8).toLowerCase();
+  if (!intent) return false;
+
+  if (/https?:\/\/github\.com\/[a-z0-9_.-]+\/[a-z0-9_.-]+/i.test(intent)) {
+    return true;
+  }
+
+  const hasRepoReference = /\b[a-z0-9_.-]+\/[a-z0-9_.-]+\b/i.test(intent);
+  const hasGitHubCue = /\bgithub\b|\brepo\b|\brepository\b|\bcodebase\b|\bsource\b|\bfile\b|\bfiles\b|\bread this repo\b/i.test(intent);
+  return hasRepoReference && hasGitHubCue;
+}
+
+function looksLikeGitHubRepoOverviewIntent(context: AgentContext): boolean {
+  if (!looksLikeGitHubRepoIntent(context)) return false;
+  const intent = collectRecentUserIntent(context, 8).toLowerCase();
+  if (!intent) return false;
+
+  const deepReadCues = [
+    /\bfile structure\b/,
+    /\bstructure\b/,
+    /\btree\b/,
+    /\blist files\b/,
+    /\bshow files\b/,
+    /\bfile(?:s)?\b/,
+    /\bfolder(?:s)?\b/,
+    /\bdirector(?:y|ies)\b/,
+    /\bpackage\.json\b/,
+    /\btsconfig\b/,
+    /\bsrc\//,
+    /\bsearch code\b/,
+    /\bfind in code\b/,
+    /\bfunction\b/,
+    /\bclass\b/,
+    /\bimplementation\b/,
+    /\bcodebase\b/,
+    /\bsource code\b/,
+    /\bgrep\b/,
+    /\bconfig\b/,
+  ];
+
+  return !deepReadCues.some((pattern) => pattern.test(intent));
+}
+
 function buildToolCallStyleSection(agent: Agent, promptMode: PromptMode): string {
   const lines: string[] = [];
   lines.push(promptMode === 'minimal' ? MINIMAL_TOOL_CALL_STYLE_GUIDANCE : TOOL_CALL_STYLE_GUIDANCE);
@@ -268,6 +368,18 @@ function buildToolCallStyleSection(agent: Agent, promptMode: PromptMode): string
   const toolSet = new Set((agent.tools || []).map((tool) => String(tool || '').trim()));
   const hasAgentBrowserTool = toolSet.has('agent_browser');
   const hasBashTool = toolSet.has('bash_exec') || toolSet.has('bash');
+  const hasGitHubRepoReadTools =
+    toolSet.has('github_get_repo')
+    || toolSet.has('github_list_repo_files')
+    || toolSet.has('github_get_file')
+    || toolSet.has('github_search_code');
+
+  if (hasGitHubRepoReadTools) {
+    lines.push('For GitHub repo URLs or repo/code/file requests, prefer `github_get_repo`, `github_list_repo_files`, `github_get_file`, and `github_search_code` over `fetch_url` or browser tools.');
+    lines.push('Use `github_connect` only for auth/setup checks. Do not use `github_connect` itself as a repo-reading tool.');
+    lines.push('If the user says "read this repo" or asks for a repo overview, start with only the project description plus a concise README-based summary.');
+    lines.push('Do not inspect files, code structure, language breakdown, or repo metadata unless the user explicitly asks for them.');
+  }
 
   if (hasAgentBrowserTool) {
     lines.push('For visual/UI page tasks (footer/header/nav/button text, what is visible), prefer `agent_browser` over static crawl.');
@@ -820,6 +932,53 @@ export function adjustToolsForIntent(context: AgentContext, tools: Array<{
   if (tools.length <= 1) return tools;
 
   const toolNames = new Set(tools.map((tool) => tool.name));
+  const hasGitHubRepoReadTools =
+    toolNames.has('github_get_repo')
+    || toolNames.has('github_list_repo_files')
+    || toolNames.has('github_get_file')
+    || toolNames.has('github_search_code');
+
+  if (hasGitHubRepoReadTools && looksLikeGitHubRepoIntent(context)) {
+    if (looksLikeGitHubRepoOverviewIntent(context)) {
+      const allowed = new Set(['github_get_repo', 'github_connect']);
+      const filtered = tools.filter((tool) => allowed.has(tool.name));
+      if (filtered.length > 0) {
+        return filtered.sort((a, b) => {
+          const aPriority = a.name === 'github_get_repo' ? 0 : 1;
+          const bPriority = b.name === 'github_get_repo' ? 0 : 1;
+          if (aPriority !== bPriority) return aPriority - bPriority;
+          return a.name.localeCompare(b.name);
+        });
+      }
+    }
+
+    const priority = new Map<string, number>([
+      ['github_get_repo', 0],
+      ['github_list_repo_files', 1],
+      ['github_get_file', 2],
+      ['github_search_code', 3],
+      ['github_connect', 4],
+      ['fetch_url', 8],
+      ['web_search', 9],
+      ['brave_search', 9],
+      ['firecrawl_scrape', 10],
+      ['firecrawl_search', 11],
+      ['agent_browser', 12],
+      ['bash_exec', 13],
+      ['bash', 13],
+    ]);
+
+    return [...tools].sort((a, b) => {
+      const aPriority = priority.get(a.name) ?? 6;
+      const bPriority = priority.get(b.name) ?? 6;
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+      if (a.name === b.name) return 0;
+      return a.name.localeCompare(b.name);
+    });
+  }
+
   if (!toolNames.has('agent_browser') || !looksLikeVisualBrowserIntent(context)) {
     return tools;
   }
@@ -1146,6 +1305,15 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   lines.push(buildToolCallStyleSection(agent, promptMode));
   lines.push('');
 
+  if (isMinimal || context.isChannelSession === true) {
+    lines.push('## Channel Reply Style');
+    lines.push('For channel and group-chat replies, prefer plain sentences or short bullets.');
+    lines.push('Do not use markdown tables, horizontal rules, decorative section dividers, or promo-style headings.');
+    lines.push('Do not re-style tool output into marketing copy. Keep repo/site summaries utilitarian and direct.');
+    lines.push('Do not end with optional menus like "Want me to dig deeper?" unless the user explicitly asked for options.');
+    lines.push('');
+  }
+
   // 4. Safety (shortened in minimal)
   if (isMinimal) {
     lines.push('## Safety');
@@ -1354,6 +1522,7 @@ export async function runAgent(
     });
   const toolContextHints = {
     urls: extractRecentUrlsFromContext(context),
+    repos: extractRecentGitHubReposFromContext(context),
   };
 
   const allToolCalls: ToolCall[] = [];
@@ -1827,6 +1996,7 @@ export async function* runAgentStream(
     });
   const toolContextHints = {
     urls: extractRecentUrlsFromContext(context),
+    repos: extractRecentGitHubReposFromContext(context),
   };
 
   let iteration = 0;
