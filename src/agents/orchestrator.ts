@@ -229,9 +229,10 @@ export class AgentOrchestrator {
     const agent = await ensureAgentRegistered(request.agentId);
     const userId = request.userId || 'default_user';
 
-    // Use minimal prompt mode for channel sessions to reduce token usage
+    // Channel sessions get a richer chat-oriented prompt; subagent/background
+    // flows still use minimal mode elsewhere.
     const isChannelSession = request.sessionId.startsWith('channel-');
-    const promptMode = isChannelSession ? 'minimal' as const : 'full' as const;
+    const promptMode = isChannelSession ? 'channel' as const : 'full' as const;
     if (isChannelSession && enhancedMessage) {
       messages = resetRepeatedChannelRetryHistory(messages, enhancedMessage);
     }
@@ -279,6 +280,7 @@ export class AgentOrchestrator {
       budget,
       promptMode,
       isChannelSession,
+      channelContext: request.channelContext,
     };
 
     if (request.stream) {

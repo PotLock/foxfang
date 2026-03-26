@@ -24,7 +24,6 @@ import { formatSkillsForPrompt, loadAvailableSkills, type SkillDefinition } from
 import { cacheToolResult } from '../tools/tool-result-cache';
 import { resolveTokenBudget, trimMessagesToBudget } from './budget';
 import { getSessionSnapshot, setSessionSnapshot } from '../workspace/manager';
-import { extractOwnerRepo } from '../integrations/github';
 
 let defaultProviderId: string | undefined;
 
@@ -69,7 +68,6 @@ Status/progress-only lines like "I need to scroll more" or "let me continue chec
 For direct inspection requests, answer the requested question directly from the latest tool results. Do not end by asking whether the user wants a different approach.`;
 
 const URL_IN_TEXT_REGEX = /https?:\/\/[^\s<>"')\]]+/gi;
-const GITHUB_REPO_URL_REGEX = /https?:\/\/github\.com\/[^\s<>"')\]]+/gi;
 
 export function isProgressOnlyStatusUpdate(content: string): boolean {
   const text = String(content || '').trim();
@@ -170,16 +168,13 @@ function normalizeExtractedUrl(url: string): string {
     .replace(/[),.!?\]]+$/g, '');
 }
 
-function normalizeExtractedRepo(repo: string): string {
-  return String(repo || '')
-    .trim()
-    .replace(/^\/+/, '')
-    .replace(/\/+$/, '');
-}
-
 function extractRecentUrlsFromContext(context: AgentContext): string[] {
   const urls: string[] = [];
-  for (const message of (context.messages || []).filter((item) => item.role === 'user').slice(-8)) {
+  const recentUserMessages = (context.messages || [])
+    .filter((item) => item.role === 'user')
+    .slice(-8)
+    .reverse();
+  for (const message of recentUserMessages) {
     const content = String(message.content || '');
     const matches = content.match(URL_IN_TEXT_REGEX) || [];
     for (const match of matches) {
@@ -191,46 +186,58 @@ function extractRecentUrlsFromContext(context: AgentContext): string[] {
   return urls;
 }
 
-function extractRecentGitHubReposFromContext(context: AgentContext): string[] {
-  const repos: string[] = [];
-  for (const message of (context.messages || []).filter((item) => item.role === 'user').slice(-8)) {
-    const content = String(message.content || '');
-    const githubUrls = content.match(GITHUB_REPO_URL_REGEX) || [];
-    for (const githubUrl of githubUrls) {
-      const parsed = extractOwnerRepo(normalizeExtractedUrl(githubUrl));
-      if (!parsed) continue;
-      const normalized = normalizeExtractedRepo(`${parsed.owner}/${parsed.repo}`);
-      if (!normalized || repos.includes(normalized)) continue;
-      repos.push(normalized);
-    }
+function looksLikeGitHubRepoUrl(url: string): boolean {
+  return /^https?:\/\/github\.com\/[^/\s]+\/[^/\s]+/i.test(String(url || '').trim());
+}
 
-    if (!/github|repo|repository|codebase/i.test(content)) {
-      continue;
-    }
+function extractExplicitFileTargetFromContext(context: AgentContext): string | undefined {
+  const recentUserMessages = (context.messages || [])
+    .filter((item) => item.role === 'user')
+    .slice(-6)
+    .reverse();
 
-    const genericMatches = content.match(/\b[a-z0-9_.-]+\/[a-z0-9_.-]+\b/gi) || [];
-    for (const candidate of genericMatches) {
-      const parsed = extractOwnerRepo(candidate);
-      if (!parsed) continue;
-      const normalized = normalizeExtractedRepo(`${parsed.owner}/${parsed.repo}`);
-      if (!normalized || repos.includes(normalized)) continue;
-      repos.push(normalized);
+  const patterns = [
+    /(?:^|\b)(?:read|show|open|view|inspect|check|display)\s+(?:the\s+)?file\s+[`'"]?([A-Za-z0-9_./-]+)[`'"]?/i,
+    /(?:^|\b)file\s+[`'"]?([A-Za-z0-9_./-]+)[`'"]?/i,
+  ];
+
+  for (const message of recentUserMessages) {
+    const content = String(message.content || '').trim();
+    if (!content) continue;
+
+    for (const pattern of patterns) {
+      const match = content.match(pattern);
+      const value = String(match?.[1] || '').trim().replace(/^[`'"]+|[`'"]+$/g, '');
+      if (!value) continue;
+      if (/^https?:\/\//i.test(value)) continue;
+      return value;
     }
   }
-  return repos;
+
+  return undefined;
 }
 
 function repairToolCallForContext(
   toolCall: ToolCall,
-  contextHints: { urls: string[]; repos: string[] },
+  contextHints: {
+    urls: string[];
+    githubRepoUrl?: string;
+    explicitFileTarget?: string;
+  },
 ): { toolCall: ToolCall; repaired: boolean; reason?: string } {
   const args = toolCall.arguments && typeof toolCall.arguments === 'object'
     ? { ...toolCall.arguments }
     : {};
   const firstUrl = contextHints.urls[0];
-  const firstRepo = contextHints.repos[0];
+  const githubRepoUrl = contextHints.githubRepoUrl;
+  const explicitFileTarget = contextHints.explicitFileTarget;
   const hasUrl = typeof args.url === 'string' && args.url.trim().length > 0;
   const hasRepo = typeof args.repo === 'string' && args.repo.trim().length > 0;
+  const hasPath = typeof args.path === 'string' && args.path.trim().length > 0;
+  const hasTarget = typeof (args as Record<string, unknown>).target === 'string'
+    && String((args as Record<string, unknown>).target || '').trim().length > 0;
+  let repaired = false;
+  const reasons: string[] = [];
 
   const githubReadTools = new Set([
     'github_get_repo',
@@ -239,26 +246,30 @@ function repairToolCallForContext(
     'github_search_code',
   ]);
 
-  if (firstRepo && githubReadTools.has(toolCall.name) && !hasRepo) {
-    args.repo = firstRepo;
-    return {
-      toolCall: { ...toolCall, arguments: args },
-      repaired: true,
-      reason: `inferred repo from conversation (${firstRepo})`,
-    };
+  if (githubRepoUrl && githubReadTools.has(toolCall.name) && !hasRepo) {
+    args.repo = githubRepoUrl;
+    repaired = true;
+    reasons.push(`bound repo from explicit GitHub URL (${githubRepoUrl})`);
+  }
+
+  if (toolCall.name === 'github_get_file' && explicitFileTarget && !hasPath && !hasTarget) {
+    (args as Record<string, unknown>).target = explicitFileTarget;
+    repaired = true;
+    reasons.push(`bound explicit file target from user message (${explicitFileTarget})`);
   }
 
   if (!firstUrl) {
-    return { toolCall: { ...toolCall, arguments: args }, repaired: false };
+    return {
+      toolCall: { ...toolCall, arguments: args },
+      repaired,
+      reason: reasons.length > 0 ? reasons.join('; ') : undefined,
+    };
   }
 
   if ((toolCall.name === 'fetch_url' || toolCall.name === 'firecrawl_scrape') && !hasUrl) {
     args.url = firstUrl;
-    return {
-      toolCall: { ...toolCall, arguments: args },
-      repaired: true,
-      reason: `inferred url from conversation (${firstUrl})`,
-    };
+    repaired = true;
+    reasons.push(`inferred url from conversation (${firstUrl})`);
   }
 
   if (toolCall.name === 'agent_browser' && !hasUrl) {
@@ -266,14 +277,15 @@ function repairToolCallForContext(
     if (typeof args.mode !== 'string' || !args.mode.trim()) {
       args.mode = 'read';
     }
-    return {
-      toolCall: { ...toolCall, arguments: args },
-      repaired: true,
-      reason: `inferred browser url from conversation (${firstUrl})`,
-    };
+    repaired = true;
+    reasons.push(`inferred browser url from conversation (${firstUrl})`);
   }
 
-  return { toolCall: { ...toolCall, arguments: args }, repaired: false };
+  return {
+    toolCall: { ...toolCall, arguments: args },
+    repaired,
+    reason: reasons.length > 0 ? reasons.join('; ') : undefined,
+  };
 }
 
 function looksLikeVisualBrowserIntent(context: AgentContext): boolean {
@@ -332,33 +344,74 @@ function looksLikeGitHubRepoIntent(context: AgentContext): boolean {
 
 function looksLikeGitHubRepoOverviewIntent(context: AgentContext): boolean {
   if (!looksLikeGitHubRepoIntent(context)) return false;
+  return (
+    !looksLikeGitHubRepoFileReadIntent(context)
+    && !looksLikeGitHubRepoStructureIntent(context)
+    && !looksLikeGitHubRepoCodeSearchIntent(context)
+  );
+}
+
+function looksLikeGitHubRepoFileReadIntent(context: AgentContext): boolean {
+  if (!looksLikeGitHubRepoIntent(context)) return false;
   const intent = collectRecentUserIntent(context, 8).toLowerCase();
   if (!intent) return false;
 
-  const deepReadCues = [
+  const hasReadCue =
+    /\b(?:read|show|open|view|inspect|check|display|summarize)\b/.test(intent)
+    || /\bwhat(?:'s| is) in\b/.test(intent)
+    || /\bcontents? of\b/.test(intent);
+  if (!hasReadCue) return false;
+
+  return (
+    /\bfile\b/.test(intent)
+    || /\b[a-z0-9_-]+\.[a-z0-9_.-]+\b/.test(intent)
+    || /\b[a-z0-9_-]+(?:_[a-z0-9_-]+){1,}(?:\.[a-z0-9_.-]+)?\b/.test(intent)
+    || /(?:^|[\s`'"])\.?(?:[a-z0-9_-]+\/)+[a-z0-9_.-]+(?=$|[\s`'",:;.!?)\]])/.test(intent)
+    || /\breadme(?:\.md)?\b/.test(intent)
+    || /\bdockerfile\b/.test(intent)
+  );
+}
+
+function looksLikeGitHubRepoStructureIntent(context: AgentContext): boolean {
+  if (!looksLikeGitHubRepoIntent(context)) return false;
+  const intent = collectRecentUserIntent(context, 8).toLowerCase();
+  if (!intent) return false;
+
+  const structureCuePatterns = [
     /\bfile structure\b/,
     /\bstructure\b/,
     /\btree\b/,
     /\blist files\b/,
     /\bshow files\b/,
-    /\bfile(?:s)?\b/,
+    /\bwhat files\b/,
+    /\broot files\b/,
+    /\brepo root\b/,
     /\bfolder(?:s)?\b/,
     /\bdirector(?:y|ies)\b/,
-    /\bpackage\.json\b/,
-    /\btsconfig\b/,
-    /\bsrc\//,
-    /\bsearch code\b/,
-    /\bfind in code\b/,
-    /\bfunction\b/,
-    /\bclass\b/,
-    /\bimplementation\b/,
-    /\bcodebase\b/,
-    /\bsource code\b/,
-    /\bgrep\b/,
-    /\bconfig\b/,
+    /\bbrowse\b/,
   ];
 
-  return !deepReadCues.some((pattern) => pattern.test(intent));
+  return structureCuePatterns.some((pattern) => pattern.test(intent));
+}
+
+function looksLikeGitHubRepoCodeSearchIntent(context: AgentContext): boolean {
+  if (!looksLikeGitHubRepoIntent(context)) return false;
+  const intent = collectRecentUserIntent(context, 8).toLowerCase();
+  if (!intent) return false;
+
+  const searchCuePatterns = [
+    /\bsearch code\b/,
+    /\bfind in code\b/,
+    /\bgrep\b/,
+    /\bsearch\b/,
+    /\bwhere(?:\s+is|\s+are)?\b.*\b(?:defined|used|referenced|implemented|mentioned)\b/,
+    /\bmentions?\b/,
+    /\busages?\b/,
+    /\breferences?\b/,
+    /\boccurrences?\b/,
+  ];
+
+  return searchCuePatterns.some((pattern) => pattern.test(intent));
 }
 
 function buildToolCallStyleSection(agent: Agent, promptMode: PromptMode): string {
@@ -380,6 +433,11 @@ function buildToolCallStyleSection(agent: Agent, promptMode: PromptMode): string
     lines.push('If the user says "read this repo" or asks for a repo overview, start with only the project description plus a concise README-based summary.');
     lines.push('Do not inspect files, code structure, language breakdown, or repo metadata unless the user explicitly asks for them.');
     lines.push('When summarizing a repo overview, state the README meaning directly. Do not preface with phrases like "Based on the README".');
+    lines.push('For "read/show/open file X" requests, call `github_get_file` first and pass the filename/target exactly as the user named it. Let the tool resolve the real path from the repo state.');
+    lines.push('When the user includes a GitHub repo URL or owner/repo reference, always carry that repo reference into the GitHub tool call. Do not call GitHub repo tools with empty arguments.');
+    lines.push('Use `github_list_repo_files` when the user explicitly wants structure browsing, or when `github_get_file` returns candidate matches and you need to inspect the repo tree.');
+    lines.push('Use `github_search_code` only for explicit code search/find/grep/where-is requests. Do not use it as the first step for reading a named file.');
+    lines.push('Only claim GitHub access or permission problems when a GitHub tool explicitly reports a permission error. Do not infer permission problems from missing query/path or an unsuccessful search attempt.');
   }
 
   if (hasAgentBrowserTool) {
@@ -484,6 +542,8 @@ const TOOL_SUMMARY_MAX_CHARS = 800;
 // Per-file and total char limits to prevent workspace files from bloating the prompt.
 const BOOTSTRAP_MAX_CHARS_PER_FILE = 2500;
 const BOOTSTRAP_TOTAL_MAX_CHARS = 8000;
+const BOOTSTRAP_CHANNEL_MAX_CHARS_PER_FILE = 1800;
+const BOOTSTRAP_CHANNEL_TOTAL_MAX_CHARS = 6500;
 // Minimal mode uses tighter limits
 const BOOTSTRAP_MINIMAL_MAX_CHARS_PER_FILE = 1200;
 const BOOTSTRAP_MINIMAL_TOTAL_MAX_CHARS = 3500;
@@ -510,6 +570,14 @@ type SkillCatalogCacheEntry = {
 };
 
 let skillCatalogCache: SkillCatalogCacheEntry | null = null;
+
+function isMinimalPromptMode(promptMode: PromptMode): boolean {
+  return promptMode === 'minimal';
+}
+
+function isChannelPromptMode(promptMode: PromptMode): boolean {
+  return promptMode === 'channel';
+}
 
 function normalizeReasoningMode(mode?: ReasoningMode): ReasoningMode {
   if (mode === 'fast' || mode === 'deep' || mode === 'balanced') {
@@ -727,6 +795,197 @@ function compactAgentBrowserPayload(rawData: unknown): {
   return { compact, rawSize, compactSize };
 }
 
+function compactGitHubListRepoFilesPayload(rawData: unknown): {
+  compact: CompactToolResult;
+  rawSize: number;
+  compactSize: number;
+} {
+  const rawText = safeJson(rawData);
+  const rawSize = rawText.length;
+  const obj = rawData && typeof rawData === 'object' ? (rawData as Record<string, unknown>) : {};
+  const data = obj.data && typeof obj.data === 'object' ? (obj.data as Record<string, unknown>) : obj;
+  const repo = typeof data.repo === 'string' ? data.repo : undefined;
+  const path = typeof data.path === 'string' && data.path.trim() ? data.path.trim() : '.';
+  const entriesRaw = Array.isArray(data.entries) ? data.entries : [];
+  const entries = entriesRaw
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+    .map((item) => ({
+      path: String(item.path || '').trim(),
+      type: String(item.type || '').trim() || 'file',
+    }))
+    .filter((item) => item.path);
+
+  const keyPoints: string[] = [];
+  if (repo) keyPoints.push(`repo: ${repo}`);
+  keyPoints.push(`path: ${path}`);
+  if (entries.length > 0) {
+    const visibleEntries = entries.slice(0, 20);
+    for (let index = 0; index < visibleEntries.length; index += 4) {
+      const batch = visibleEntries.slice(index, index + 4);
+      keyPoints.push(
+        `entries ${Math.floor(index / 4) + 1}: ${batch
+          .map((entry) => `${entry.type === 'dir' ? '[dir]' : '[file]'} ${entry.path}`)
+          .join(' | ')}`,
+      );
+    }
+  } else {
+    keyPoints.push('entries: none returned');
+  }
+
+  let rawRef: string | undefined;
+  if (rawSize > TOOL_COMPRESSION_THRESHOLD_CHARS) {
+    rawRef = cacheToolResult('github_list_repo_files', rawData).rawRef;
+  }
+
+  const compact: CompactToolResult = {
+    source: 'github_list_repo_files',
+    title: repo ? `github files: ${repo}` : 'github repo file list',
+    summary: compactText(
+      `${repo ? `${repo} ` : ''}listed ${entries.length} entr${entries.length === 1 ? 'y' : 'ies'} at ${path}`,
+      TOOL_SUMMARY_MAX_CHARS,
+    ),
+    keyPoints,
+    relevanceToTask: 'Use the returned entry paths to identify the exact file or directory before deeper reads.',
+    ...(rawRef ? { rawRef } : {}),
+  };
+
+  const compactSize = safeJson(compact).length;
+  return { compact, rawSize, compactSize };
+}
+
+function compactGitHubSearchCodePayload(rawData: unknown): {
+  compact: CompactToolResult;
+  rawSize: number;
+  compactSize: number;
+} {
+  const rawText = safeJson(rawData);
+  const rawSize = rawText.length;
+  const obj = rawData && typeof rawData === 'object' ? (rawData as Record<string, unknown>) : {};
+  const data = obj.data && typeof obj.data === 'object' ? (obj.data as Record<string, unknown>) : obj;
+  const totalCount = typeof data.totalCount === 'number' ? data.totalCount : 0;
+  const itemsRaw = Array.isArray(data.items) ? data.items : [];
+  const items = itemsRaw
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+    .map((item) => ({
+      path: String(item.path || '').trim(),
+      name: String(item.name || '').trim(),
+    }))
+    .filter((item) => item.path || item.name);
+  const queryMatch = String(obj.output || '').match(/Found \d+ result\(s\) for "([^"]+)"/);
+  const query = queryMatch?.[1] || undefined;
+
+  const keyPoints: string[] = [];
+  if (query) keyPoints.push(`query: ${query}`);
+  keyPoints.push(`matches: ${totalCount || items.length}`);
+  if (items.length > 0) {
+    keyPoints.push(
+      `paths: ${items
+        .slice(0, 8)
+        .map((item) => item.path || item.name)
+        .join(' | ')}`,
+    );
+  }
+
+  let rawRef: string | undefined;
+  if (rawSize > TOOL_COMPRESSION_THRESHOLD_CHARS) {
+    rawRef = cacheToolResult('github_search_code', rawData).rawRef;
+  }
+
+  const compact: CompactToolResult = {
+    source: 'github_search_code',
+    title: query ? `github search: ${query}` : 'github code search',
+    summary: compactText(
+      query
+        ? `Search for "${query}" returned ${totalCount || items.length} match(es).`
+        : `GitHub code search returned ${totalCount || items.length} match(es).`,
+      TOOL_SUMMARY_MAX_CHARS,
+    ),
+    keyPoints,
+    relevanceToTask: 'Use matched file paths to open the exact file the user asked for.',
+    ...(rawRef ? { rawRef } : {}),
+  };
+
+  const compactSize = safeJson(compact).length;
+  return { compact, rawSize, compactSize };
+}
+
+function compactGitHubGetFilePayload(rawData: unknown): {
+  compact: CompactToolResult;
+  rawSize: number;
+  compactSize: number;
+} {
+  const rawText = safeJson(rawData);
+  const rawSize = rawText.length;
+  const obj = rawData && typeof rawData === 'object' ? (rawData as Record<string, unknown>) : {};
+  const data = obj.data && typeof obj.data === 'object' ? (obj.data as Record<string, unknown>) : obj;
+  const repo = typeof data.repo === 'string' ? data.repo : '';
+  const path = typeof data.path === 'string' ? data.path : '';
+  const target = typeof data.target === 'string' ? data.target : '';
+  const content = typeof data.content === 'string' ? data.content : '';
+  const matchesRaw = Array.isArray(data.matches) ? data.matches : [];
+  const matches = matchesRaw
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+    .map((item) => ({
+      path: String(item.path || '').trim(),
+      source: String(item.source || '').trim(),
+      score: typeof item.score === 'number' ? item.score : undefined,
+    }))
+    .filter((item) => item.path);
+  const keyPoints: string[] = [];
+  if (repo) keyPoints.push(`repo: ${repo}`);
+  if (path) keyPoints.push(`path: ${path}`);
+  if (target && target !== path) keyPoints.push(`requested target: ${target}`);
+  if (Boolean(data.resolvedFromTarget) && path && target && target !== path) {
+    keyPoints.push(`resolved target to real path: ${path}`);
+  }
+  if (matches.length > 0) {
+    keyPoints.push(
+      `candidate paths: ${matches
+        .slice(0, 6)
+        .map((item) => item.path)
+        .join(' | ')}`,
+    );
+  }
+
+  const usefulQuotes = content
+    ? content
+      .replace(/\r/g, '')
+      .split(/\n\s*\n/)
+      .map((part) => part.replace(/\s+/g, ' ').trim())
+      .filter(Boolean)
+      .slice(0, 3)
+      .map((part) => compactText(part, 220))
+    : undefined;
+
+  let rawRef: string | undefined;
+  if (rawSize > TOOL_COMPRESSION_THRESHOLD_CHARS) {
+    rawRef = cacheToolResult('github_get_file', rawData).rawRef;
+  }
+
+  const summary = path
+    ? target && target !== path
+      ? `Read ${path}, resolved from the requested target "${target}".`
+      : `Read ${path}.`
+    : target
+      ? `Could not fully resolve requested file target "${target}".`
+      : 'GitHub file read returned without a resolved path.';
+
+  const compact: CompactToolResult = {
+    source: 'github_get_file',
+    title: path ? `github file: ${path}` : 'github file read',
+    summary: compactText(summary, TOOL_SUMMARY_MAX_CHARS),
+    keyPoints,
+    usefulQuotes,
+    relevanceToTask: path
+      ? 'Use the file excerpt and resolved path to answer the user directly.'
+      : 'If the target was not resolved, inspect the candidate paths or browse the repo tree next.',
+    ...(rawRef ? { rawRef } : {}),
+  };
+
+  const compactSize = safeJson(compact).length;
+  return { compact, rawSize, compactSize };
+}
+
 function compactToolPayload(toolName: string, rawData: unknown): {
   compact: CompactToolResult;
   rawSize: number;
@@ -734,6 +993,15 @@ function compactToolPayload(toolName: string, rawData: unknown): {
 } {
   if (toolName === 'agent_browser') {
     return compactAgentBrowserPayload(rawData);
+  }
+  if (toolName === 'github_list_repo_files') {
+    return compactGitHubListRepoFilesPayload(rawData);
+  }
+  if (toolName === 'github_get_file') {
+    return compactGitHubGetFilePayload(rawData);
+  }
+  if (toolName === 'github_search_code') {
+    return compactGitHubSearchCodePayload(rawData);
   }
 
   const rawText = safeJson(rawData);
@@ -940,16 +1208,90 @@ export function adjustToolsForIntent(context: AgentContext, tools: Array<{
     || toolNames.has('github_search_code');
 
   if (hasGitHubRepoReadTools && looksLikeGitHubRepoIntent(context)) {
+    const prioritize = (
+      priority: Map<string, number>,
+      allowed?: Set<string>,
+    ): Array<{
+      name: string;
+      description: string;
+      parameters: any;
+    }> => {
+      const scoped = allowed ? tools.filter((tool) => allowed.has(tool.name)) : [...tools];
+      return [...scoped].sort((a, b) => {
+        const aPriority = priority.get(a.name) ?? 10;
+        const bPriority = priority.get(b.name) ?? 10;
+        if (aPriority !== bPriority) {
+          return aPriority - bPriority;
+        }
+        if (a.name === b.name) return 0;
+        return a.name.localeCompare(b.name);
+      });
+    };
+
     if (looksLikeGitHubRepoOverviewIntent(context)) {
       const allowed = new Set(['github_get_repo', 'github_connect']);
-      const filtered = tools.filter((tool) => allowed.has(tool.name));
+      const filtered = prioritize(new Map([
+        ['github_get_repo', 0],
+        ['github_connect', 1],
+      ]), allowed);
       if (filtered.length > 0) {
-        return filtered.sort((a, b) => {
-          const aPriority = a.name === 'github_get_repo' ? 0 : 1;
-          const bPriority = b.name === 'github_get_repo' ? 0 : 1;
-          if (aPriority !== bPriority) return aPriority - bPriority;
-          return a.name.localeCompare(b.name);
-        });
+        return filtered;
+      }
+    }
+
+    if (looksLikeGitHubRepoFileReadIntent(context)) {
+      const allowed = new Set([
+        'github_get_file',
+        'github_list_repo_files',
+        'github_get_repo',
+        'github_connect',
+      ]);
+      const filtered = prioritize(new Map([
+        ['github_get_file', 0],
+        ['github_list_repo_files', 1],
+        ['github_get_repo', 2],
+        ['github_connect', 3],
+      ]), allowed);
+      if (filtered.length > 0) {
+        return filtered;
+      }
+    }
+
+    if (looksLikeGitHubRepoStructureIntent(context)) {
+      const allowed = new Set([
+        'github_list_repo_files',
+        'github_get_file',
+        'github_get_repo',
+        'github_connect',
+      ]);
+      const filtered = prioritize(new Map([
+        ['github_list_repo_files', 0],
+        ['github_get_file', 1],
+        ['github_get_repo', 2],
+        ['github_connect', 3],
+      ]), allowed);
+      if (filtered.length > 0) {
+        return filtered;
+      }
+    }
+
+    if (looksLikeGitHubRepoCodeSearchIntent(context)) {
+      const allowed = new Set([
+        'github_search_code',
+        'github_get_file',
+        'github_list_repo_files',
+        'github_get_repo',
+        'github_connect',
+      ]);
+      const filtered = prioritize(new Map([
+        ['github_search_code', 0],
+        ['github_get_file', 1],
+        ['github_list_repo_files', 2],
+        ['github_get_repo', 3],
+        ['github_connect', 4],
+      ]), allowed);
+      if (filtered.length > 0) {
+        return filtered;
       }
     }
 
@@ -968,16 +1310,7 @@ export function adjustToolsForIntent(context: AgentContext, tools: Array<{
       ['bash_exec', 13],
       ['bash', 13],
     ]);
-
-    return [...tools].sort((a, b) => {
-      const aPriority = priority.get(a.name) ?? 6;
-      const bPriority = priority.get(b.name) ?? 6;
-      if (aPriority !== bPriority) {
-        return aPriority - bPriority;
-      }
-      if (a.name === b.name) return 0;
-      return a.name.localeCompare(b.name);
-    });
+    return prioritize(priority);
   }
 
   if (!toolNames.has('agent_browser') || !looksLikeVisualBrowserIntent(context)) {
@@ -1011,7 +1344,11 @@ function selectSkillsForPrompt(params: {
   context: AgentContext;
   promptMode: PromptMode;
 }): SkillDefinition[] {
-  const maxSkills = params.promptMode === 'minimal' ? 4 : 40;
+  const maxSkills = isMinimalPromptMode(params.promptMode)
+    ? 4
+    : isChannelPromptMode(params.promptMode)
+      ? 10
+      : 40;
   if (params.skills.length <= maxSkills) return params.skills;
 
   const intent = collectRecentUserIntent(params.context);
@@ -1079,7 +1416,11 @@ function buildSkillsSection(agent: Agent, context: AgentContext, promptMode: Pro
   lines.push('- If user asks to add/install a skill, use `skills_add`.');
   lines.push('');
   const fullPrompt = formatSkillsForPrompt(skills);
-  const maxChars = promptMode === 'minimal' ? 2400 : 9000;
+  const maxChars = isMinimalPromptMode(promptMode)
+    ? 2400
+    : isChannelPromptMode(promptMode)
+      ? 4200
+      : 9000;
   if (fullPrompt.length <= maxChars) {
     lines.push(fullPrompt);
   } else {
@@ -1098,10 +1439,10 @@ function buildSessionSummarySection(context: AgentContext, promptMode: PromptMod
   const lines: string[] = [];
   lines.push('## Session Summary');
   if (summary.currentGoal) {
-    lines.push(`- Goal: ${compactText(summary.currentGoal, promptMode === 'minimal' ? 180 : 320)}`);
+    lines.push(`- Goal: ${compactText(summary.currentGoal, isMinimalPromptMode(promptMode) ? 180 : isChannelPromptMode(promptMode) ? 260 : 320)}`);
   }
 
-  const maxEntries = promptMode === 'minimal' ? 2 : 4;
+  const maxEntries = isMinimalPromptMode(promptMode) ? 2 : isChannelPromptMode(promptMode) ? 3 : 4;
   const decisions = (summary.importantDecisions || []).slice(0, maxEntries).map((item) => compactText(item, 180));
   const constraints = (summary.activeConstraints || []).slice(0, maxEntries).map((item) => compactText(item, 180));
   const loops = (summary.openLoops || []).slice(0, maxEntries).map((item) => compactText(item, 180));
@@ -1120,7 +1461,7 @@ function buildMemoryHintsSection(context: AgentContext, promptMode: PromptMode):
   const hints = Array.isArray(context.memoryHints) ? context.memoryHints : [];
   if (hints.length === 0) return '';
 
-  const maxHints = promptMode === 'minimal' ? 2 : 4;
+  const maxHints = isMinimalPromptMode(promptMode) ? 2 : isChannelPromptMode(promptMode) ? 3 : 4;
   const lines: string[] = [];
   lines.push('## Memory Hints');
   for (const hint of hints.slice(0, maxHints)) {
@@ -1129,7 +1470,47 @@ function buildMemoryHintsSection(context: AgentContext, promptMode: PromptMode):
     if (typeof hint.importance === 'number') detailBits.push(`importance=${hint.importance}`);
     if (hint.source) detailBits.push(hint.source);
     const detail = detailBits.length > 0 ? ` (${detailBits.join(', ')})` : '';
-    lines.push(`- ${compactText(hint.content, promptMode === 'minimal' ? 180 : 320)}${detail}`);
+    lines.push(`- ${compactText(hint.content, isMinimalPromptMode(promptMode) ? 180 : isChannelPromptMode(promptMode) ? 240 : 320)}${detail}`);
+  }
+  lines.push('');
+  return lines.join('\n');
+}
+
+function buildChannelContextSection(context: AgentContext, promptMode: PromptMode): string {
+  const channel = context.channelContext;
+  if (!channel) return '';
+
+  const lines: string[] = [];
+  lines.push('## Channel Context');
+  lines.push(`- Channel: ${channel.channel}`);
+  if (channel.chatType) lines.push(`- Chat type: ${channel.chatType}`);
+  if (channel.chatTitle) lines.push(`- Chat title: ${compactText(channel.chatTitle, 120)}`);
+  if (channel.threadId) lines.push(`- Thread: ${channel.threadId}`);
+  if (channel.senderName || channel.senderUsername) {
+    const sender = [
+      channel.senderName,
+      channel.senderUsername ? `@${channel.senderUsername}` : '',
+    ].filter(Boolean).join(' ');
+    if (sender) lines.push(`- Sender: ${compactText(sender, 120)}`);
+  }
+  if (typeof channel.wasMentioned === 'boolean') {
+    lines.push(`- Bot mentioned: ${channel.wasMentioned ? 'yes' : 'no'}`);
+  }
+  if (channel.replyToSender || channel.replyToText) {
+    const replyBits: string[] = [];
+    if (channel.replyToSender) replyBits.push(`sender=${compactText(channel.replyToSender, 80)}`);
+    if (channel.replyToText) {
+      replyBits.push(`text=${compactText(channel.replyToText, isMinimalPromptMode(promptMode) ? 120 : 220)}`);
+    }
+    lines.push(`- Reply target: ${replyBits.join(' | ')}`);
+  }
+  if ((channel.attachmentCount || 0) > 0) {
+    lines.push(`- Attachments: ${channel.attachmentCount}`);
+    const summaryLimit = isMinimalPromptMode(promptMode) ? 2 : isChannelPromptMode(promptMode) ? 4 : 5;
+    const summaries = (channel.attachmentSummary || []).slice(0, summaryLimit);
+    if (summaries.length > 0) {
+      lines.push(`- Attachment summary: ${summaries.map((item) => compactText(item, 120)).join(' | ')}`);
+    }
   }
   lines.push('');
   return lines.join('\n');
@@ -1223,9 +1604,18 @@ function buildWorkspaceContext(
 ): string {
   if (promptMode === 'none') return '';
 
-  const isMinimal = promptMode === 'minimal';
-  const perFileMax = isMinimal ? BOOTSTRAP_MINIMAL_MAX_CHARS_PER_FILE : BOOTSTRAP_MAX_CHARS_PER_FILE;
-  const totalMax = isMinimal ? BOOTSTRAP_MINIMAL_TOTAL_MAX_CHARS : BOOTSTRAP_TOTAL_MAX_CHARS;
+  const isMinimal = isMinimalPromptMode(promptMode);
+  const isChannel = isChannelPromptMode(promptMode);
+  const perFileMax = isMinimal
+    ? BOOTSTRAP_MINIMAL_MAX_CHARS_PER_FILE
+    : isChannel
+      ? BOOTSTRAP_CHANNEL_MAX_CHARS_PER_FILE
+      : BOOTSTRAP_MAX_CHARS_PER_FILE;
+  const totalMax = isMinimal
+    ? BOOTSTRAP_MINIMAL_TOTAL_MAX_CHARS
+    : isChannel
+      ? BOOTSTRAP_CHANNEL_TOTAL_MAX_CHARS
+      : BOOTSTRAP_TOTAL_MAX_CHARS;
 
   const files = loadBootstrapFiles(workspace, sessionId);
   const lines: string[] = [];
@@ -1273,7 +1663,11 @@ function buildWorkspaceContext(
  * "full" mode (CLI, complex tasks):
  *   Identity + Tooling + Tool Style + Safety + Skills + Agent Role + Workspace Context + Runtime
  *
- * "minimal" mode (channel messages, subagents):
+ * "channel" mode (live chat sessions):
+ *   Identity + Tooling + Tool Style + Channel Reply Style + Safety + Channel Context
+ *   + Session/Memory/Skills + Workspace Context + Runtime
+ *
+ * "minimal" mode (subagents, background runs):
  *   Identity + Tooling + Safety (short) + compact Session/Memory/Skills + Workspace Context + Runtime
  *   Skips heavy sections and keeps strict budget caps.
  *
@@ -1289,7 +1683,8 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     return prompt;
   }
 
-  const isMinimal = promptMode === 'minimal';
+  const isMinimal = isMinimalPromptMode(promptMode);
+  const isChannel = isChannelPromptMode(promptMode);
   const lines: string[] = [];
 
   // 1. Identity — minimal, personality comes from SOUL.md
@@ -1306,12 +1701,20 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   lines.push(buildToolCallStyleSection(agent, promptMode));
   lines.push('');
 
-  if (isMinimal || context.isChannelSession === true) {
+  if (isMinimal || isChannel || context.isChannelSession === true) {
     lines.push('## Channel Reply Style');
-    lines.push('For channel and group-chat replies, prefer plain sentences or short bullets.');
-    lines.push('Do not use markdown tables, horizontal rules, decorative section dividers, or promo-style headings.');
-    lines.push('Do not re-style tool output into marketing copy. Keep repo/site summaries utilitarian and direct.');
-    lines.push('Do not end with optional menus like "Want me to dig deeper?" unless the user explicitly asked for options.');
+    if (isMinimal) {
+      lines.push('For channel and group-chat replies, prefer plain sentences or short bullets.');
+      lines.push('Do not use markdown tables, horizontal rules, decorative section dividers, or promo-style headings.');
+      lines.push('Do not re-style tool output into marketing copy. Keep repo/site summaries utilitarian and direct.');
+      lines.push('Do not end with optional menus like "Want me to dig deeper?" unless the user explicitly asked for options.');
+    } else {
+      lines.push('For live channel replies, answer directly but do not be artificially terse.');
+      lines.push('Prefer 2-5 concise sentences or short bullets when the answer has multiple parts.');
+      lines.push('Synthesize tool results into a coherent explanation with the most relevant context, not just the shortest possible answer.');
+      lines.push('Keep the tone natural and useful. Avoid markdown tables, decorative dividers, and raw tool-status chatter.');
+      lines.push('Only offer next-step options when they materially help or the user explicitly asks for them.');
+    }
     lines.push('');
   }
 
@@ -1325,6 +1728,11 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push('');
   }
 
+  const channelContextSection = buildChannelContextSection(context, promptMode);
+  if (channelContextSection) {
+    lines.push(channelContextSection);
+  }
+
   // 5. Session + Memory (always eligible, compacted by mode)
   const sessionSummarySection = buildSessionSummarySection(context, promptMode);
   if (sessionSummarySection) {
@@ -1335,7 +1743,7 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push(memoryHintsSection);
   }
 
-  // 6. Skills (also enabled in minimal mode with strict caps)
+  // 6. Skills (also enabled in channel/minimal modes with stricter caps)
   const skillsSection = buildSkillsSection(agent, context, promptMode);
   if (skillsSection) {
     lines.push(skillsSection);
@@ -1427,27 +1835,55 @@ function compactForModelInputText(value: unknown, maxChars = 1800): string {
   return `${text.slice(0, maxChars)}...[truncated ${text.length - maxChars} chars]`;
 }
 
-function formatToolResultForModelLine(toolName: string | undefined, r: ToolResult): string {
+function buildToolResultNarrativeBlock(toolName: string | undefined, result: ToolResult): string {
   const label = toolName || 'tool';
-  if (r.error) {
-    return `${label}: Error: ${compactForModelInputText(r.error, 420)}`;
+  const lines: string[] = [];
+  lines.push(`<tool_result name="${label}" status="${result.error ? 'error' : 'ok'}">`);
+
+  if (result.error) {
+    lines.push(`error: ${compactForModelInputText(result.error, 420)}`);
   }
 
-  if (r.compact) {
-    const compact = r.compact;
-    const keyPoints = Array.isArray(compact.keyPoints)
-      ? compact.keyPoints
-          .slice(0, 4)
-          .map((item) => compactForModelInputText(item, 220))
-          .join(' | ')
-      : '';
-    const summary = compactForModelInputText(compact.summary, 420);
-    const rawRef = compact.rawRef ? ` rawRef=${compact.rawRef}` : '';
-    return `${label}: summary=${summary}${keyPoints ? ` | keyPoints=${keyPoints}` : ''}${rawRef}`;
+  if (result.compact) {
+    const compact = result.compact;
+    if (compact.title) {
+      lines.push(`title: ${compactForModelInputText(compact.title, 180)}`);
+    }
+    lines.push(`summary: ${compactForModelInputText(compact.summary, 520)}`);
+    if (Array.isArray(compact.keyPoints) && compact.keyPoints.length > 0) {
+      lines.push('key_points:');
+      for (const point of compact.keyPoints.slice(0, 8)) {
+        lines.push(`- ${compactForModelInputText(point, 260)}`);
+      }
+    }
+    if (compact.usefulQuotes && compact.usefulQuotes.length > 0) {
+      lines.push('useful_quotes:');
+      for (const quote of compact.usefulQuotes.slice(0, 3)) {
+        lines.push(`- ${compactForModelInputText(quote, 220)}`);
+      }
+    }
+    lines.push(`relevance: ${compactForModelInputText(compact.relevanceToTask, 220)}`);
+    if (compact.rawRef) {
+      lines.push(`raw_ref: ${compact.rawRef}`);
+    }
+  } else {
+    const payload = result.data ?? result.output ?? '';
+    if (payload) {
+      lines.push(`content: ${compactForModelInputText(payload, 900)}`);
+    }
   }
 
-  const payload = r.data ?? r.output ?? '';
-  return `${label}: ${compactForModelInputText(payload, 1800)}`;
+  lines.push('</tool_result>');
+  return lines.join('\n');
+}
+
+function buildToolResultsForModelInput(toolCalls: ToolCall[], results: ToolResult[]): string {
+  const lines: string[] = ['[Tool Results]'];
+  for (const result of results) {
+    const toolName = toolCalls.find((toolCall) => toolCall.id === result.toolCallId)?.name;
+    lines.push(buildToolResultNarrativeBlock(toolName, result));
+  }
+  return lines.join('\n');
 }
 
 // ─── Agent Loop ───────────────────────────────────────────────────────────
@@ -1521,9 +1957,11 @@ export async function runAgent(
       smallModel: providerConfig?.smallModel,
       tier: agent.executionProfile?.modelTier,
     });
+  const recentUrls = extractRecentUrlsFromContext(context);
   const toolContextHints = {
-    urls: extractRecentUrlsFromContext(context),
-    repos: extractRecentGitHubReposFromContext(context),
+    urls: recentUrls,
+    githubRepoUrl: recentUrls.find((url) => looksLikeGitHubRepoUrl(url)),
+    explicitFileTarget: extractExplicitFileTargetFromContext(context),
   };
 
   const allToolCalls: ToolCall[] = [];
@@ -1869,7 +2307,7 @@ export async function runAgent(
       };
     }
 
-    const toolResultsForModel = results.map(r => {
+    results.forEach((r) => {
       const toolName = toolCallsWithIds.find(tc => tc.id === r.toolCallId)?.name;
       if (toolName && typeof r.rawSize === 'number' && typeof r.compactSize === 'number') {
         toolTelemetry.push({
@@ -1883,14 +2321,14 @@ export async function runAgent(
           mediaUrls.add(mediaUrl);
         }
       }
-      return formatToolResultForModelLine(toolName, r);
-    }).join('\n');
+    });
+    const toolResultsForModel = buildToolResultsForModelInput(toolCallsWithIds, results);
 
     const assistantContent = (response.content || '').trim() || '[Tool invocation]';
     messages = [
       ...messages,
       { role: 'assistant', content: assistantContent },
-      { role: 'user', content: `[Tool Results]\n${toolResultsForModel}` },
+      { role: 'user', content: toolResultsForModel },
     ];
     messages = enforceToolResultContextBudget(
       trimMessagesToBudget(messages, budget.requestMaxInputTokens).messages,
@@ -1995,9 +2433,11 @@ export async function* runAgentStream(
       smallModel: providerConfig?.smallModel,
       tier: agent.executionProfile?.modelTier,
     });
+  const recentUrls = extractRecentUrlsFromContext(context);
   const toolContextHints = {
-    urls: extractRecentUrlsFromContext(context),
-    repos: extractRecentGitHubReposFromContext(context),
+    urls: recentUrls,
+    githubRepoUrl: recentUrls.find((url) => looksLikeGitHubRepoUrl(url)),
+    explicitFileTarget: extractExplicitFileTargetFromContext(context),
   };
 
   let iteration = 0;
@@ -2355,15 +2795,12 @@ export async function* runAgentStream(
         };
       }
 
-      const toolResultContent = results.map(r => {
-        const toolName = pendingToolCalls.find(tc => tc.id === r.toolCallId)?.name;
-        return formatToolResultForModelLine(toolName, r);
-      }).join('\n');
+      const toolResultContent = buildToolResultsForModelInput(pendingToolCalls, results);
 
       messages = [
         ...messages,
         { role: 'assistant', content: fullContent },
-        { role: 'user', content: `[Tool Results]\n${toolResultContent}` },
+        { role: 'user', content: toolResultContent },
       ];
       messages = enforceToolResultContextBudget(
         trimMessagesToBudget(messages, budget.requestMaxInputTokens).messages,

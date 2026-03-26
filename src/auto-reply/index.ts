@@ -10,6 +10,7 @@
  */
 
 import { AgentOrchestrator } from '../agents/orchestrator';
+import type { AgentChannelContext } from '../agents/types';
 import { createReplyDispatcher } from './dispatcher';
 import { createReplyProjector } from './reply-projector';
 import { createTypingController } from './typing';
@@ -28,6 +29,12 @@ export * from './types';
 export { createReplyDispatcher, ReplyDispatcher } from './dispatcher';
 export { createTypingController } from './typing';
 export { CommandRegistryManager, registerBuiltinCommands } from './commands';
+
+function compactInline(value: string, maxChars: number): string {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (text.length <= maxChars) return text;
+  return `${text.slice(0, maxChars)}...`;
+}
 
 export interface HandleMessageResult {
   content?: string;
@@ -269,17 +276,93 @@ export class AutoReplyHandler {
     return lines.join('\n');
   }
 
+  private firstMetadataString(message: IncomingMessage, ...keys: string[]): string | undefined {
+    const metadata = message.metadata || {};
+    for (const key of keys) {
+      const value = metadata[key];
+      if (typeof value === 'string' && value.trim()) return value.trim();
+    }
+    return undefined;
+  }
+
+  private buildChannelContext(message: IncomingMessage): AgentChannelContext {
+    const attachmentSummary = (message.media || []).slice(0, 5).map((item) => {
+      const parts: string[] = [item.type];
+      if (item.filename) parts.push(item.filename);
+      else if (item.caption) parts.push(compactInline(item.caption, 80));
+      return parts.join(': ');
+    });
+
+    return {
+      channel: message.channel,
+      chatType: message.chat?.type,
+      chatId: message.chat?.id,
+      chatTitle: message.chat?.title,
+      threadId: message.threadId,
+      messageId: message.id,
+      senderId: message.from?.id,
+      senderName: message.from?.name,
+      senderUsername: message.from?.username,
+      wasMentioned: message.wasMentioned,
+      replyToMessageId: message.replyToMessageId,
+      replyToText: this.firstMetadataString(message, 'replyToText', 'replyText', 'quotedText', 'replyBody'),
+      replyToSender: this.firstMetadataString(message, 'replyToSender', 'quotedSender', 'replyAuthor'),
+      accountId: typeof message.metadata?.accountId === 'string' ? message.metadata.accountId : undefined,
+      timestampIso: message.timestamp?.toISOString?.(),
+      attachmentCount: Array.isArray(message.media) ? message.media.length : 0,
+      attachmentSummary: attachmentSummary.length > 0 ? attachmentSummary : undefined,
+    };
+  }
+
+  private buildInboundEnvelopeBlock(message: IncomingMessage): string {
+    const lines: string[] = [];
+    lines.push('[Inbound Context]');
+    lines.push(`channel: ${message.channel}`);
+    if (message.chat?.type) lines.push(`chat_type: ${message.chat.type}`);
+    if (message.chat?.title) lines.push(`chat_title: ${message.chat.title}`);
+    if (message.chat?.id) lines.push(`chat_id: ${message.chat.id}`);
+    if (message.threadId) lines.push(`thread_id: ${message.threadId}`);
+    if (message.from?.name) {
+      const sender =
+        message.from.username
+          ? `${message.from.name} (@${message.from.username})`
+          : message.from.name;
+      lines.push(`sender: ${sender}`);
+    } else if (message.from?.id) {
+      lines.push(`sender_id: ${message.from.id}`);
+    }
+    if (message.wasMentioned != null) lines.push(`bot_mentioned: ${message.wasMentioned ? 'yes' : 'no'}`);
+    if (message.replyToMessageId) lines.push(`reply_to_message_id: ${message.replyToMessageId}`);
+    const replyToSender = this.firstMetadataString(message, 'replyToSender', 'quotedSender', 'replyAuthor');
+    if (replyToSender) lines.push(`reply_to_sender: ${replyToSender}`);
+    const replyToText = this.firstMetadataString(message, 'replyToText', 'replyText', 'quotedText', 'replyBody');
+    if (replyToText) lines.push(`reply_to_text: ${compactInline(replyToText, 280)}`);
+    if (Array.isArray(message.media) && message.media.length > 0) {
+      lines.push(`attachments: ${message.media.length}`);
+    }
+    lines.push('');
+    return lines.join('\n');
+  }
+
   private buildInboundPrompt(message: IncomingMessage): string {
     const userText = (message.text || '').trim();
     const mediaContext = this.buildMediaContextBlock(message);
+    const envelope = this.buildInboundEnvelopeBlock(message);
 
-    if (userText && mediaContext) {
-      return `${userText}\n\n${mediaContext}`;
+    const sections: string[] = [];
+    sections.push(envelope);
+    if (userText) {
+      sections.push('[User Message]');
+      sections.push(userText);
+    } else {
+      sections.push('[User Message]');
+      sections.push('[Media message]');
     }
     if (mediaContext) {
-      return mediaContext;
+      sections.push('');
+      sections.push(mediaContext);
     }
-    return userText || '[Media message]';
+    return sections.join('\n');
   }
 
   /**
@@ -352,6 +435,7 @@ export class AutoReplyHandler {
         agentId: route.agentId,
         message: inboundPrompt,
         stream: true,
+        channelContext: this.buildChannelContext(message),
       });
 
       const projector = createReplyProjector({

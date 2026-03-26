@@ -4,6 +4,7 @@
  * Read repository metadata, files, and code via the GitHub API.
  */
 
+import path from 'node:path';
 import { Tool, ToolCategory, ToolResult } from '../traits';
 import { loadConfig } from '../../config';
 import {
@@ -16,6 +17,22 @@ type OwnerRepo = {
   owner: string;
   repo: string;
 };
+
+type RepoTreeEntry = {
+  path: string;
+  type: string;
+  size?: number;
+};
+
+type ResolvedFileMatch = {
+  path: string;
+  score: number;
+  url?: string;
+  source: 'tree' | 'search';
+};
+
+const repoTreeCache = new Map<string, { expiresAt: number; entries: RepoTreeEntry[] }>();
+const REPO_TREE_CACHE_TTL_MS = 60_000;
 
 async function buildGitHubReconnectMessage(): Promise<string> {
   const generic = [
@@ -93,6 +110,111 @@ function normalizePath(path?: string): string {
     .replace(/\/+$/, '');
 }
 
+function normalizeFileTarget(target?: string): string {
+  return String(target || '')
+    .trim()
+    .replace(/^[`'"]+/, '')
+    .replace(/[`'",:;.!?)\]]+$/g, '')
+    .replace(/^\/+/, '');
+}
+
+function looksLikeExactFilename(target?: string): boolean {
+  const basename = path.posix.basename(normalizeFileTarget(target));
+  return /\.[A-Za-z0-9_.-]+$/.test(basename);
+}
+
+function stripFileExtension(value: string): string {
+  return value.replace(/\.[^.]+$/, '');
+}
+
+function normalizeComparablePathToken(value: string): string {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9_.-]+/g, '');
+}
+
+function buildRepoTreeCacheKey(params: {
+  ownerRepo: OwnerRepo;
+  ref?: string;
+  apiBaseUrl?: string;
+}): string {
+  return [
+    params.apiBaseUrl || 'default',
+    params.ownerRepo.owner,
+    params.ownerRepo.repo,
+    String(params.ref || '').trim() || 'default',
+  ].join(':');
+}
+
+async function resolveRepositoryTreeSha(params: {
+  ownerRepo: OwnerRepo;
+  ref?: string;
+  token: string;
+  apiBaseUrl?: string;
+}): Promise<string | undefined> {
+  const desiredRef = String(params.ref || '').trim();
+  let commitRef = desiredRef;
+
+  if (!commitRef) {
+    const repoInfo = await githubApiRequest(
+      `/repos/${params.ownerRepo.owner}/${params.ownerRepo.repo}`,
+      { token: params.token, apiBaseUrl: params.apiBaseUrl },
+    );
+    commitRef = String(repoInfo?.default_branch || '').trim();
+  }
+
+  if (!commitRef) {
+    return undefined;
+  }
+
+  const commit = await githubApiRequest(
+    `/repos/${params.ownerRepo.owner}/${params.ownerRepo.repo}/commits/${encodeURIComponent(commitRef)}`,
+    { token: params.token, apiBaseUrl: params.apiBaseUrl },
+  );
+
+  return typeof commit?.commit?.tree?.sha === 'string' && commit.commit.tree.sha.trim()
+    ? commit.commit.tree.sha.trim()
+    : undefined;
+}
+
+async function getRepositoryTreeEntries(params: {
+  ownerRepo: OwnerRepo;
+  ref?: string;
+  token: string;
+  apiBaseUrl?: string;
+}): Promise<RepoTreeEntry[]> {
+  const cacheKey = buildRepoTreeCacheKey(params);
+  const cached = repoTreeCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.entries;
+  }
+
+  const treeSha = await resolveRepositoryTreeSha(params);
+  if (!treeSha) {
+    return [];
+  }
+
+  const tree = await githubApiRequest(
+    `/repos/${params.ownerRepo.owner}/${params.ownerRepo.repo}/git/trees/${treeSha}?recursive=1`,
+    { token: params.token, apiBaseUrl: params.apiBaseUrl },
+  );
+
+  const entries = (Array.isArray(tree?.tree) ? tree.tree : [])
+    .map((entry: any) => ({
+      path: String(entry?.path || '').trim(),
+      type: String(entry?.type || '').trim(),
+      size: typeof entry?.size === 'number' ? entry.size : undefined,
+    }))
+    .filter((entry: RepoTreeEntry) => entry.path && entry.type === 'blob');
+
+  repoTreeCache.set(cacheKey, {
+    expiresAt: Date.now() + REPO_TREE_CACHE_TTL_MS,
+    entries,
+  });
+
+  return entries;
+}
+
 function truncateText(text: string, maxLength: number): { text: string; truncated: boolean } {
   if (text.length <= maxLength) {
     return { text, truncated: false };
@@ -109,6 +231,177 @@ function decodeGitHubContent(content?: string, encoding?: string): string {
     return Buffer.from(content.replace(/\n/g, ''), 'base64').toString('utf8');
   }
   return content;
+}
+
+function scoreResolvedFilePath(candidatePath: string, target: string): number {
+  const normalizedCandidate = normalizePath(candidatePath).toLowerCase();
+  const normalizedTarget = normalizePath(target).toLowerCase();
+  const candidateBase = path.posix.basename(normalizedCandidate);
+  const targetBase = path.posix.basename(normalizedTarget);
+  const candidateStem = stripFileExtension(candidateBase);
+  const targetStem = stripFileExtension(targetBase);
+  const candidateToken = normalizeComparablePathToken(candidateBase);
+  const targetToken = normalizeComparablePathToken(targetBase);
+  const candidateStemToken = normalizeComparablePathToken(candidateStem);
+  const targetStemToken = normalizeComparablePathToken(targetStem);
+
+  if (normalizedCandidate === normalizedTarget) return 1000;
+  if (candidateBase === targetBase && targetBase.includes('.')) return 950;
+  if (!targetBase.includes('.') && candidateBase === `${targetBase}.md`) return 910;
+  if (normalizedCandidate.endsWith(`/${normalizedTarget}`)) return 920;
+  if (candidateBase === targetBase) return 900;
+  if (candidateStem === targetStem && targetStem.length >= 3) return 860;
+  if (candidateToken === targetToken && targetToken.length >= 3) return 830;
+  if (candidateStemToken === targetStemToken && targetStemToken.length >= 3) return 800;
+  if (candidateBase.includes(targetBase) && targetBase.length >= 4) return 720;
+  if (candidateStem.includes(targetStem) && targetStem.length >= 4) return 680;
+  if (normalizedCandidate.includes(normalizedTarget) && normalizedTarget.length >= 4) return 640;
+  return 0;
+}
+
+function mergeResolvedMatches(matches: ResolvedFileMatch[]): ResolvedFileMatch[] {
+  const seen = new Set<string>();
+  return matches.filter((match) => {
+    const key = normalizePath(match.path).toLowerCase();
+    if (!key || seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
+function chooseResolvedPath(matches: ResolvedFileMatch[], target: string): string | undefined {
+  const [top, second] = matches;
+  if (!top) {
+    return undefined;
+  }
+
+  const normalizedTarget = normalizePath(target).toLowerCase();
+  const targetBase = path.posix.basename(normalizedTarget);
+  const targetHasExtension = looksLikeExactFilename(target);
+
+  if (targetHasExtension) {
+    if (top.score >= 900) return top.path;
+    if (!second && top.score >= 860) return top.path;
+    if (second && top.score >= 900 && top.score >= second.score + 30) return top.path;
+    return undefined;
+  }
+
+  if (path.posix.basename(top.path).toLowerCase() === `${targetBase}.md`) {
+    return top.path;
+  }
+  if (!second && top.score >= 780) {
+    return top.path;
+  }
+  if (second && top.score >= 860 && top.score >= second.score + 70) {
+    return top.path;
+  }
+
+  return undefined;
+}
+
+async function resolveFileTargetFromTree(params: {
+  ownerRepo: OwnerRepo;
+  target: string;
+  ref?: string;
+  token: string;
+  apiBaseUrl?: string;
+}): Promise<ResolvedFileMatch[]> {
+  const entries = await getRepositoryTreeEntries(params);
+  return entries
+    .map((entry) => ({
+      path: entry.path,
+      score: scoreResolvedFilePath(entry.path, params.target),
+      source: 'tree' as const,
+    }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || a.path.localeCompare(b.path));
+}
+
+async function resolveFileTargetFromSearch(params: {
+  ownerRepo: OwnerRepo;
+  target: string;
+  ref?: string;
+  token: string;
+  apiBaseUrl?: string;
+  limit?: number;
+}): Promise<ResolvedFileMatch[]> {
+  const basename = path.posix.basename(params.target);
+  const dirname = path.posix.dirname(params.target);
+  const queryParts = [basename || params.target, `repo:${params.ownerRepo.owner}/${params.ownerRepo.repo}`];
+  if (looksLikeExactFilename(params.target)) {
+    queryParts.push(`filename:${basename}`);
+  }
+  if (dirname && dirname !== '.' && dirname !== basename) {
+    queryParts.push(`path:${dirname}`);
+  }
+
+  const perPage = Math.max(5, Math.min(params.limit || 20, 50));
+  const result = await githubApiRequest(
+    `/search/code?q=${encodeURIComponent(queryParts.join(' '))}&per_page=${perPage}`,
+    { token: params.token, apiBaseUrl: params.apiBaseUrl },
+  );
+
+  return (Array.isArray(result?.items) ? result.items : [])
+    .map((item: any) => ({
+      path: String(item?.path || '').trim(),
+      url: typeof item?.html_url === 'string' ? item.html_url : undefined,
+      source: 'search' as const,
+    }))
+    .filter((item: { path: string }) => item.path)
+    .map((item: { path: string; url?: string; source: 'search' }) => ({
+      ...item,
+      score: scoreResolvedFilePath(item.path, params.target),
+    }))
+    .filter((item: ResolvedFileMatch) => item.score > 0)
+    .sort((a: ResolvedFileMatch, b: ResolvedFileMatch) => b.score - a.score || a.path.localeCompare(b.path));
+}
+
+async function resolveFileTargetToPath(params: {
+  ownerRepo: OwnerRepo;
+  target: string;
+  ref?: string;
+  token: string;
+  apiBaseUrl?: string;
+  limit?: number;
+}): Promise<{
+  resolvedPath?: string;
+  matches: Array<{ path: string; score: number; url?: string; source: 'tree' | 'search' }>;
+}> {
+  const target = normalizeFileTarget(params.target);
+  if (!target) {
+    return { matches: [] };
+  }
+  const treeMatches = await resolveFileTargetFromTree({
+    ownerRepo: params.ownerRepo,
+    target,
+    ref: params.ref,
+    token: params.token,
+    apiBaseUrl: params.apiBaseUrl,
+  }).catch(() => []);
+
+  let mergedMatches = mergeResolvedMatches(treeMatches);
+  let resolvedPath = chooseResolvedPath(mergedMatches, target);
+
+  if (!resolvedPath) {
+    const searchMatches = await resolveFileTargetFromSearch({
+      ownerRepo: params.ownerRepo,
+      target,
+      ref: params.ref,
+      token: params.token,
+      apiBaseUrl: params.apiBaseUrl,
+      limit: params.limit,
+    }).catch(() => []);
+    mergedMatches = mergeResolvedMatches([...treeMatches, ...searchMatches])
+      .sort((a, b) => b.score - a.score || a.path.localeCompare(b.path));
+    resolvedPath = chooseResolvedPath(mergedMatches, target);
+  }
+
+  return {
+    resolvedPath,
+    matches: mergedMatches.slice(0, 8),
+  };
 }
 
 function extractReadmeSummarySource(text: string, maxLength: number): string {
@@ -364,7 +657,8 @@ Use this for:
 - "list files in src/"
 - "what is in the root of this repo?"
 
-Prefer this over scraping the GitHub HTML page.`;
+Prefer this over scraping the GitHub HTML page.
+Use this when the user wants to browse the repo tree or inspect candidate paths returned by \`github_get_file\`.`;
 
   category = ToolCategory.EXTERNAL;
   parameters = {
@@ -495,7 +789,13 @@ Use this for:
 - "open package.json"
 - "read README.md"
 - "show src/index.ts"
-- "what is in this file?"`;
+- "what is in this file?"
+
+This tool can read by:
+- exact path (\`path\`)
+- filename or file hint (\`target\`), which FoxFang resolves against the actual repo tree before reading.
+
+When the user names a file without an exact path, pass that filename as \`target\` exactly as the user said it.`;
 
   category = ToolCategory.EXTERNAL;
   parameters = {
@@ -509,6 +809,10 @@ Use this for:
         type: 'string',
         description: 'File path inside the repository.',
       },
+      target: {
+        type: 'string',
+        description: 'Optional filename or partial file hint to resolve when the exact path is unknown.',
+      },
       ref: {
         type: 'string',
         description: 'Optional git ref, tag, or branch name.',
@@ -519,12 +823,13 @@ Use this for:
         default: 12000,
       },
     },
-    required: ['repo', 'path'],
+    required: ['repo'],
   };
 
   async execute(args: {
     repo: string;
-    path: string;
+    path?: string;
+    target?: string;
     ref?: string;
     maxLength?: number;
   }): Promise<ToolResult> {
@@ -553,11 +858,34 @@ Use this for:
         };
       }
 
-      const path = normalizePath(args.path);
+      let path = normalizePath(args.path);
+      const target = normalizeFileTarget(args.target);
+      let targetMatches: Array<{ path: string; score: number; url?: string; source: 'tree' | 'search' }> = [];
+      if (!path && target) {
+        const resolved = await resolveFileTargetToPath({
+          ownerRepo,
+          target,
+          ref: args.ref,
+          token: auth.token,
+          apiBaseUrl: auth.apiBaseUrl,
+        });
+        path = resolved.resolvedPath || '';
+        targetMatches = resolved.matches;
+      }
+
       if (!path) {
         return {
           success: false,
-          error: 'File path is required',
+          error: target
+            ? `Could not resolve file target "${target}" in ${ownerRepo.owner}/${ownerRepo.repo}.`
+            : 'File path or target is required. Provide an exact path, or pass a filename/target to resolve.',
+          data: targetMatches.length > 0
+            ? {
+                repo: `${ownerRepo.owner}/${ownerRepo.repo}`,
+                target,
+                matches: targetMatches,
+              }
+            : undefined,
         };
       }
 
@@ -584,6 +912,9 @@ Use this for:
         data: {
           repo: `${ownerRepo.owner}/${ownerRepo.repo}`,
           path: file.path,
+          target: target || undefined,
+          resolvedFromTarget: Boolean(target && file.path !== target),
+          matches: targetMatches.length > 0 ? targetMatches : undefined,
           sha: file.sha,
           size: file.size,
           content: truncated.text,
@@ -621,7 +952,9 @@ Use this for:
 - "find auth middleware"
 - "search for env var usage"
 - "where is this function defined?"
-- "find files mentioning X"`;
+- "find files mentioning X"
+
+Use this for explicit search/find/grep questions, not as the first step for reading a named file.`;
 
   category = ToolCategory.EXTERNAL;
   parameters = {

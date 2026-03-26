@@ -22,6 +22,10 @@ interface ReplyProjectorOptions {
   threadId?: string;
 }
 
+const MAX_PARTIAL_REPLIES = 2;
+const MIN_PARTIAL_REPLY_CHARS = 140;
+const MAX_PARTIAL_REPLY_CHARS = 520;
+
 function normalizeComparableText(value: string): string {
   return String(value || '')
     .toLowerCase()
@@ -47,11 +51,45 @@ function sanitizeVisibleText(raw: string, currentMessageId: string): string {
   return visible;
 }
 
+function truncateAtNaturalBoundary(text: string, maxChars: number): string {
+  if (text.length <= maxChars) return text;
+  const slice = text.slice(0, maxChars);
+  const boundary = Math.max(
+    slice.lastIndexOf('\n\n'),
+    slice.lastIndexOf('. '),
+    slice.lastIndexOf('! '),
+    slice.lastIndexOf('? '),
+  );
+  if (boundary >= Math.max(80, Math.floor(maxChars * 0.5))) {
+    return slice.slice(0, boundary + 1).trim();
+  }
+  return `${slice.trim()}...`;
+}
+
+function selectProjectableVisibleText(raw: string, currentMessageId: string): string {
+  const visible = sanitizeVisibleText(raw, currentMessageId);
+  if (!visible) return '';
+  const normalizedWhitespace = visible.replace(/\n{3,}/g, '\n\n').trim();
+  const paragraphs = normalizedWhitespace
+    .split(/\n{2,}/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  let candidate = normalizedWhitespace;
+  if (paragraphs.length >= 2 && normalizedWhitespace.length > MAX_PARTIAL_REPLY_CHARS) {
+    candidate = `${paragraphs[0]}\n\n${paragraphs[1]}`.trim();
+  } else if (paragraphs.length >= 1 && normalizedWhitespace.length > MAX_PARTIAL_REPLY_CHARS) {
+    candidate = paragraphs[0];
+  }
+
+  return truncateAtNaturalBoundary(candidate, MAX_PARTIAL_REPLY_CHARS);
+}
+
 export function createReplyProjector(options: ReplyProjectorOptions): ReplyProjector {
   let finalized = false;
   let quoteConsumed = false;
   let lastProjectedVisibleText = '';
-  let partialReplySent = false;
+  let partialRepliesSent = 0;
   let finalContent = '';
   let finalToolCalls: ToolCall[] | undefined;
   const seenProjectionSignatures = new Set<string>();
@@ -111,11 +149,12 @@ export function createReplyProjector(options: ReplyProjectorOptions): ReplyProje
   };
 
   const enqueuePartialReply = (text: string): boolean => {
-    if (partialReplySent) return false;
+    if (partialRepliesSent >= MAX_PARTIAL_REPLIES) return false;
 
-    const visible = sanitizeVisibleText(text, options.currentMessageId);
+    const visible = selectProjectableVisibleText(text, options.currentMessageId);
     if (!visible) return false;
     if (isProgressOnlyStatusUpdate(visible)) return false;
+    if (visible.length < MIN_PARTIAL_REPLY_CHARS && !visible.includes('\n')) return false;
 
     const signature = normalizeComparableText(visible);
     if (!signature || seenProjectionSignatures.has(signature)) return false;
@@ -126,7 +165,7 @@ export function createReplyProjector(options: ReplyProjectorOptions): ReplyProje
       allowDefaultReplyQuote: true,
     }));
     if (sent) {
-      partialReplySent = true;
+      partialRepliesSent += 1;
       lastProjectedVisibleText = visible;
     }
     return sent;
@@ -196,8 +235,8 @@ export function createReplyProjector(options: ReplyProjectorOptions): ReplyProje
     const isDuplicateFinal =
       Boolean(visibleFinalText) &&
       !mediaUrl &&
-      Boolean(lastProjectedVisibleText) &&
-      normalizeComparableText(lastProjectedVisibleText) === normalizedFinal;
+      Boolean(normalizedFinal) &&
+      seenProjectionSignatures.has(normalizedFinal);
 
     if (!shouldSuppressFinal && (visibleFinalText || mediaUrl) && !isDuplicateFinal) {
       options.dispatcher.sendFinalReply(buildPayload({

@@ -42,6 +42,26 @@ export type CompactToolResult = {
   rawRef?: string;
 };
 
+export type AgentChannelContext = {
+  channel: string;
+  chatType?: 'private' | 'group' | 'channel' | string;
+  chatId?: string;
+  chatTitle?: string;
+  threadId?: string;
+  messageId?: string;
+  senderId?: string;
+  senderName?: string;
+  senderUsername?: string;
+  wasMentioned?: boolean;
+  replyToMessageId?: string;
+  replyToText?: string;
+  replyToSender?: string;
+  accountId?: string;
+  timestampIso?: string;
+  attachmentCount?: number;
+  attachmentSummary?: string[];
+};
+
 export type RequestTrace = {
   requestId: string;
   createdAt: string;
@@ -112,10 +132,11 @@ export interface ToolResult {
 /**
  * Prompt mode controls how much context is injected into the system prompt.
  * - "full": All sections (tooling, safety, skills, workspace context, runtime)
- * - "minimal": Stripped-down prompt for subagents and channel messages (compact skills + truncated workspace)
+ * - "channel": Rich channel prompt for live chat sessions (more context than minimal, less verbose than full)
+ * - "minimal": Stripped-down prompt for subagents/background runs (compact skills + truncated workspace)
  * - "none": Single identity line only
  */
-export type PromptMode = 'full' | 'minimal' | 'none';
+export type PromptMode = 'full' | 'channel' | 'minimal' | 'none';
 
 export interface AgentContext {
   sessionId: string;
@@ -136,6 +157,7 @@ export interface AgentContext {
   reasoningMode?: ReasoningMode;
   promptMode?: PromptMode;
   isChannelSession?: boolean;
+  channelContext?: AgentChannelContext;
   trace?: RequestTrace;
 }
 
@@ -172,6 +194,7 @@ export interface RunRequest {
   provider?: string;
   systemPrompt?: string;
   stream?: boolean;
+  channelContext?: AgentChannelContext;
   /** Internal recursion/delegation counter for governance controls */
   delegationDepth?: number;
 }
