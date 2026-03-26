@@ -38,14 +38,6 @@ export function setDefaultProvider(providerId: string): void {
  */
 const systemPromptCache = new Map<string, string>();
 
-function getCachedSystemPrompt(sessionId: string): string | undefined {
-  return systemPromptCache.get(sessionId);
-}
-
-function setCachedSystemPrompt(sessionId: string, prompt: string): void {
-  systemPromptCache.set(sessionId, prompt);
-}
-
 export function clearSystemPromptCache(sessionId: string): void {
   systemPromptCache.delete(sessionId);
 }
