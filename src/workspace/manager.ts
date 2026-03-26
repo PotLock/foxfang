@@ -6,6 +6,7 @@ import { join } from 'path';
 import { resolveFoxFangHome } from '../config/defaults';
 import { expandHomePath, seedManagedSkills } from '../skill-system';
 import { WorkspaceFile, WorkspaceConfig, IdentityData, UserData, SoulData } from './types';
+import { seedWorkspacePresets } from './preset-seed';
 import {
   IDENTITY_TEMPLATE,
   IDENTITY_BRAND_TEMPLATE,
@@ -84,8 +85,7 @@ export function initFoxFangHome(homeDir?: string): string {
   const dirs = [
     home,
     join(home, 'workspace'),
-    join(home, 'workspace', 'skills'),
-    join(home, 'workspace', 'projects'),
+    join(home, 'workspace', 'presets'),
     join(home, 'sessions'),
     join(home, 'skills'),
     join(home, 'data'),
@@ -100,6 +100,11 @@ export function initFoxFangHome(homeDir?: string): string {
   const seeded = seedManagedSkills(home);
   if (seeded.copied > 0) {
     console.log(`[FoxFang] Seeded ${seeded.copied} default skill(s) to: ${seeded.managedDir}`);
+  }
+
+  const presetSeed = seedWorkspacePresets(home);
+  if (presetSeed.copied > 0) {
+    console.log(`[FoxFang] Seeded ${presetSeed.copied} workspace preset file(s) to: ${presetSeed.targetDir}`);
   }
 
   console.log(`[FoxFang] Home directory initialized at: ${home}`);
@@ -138,6 +143,11 @@ export class WorkspaceManager {
   
   private getFilePath(filename: string): string {
     return join(this.getWorkspacePath(), filename);
+  }
+
+  private getProjectRootPath(): string | null {
+    if (!this.config.projectId) return null;
+    return join(this.config.workspaceDir, 'workspace', 'projects', this.config.projectId);
   }
 
   private getRootAgentsSpec(): string | null {
@@ -181,7 +191,7 @@ export class WorkspaceManager {
       industry: user.preferences?.industry || 'Not specified',
       userRole: user.preferences?.role || 'Not specified',
       preferences: '- Professional and direct communication\n- Data-driven recommendations\n- Creative and innovative solutions',
-      projects: '- Current marketing campaigns\n- Brand development\n- Content strategy'
+      focus: '- Current marketing campaigns\n- Brand development\n- Content strategy'
     }), 'user');
     
     // Create MEMORY.md
@@ -254,7 +264,7 @@ ${project.description || 'No description provided.'}
       industry: 'Marketing',
       userRole: 'Operator',
       preferences: '- Clear status updates\n- Actionable next steps\n- Ask questions when blocked',
-      projects: '- Active project tasks'
+      focus: '- Active marketing priorities'
     });
 
     this.writeFile('IDENTITY.md', identityContent, 'identity');
@@ -283,7 +293,30 @@ ${project.description || 'No description provided.'}
   // Read a workspace file (stat-cached — only re-reads when file changes on disk)
   readFile(filename: string): string | null {
     const filepath = this.getFilePath(filename);
-    return readFileCached(filepath);
+    const localContent = readFileCached(filepath);
+    if (localContent != null) return localContent;
+
+    // Agent workspaces inherit shared project files when not overridden locally.
+    if (this.config.projectId && this.config.agentId) {
+      const projectRoot = this.getProjectRootPath();
+      if (projectRoot) {
+        const sharedPath = join(projectRoot, filename);
+        if (sharedPath !== filepath) {
+          const sharedContent = readFileCached(sharedPath);
+          if (sharedContent != null) return sharedContent;
+        }
+      }
+    }
+
+    // Global workspace presets (shared across agents/projects):
+    // ~/.foxfang/workspace/presets/*.md
+    if (filename.startsWith('presets/')) {
+      const presetPath = join(this.config.workspaceDir, 'workspace', filename);
+      const presetContent = readFileCached(presetPath);
+      if (presetContent != null) return presetContent;
+    }
+
+    return null;
   }
   
   // Write a workspace file (invalidates stat cache so next read picks up changes)
@@ -324,7 +357,9 @@ ${project.description || 'No description provided.'}
     const files = [
       { name: 'AGENTS.md', required: true },
       { name: 'SOUL.md', required: true },
+      { name: 'BRAND_VOICE.md', required: false }, // Brand voice profile (project-specific)
       { name: 'BRAND.md', required: false },   // Brand context — highest priority content signal
+      { name: 'PROJECT.md', required: false },
       { name: 'TOOLS.md', required: true },
       { name: 'IDENTITY.md', required: true },
       { name: 'USER.md', required: false },
@@ -347,7 +382,7 @@ ${project.description || 'No description provided.'}
   }
 
   // Apply brand context to this agent workspace.
-  // Writes BRAND.md and rewrites SOUL.md + IDENTITY.md to be brand-aware.
+  // Writes BRAND.md + BRAND_VOICE.md and rewrites SOUL.md + IDENTITY.md to be brand-aware.
   applyBrandContext(params: {
     brandContent: string;
     agentName: string;
@@ -368,6 +403,23 @@ ${project.description || 'No description provided.'}
 
     // Write the raw brand document
     this.writeFile('BRAND.md', brandContent, 'user');
+
+    // Write a concise brand voice profile that can be swapped per project.
+    const brandVoiceContent = `# Brand Voice — ${brandName}
+
+## Core Tone
+${brandSummary}
+
+## Voice Principles
+- Keep writing consistent with ${brandName}'s positioning and audience.
+- Prefer clear, specific language over generic marketing phrasing.
+- Use this file as the highest-priority voice reference for this project.
+
+## Source
+- Derived from BRAND.md
+- Updated at: ${new Date().toISOString()}
+`;
+    this.writeFile('BRAND_VOICE.md', brandVoiceContent, 'user');
 
     // Rewrite SOUL.md with brand-aware template
     const soulContent = renderTemplate(SOUL_BRAND_TEMPLATE, { brandName, brandSummary });
@@ -392,7 +444,7 @@ ${project.description || 'No description provided.'}
 
     // Update MEMORY.md to note brand application
     const memory = this.readFile('MEMORY.md') || '';
-    const brandNote = `\n- **[brand]** Brand context applied from BRAND.md for "${brandName}". SOUL.md and IDENTITY.md updated. (${new Date().toISOString()})`;
+    const brandNote = `\n- **[brand]** Brand context applied from BRAND.md for "${brandName}". BRAND_VOICE.md, SOUL.md and IDENTITY.md updated. (${new Date().toISOString()})`;
     this.writeFile('MEMORY.md', memory + brandNote, 'memory');
 
     console.log(`[Workspace] Brand context applied for agent ${agentName}: "${brandName}"`);

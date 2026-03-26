@@ -12,8 +12,6 @@ const { FirecrawlSearchTool, FirecrawlScrapeTool } = require('./builtin/firecraw
 const { BraveSearchTool } = require('./builtin/brave_search');
 const { MemoryStoreTool, MemoryRecallTool, MemorySearchTool, MemoryGetTool } = require('./builtin/memory');
 const { CreateBrandTool, ListBrandsTool, GetBrandTool } = require('./builtin/brand');
-const { CreateProjectTool, ListProjectsTool, GetProjectTool } = require('./builtin/project');
-const { CreateTaskTool, ListTasksTool, GetTaskTool, UpdateTaskStatusTool } = require('./builtin/task');
 const { BashExecTool, BashListTool, BashLogTool, BashPollTool, BashKillTool, BashRemoveTool } = require('./builtin/bash');
 const { CronTool } = require('./builtin/cron');
 const { GitHubConnectTool, GitHubCreateIssueTool, GitHubCreatePRTool, GitHubListIssuesTool, GitHubListPRsTool } = require('./builtin/github');
@@ -108,17 +106,6 @@ export function initializeTools(config: Record<string, any>): void {
   toolRegistry.register(new CreateBrandTool());
   toolRegistry.register(new ListBrandsTool());
   toolRegistry.register(new GetBrandTool());
-
-  // Project management tools
-  toolRegistry.register(new CreateProjectTool());
-  toolRegistry.register(new ListProjectsTool());
-  toolRegistry.register(new GetProjectTool());
-
-  // Task management tools
-  toolRegistry.register(new CreateTaskTool());
-  toolRegistry.register(new ListTasksTool());
-  toolRegistry.register(new GetTaskTool());
-  toolRegistry.register(new UpdateTaskStatusTool());
 
   // Bash/Shell execution tools
   toolRegistry.register(new BashExecTool());

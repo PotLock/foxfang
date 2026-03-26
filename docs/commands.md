@@ -156,14 +156,12 @@ Start an interactive chat session.
 
 ```bash
 pnpm foxfang chat
-pnpm foxfang chat -a orchestrator
-pnpm foxfang chat -p my-project
+pnpm foxfang chat -a foxfang
 pnpm foxfang chat --system "You are my brand voice editor"
 ```
 
 Options:
-- `-a, --agent <agent>` - Agent ID to use (default: `orchestrator`)
-- `-p, --project <project>` - Project ID for context
+- `-a, --agent <agent>` - Agent ID to use (default: resolved from config, fallback `foxfang`)
 - `-s, --session <session>` - Session ID (creates new if not provided)
 - `-m, --model <model>` - Model to use
 - `--provider <provider>` - Provider to use
@@ -179,7 +177,6 @@ pnpm foxfang run --no-stream "Quick task without streaming"
 
 Options:
 - `-a, --agent <agent>` - Agent ID to use
-- `-p, --project <project>` - Project ID for context
 - `-s, --session <session>` - Session ID
 - `--stream` - Stream output (default: true)
 - `--no-stream` - Disable streaming

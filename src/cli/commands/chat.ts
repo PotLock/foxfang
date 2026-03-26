@@ -19,7 +19,6 @@ export async function registerChatCommand(program: Command): Promise<void> {
     .command('chat')
     .description('Start an interactive chat session with an agent')
     .option('-a, --agent <agent>', 'Agent ID to use')
-    .option('-p, --project <project>', 'Project ID')
     .option('-s, --session <session>', 'Session ID (creates new if not provided)')
     .option('-m, --model <model>', 'Model to use')
     .option('--provider <provider>', 'Provider to use')
@@ -49,7 +48,7 @@ export async function registerChatCommand(program: Command): Promise<void> {
       const workspaceManager = createWorkspaceManager(
         'default_user',
         foxfangHome,
-        options.project,
+        undefined,
         agentId,
       );
       
@@ -171,7 +170,6 @@ export async function registerChatCommand(program: Command): Promise<void> {
             sessionId,
             agentId,
             message,
-            projectId: options.project,
             model: options.model,
             provider: options.provider,
             systemPrompt: options.system,

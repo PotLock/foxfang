@@ -166,7 +166,7 @@ export class AutoReplyHandler {
   } {
     const metadata = message.metadata || {};
     const binding = this.selectBinding(message);
-    const agentId = binding?.agentId || this.config.defaultAgent;
+    const agentId = String(binding?.agentId || this.config.defaultAgent || '').trim() || 'foxfang';
     const scope = binding?.sessionScope || this.config.defaultSessionScope || 'chat-thread';
     const accountId = String(metadata.accountId || 'default');
     const anchor = this.resolveSessionAnchor(message, scope);

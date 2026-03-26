@@ -20,7 +20,6 @@ export async function registerRunCommand(program: Command): Promise<void> {
     .description('Run a single agent task')
     .argument('<message>', 'Message or task description')
     .option('-a, --agent <agent>', 'Agent ID to use')
-    .option('-p, --project <project>', 'Project ID')
     .option('-s, --session <session>', 'Session ID (creates new if not provided)')
     .option('--stream', 'Stream output', true)
     .option('--no-stream', 'Disable streaming output')
@@ -55,7 +54,7 @@ export async function registerRunCommand(program: Command): Promise<void> {
         const workspaceManager = createWorkspaceManager(
           'default_user',
           foxfangHome,
-          options.project,
+          undefined,
           agentId,
         );
         
@@ -79,7 +78,6 @@ export async function registerRunCommand(program: Command): Promise<void> {
             sessionId,
             agentId,
             message,
-            projectId: options.project,
             model: options.model,
             provider: options.provider,
             stream: true,
@@ -101,7 +99,6 @@ export async function registerRunCommand(program: Command): Promise<void> {
             sessionId,
             agentId,
             message,
-            projectId: options.project,
             model: options.model,
             provider: options.provider,
             stream: false,

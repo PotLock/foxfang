@@ -17,7 +17,7 @@ import { initDatabase } from '../../database/sqlite';
 import { runMigrations } from '../../compat';
 import { saveCredential, deleteCredential, isKeychainAvailable, migrateFromConfig } from '../../credentials/index';
 import { isGitHubConnected, saveGitHubToken, startGitHubOAuthFlow } from '../../integrations/github';
-import { agentRegistry, hydrateAgentRegistryFromConfig, resolveDefaultAgentId } from '../../agents/registry';
+import { DEFAULT_AGENT_ID, agentRegistry, hydrateAgentRegistryFromConfig, resolveDefaultAgentId } from '../../agents/registry';
 import { loginWithDeviceCode } from '../../providers/github-copilot';
 
 // Available providers with metadata
@@ -323,7 +323,7 @@ async function fetchNvidiaModels(): Promise<Array<{ id: string; name: string }>>
 function formatBindingLabel(binding: any, index: number): string {
   const id = String(binding?.id || `binding-${index + 1}`);
   const channel = binding?.channel || '*';
-  const agent = binding?.agentId || 'main';
+  const agent = binding?.agentId || DEFAULT_AGENT_ID;
   const scope = binding?.sessionScope || 'chat-thread';
   const status = binding?.enabled === false ? 'off' : 'on';
   return `${id} [${status}] ${channel} -> ${agent} (${scope})`;
@@ -364,7 +364,7 @@ async function promptBindingInput(existing: any | undefined, agentOptions: Agent
   });
   if (isCancel(enabled)) return null;
 
-  const currentAgent = String(existing?.agentId || 'main').trim() || 'main';
+  const currentAgent = String(existing?.agentId || DEFAULT_AGENT_ID).trim() || DEFAULT_AGENT_ID;
   const resolvedAgentOptions = agentOptions.some((option) => option.value === currentAgent)
     ? agentOptions
     : [
@@ -959,7 +959,10 @@ async function runSetupWizard() {
   });
 
   // Auto-reply defaults — no need to ask the user, sensible defaults work for everyone
-  const autoReplyDefaultAgent = String(config.autoReply?.defaultAgent || 'main').trim() || 'main';
+  const resolvedDefaultAgent = await resolveDefaultAgentId();
+  const autoReplyDefaultAgent = String(config.autoReply?.defaultAgent || resolvedDefaultAgent || DEFAULT_AGENT_ID).trim()
+    || resolvedDefaultAgent
+    || DEFAULT_AGENT_ID;
   const autoReplyDefaultSessionScope = String(config.autoReply?.defaultSessionScope || 'chat-thread').trim() || 'chat-thread';
 
   // Tool cache TTL — use sensible default (24h), no need to ask
@@ -1015,7 +1018,7 @@ async function runSetupWizard() {
 
   const notionApiKey = await text({
     message: 'Notion API Key (optional):',
-    placeholder: 'secret_...',
+    placeholder: 'ntn_...',
     defaultValue: config.notion?.apiKey || '',
   });
 
@@ -1077,7 +1080,7 @@ async function runSetupWizard() {
     config.firecrawl = { apiKeyRef: 'credential:firecrawl' };
   }
   const notionApiKeyStr = String(notionApiKey || '');
-  if (notionApiKeyStr && notionApiKeyStr !== 'secret_...' && notionApiKeyStr.startsWith('secret_')) {
+  if (notionApiKeyStr && notionApiKeyStr !== 'ntn_...' && notionApiKeyStr.startsWith('ntn_')) {
     await saveCredential('notion', {
       provider: 'notion',
       apiKey: notionApiKeyStr,

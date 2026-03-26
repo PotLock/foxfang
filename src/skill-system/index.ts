@@ -1,7 +1,7 @@
 /**
  * Skills subsystem
  *
- * Loads skills from bundled + managed + workspace locations,
+ * Loads skills from bundled + managed locations,
  * formats catalog for prompts, and seeds managed skills on first run.
  */
 
@@ -17,7 +17,7 @@ import { homedir } from 'os';
 import { basename, join, resolve } from 'path';
 import { resolveFoxFangHome } from '../config/defaults';
 
-export type SkillSource = 'bundled' | 'managed' | 'workspace';
+export type SkillSource = 'bundled' | 'managed';
 
 export interface SkillDefinition {
   id: string;
@@ -31,6 +31,7 @@ export interface SkillDefinition {
 
 export interface LoadSkillsOptions {
   homeDir?: string;
+  // Kept for backward compatibility; ignored in current resolver.
   workspacePath?: string;
   includeContent?: boolean;
   maxContentChars?: number;
@@ -71,10 +72,6 @@ export function resolveFoxFangHomePath(homeDir?: string): string {
 
 export function resolveManagedSkillsDir(homeDir?: string): string {
   return join(resolveFoxFangHomePath(homeDir), 'skills');
-}
-
-export function resolveWorkspaceSkillsDir(homeDir?: string): string {
-  return join(resolveFoxFangHomePath(homeDir), 'workspace', 'skills');
 }
 
 export function resolveBundledSkillsDir(): string | null {
@@ -262,16 +259,12 @@ function loadSkillsFromRoot(
 
 export function loadAvailableSkills(options?: LoadSkillsOptions): SkillDefinition[] {
   const homeDir = resolveFoxFangHomePath(options?.homeDir);
-  const workspacePath = options?.workspacePath;
   const maxSkills = options?.maxSkills;
   const includeContent = options?.includeContent;
   const maxContentChars = options?.maxContentChars;
 
   const bundledDir = resolveBundledSkillsDir();
   const managedDir = resolveManagedSkillsDir(homeDir);
-  const workspaceDir = workspacePath
-    ? join(workspacePath, 'skills')
-    : resolveWorkspaceSkillsDir(homeDir);
 
   const merged = new Map<string, SkillDefinition>();
 
@@ -285,7 +278,6 @@ export function loadAvailableSkills(options?: LoadSkillsOptions): SkillDefinitio
     putSkills(loadSkillsFromRoot(bundledDir, 'bundled', { includeContent, maxContentChars, maxSkills }));
   }
   putSkills(loadSkillsFromRoot(managedDir, 'managed', { includeContent, maxContentChars, maxSkills }));
-  putSkills(loadSkillsFromRoot(workspaceDir, 'workspace', { includeContent, maxContentChars, maxSkills }));
 
   return Array.from(merged.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -331,10 +323,8 @@ export function seedManagedSkills(homeDir?: string): {
 } {
   const home = resolveFoxFangHomePath(homeDir);
   const managedDir = resolveManagedSkillsDir(home);
-  const workspaceSkillsDir = resolveWorkspaceSkillsDir(home);
 
   mkdirSync(managedDir, { recursive: true });
-  mkdirSync(workspaceSkillsDir, { recursive: true });
 
   if (countSkillsInDir(managedDir) > 0) {
     return {

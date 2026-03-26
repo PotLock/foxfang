@@ -9,16 +9,15 @@ import {
   resolveBundledSkillsDir,
   resolveFoxFangHomePath,
   resolveManagedSkillsDir,
-  resolveWorkspaceSkillsDir,
   sanitizeSkillSlug,
   seedManagedSkills,
 } from '../../skill-system';
 import { Tool, ToolCategory, ToolResult } from '../traits';
 
-type SkillTarget = 'managed' | 'workspace';
+type SkillTarget = 'managed';
 
 function resolveTargetSkillsDir(target: SkillTarget, homeDir: string): string {
-  return target === 'workspace' ? resolveWorkspaceSkillsDir(homeDir) : resolveManagedSkillsDir(homeDir);
+  return resolveManagedSkillsDir(homeDir);
 }
 
 function buildSkillMarkdown(params: {
@@ -46,14 +45,14 @@ ${instructions}
 
 export class SkillsListTool implements Tool {
   name = 'skills_list';
-  description = 'List available skills loaded from bundled, managed, and workspace locations.';
+  description = 'List available skills loaded from bundled and managed locations.';
   category = ToolCategory.UTILITY;
   parameters = {
     type: 'object' as const,
     properties: {
       source: {
         type: 'string',
-        description: 'Optional source filter: bundled | managed | workspace',
+        description: 'Optional source filter: bundled | managed',
       },
       include_content: {
         type: 'boolean',
@@ -69,11 +68,11 @@ export class SkillsListTool implements Tool {
       seedManagedSkills(homeDir);
 
       const sourceFilter = args.source?.trim().toLowerCase();
-      const allowed = new Set(['bundled', 'managed', 'workspace']);
+      const allowed = new Set(['bundled', 'managed']);
       if (sourceFilter && !allowed.has(sourceFilter)) {
         return {
           success: false,
-          error: 'Invalid source filter. Use: bundled, managed, or workspace.',
+          error: 'Invalid source filter. Use: bundled or managed.',
         };
       }
 
@@ -144,7 +143,7 @@ export class SkillsAddTool implements Tool {
       },
       target: {
         type: 'string',
-        description: 'Target location: managed (default) or workspace.',
+        description: 'Target location: managed (default).',
       },
       overwrite: {
         type: 'boolean',
@@ -166,7 +165,7 @@ export class SkillsAddTool implements Tool {
   }): Promise<ToolResult> {
     try {
       const homeDir = resolveFoxFangHomePath();
-      const target: SkillTarget = args.target?.toLowerCase() === 'workspace' ? 'workspace' : 'managed';
+      const target: SkillTarget = 'managed';
       const targetSkillsRoot = resolveTargetSkillsDir(target, homeDir);
       mkdirSync(targetSkillsRoot, { recursive: true });
 

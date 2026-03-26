@@ -9,6 +9,8 @@ const distDir = path.join(projectRoot, 'dist', 'daemon');
 const distHtml = path.join(distDir, 'setup-page.html');
 const srcSkillsDir = path.join(projectRoot, 'skills');
 const distSkillsDir = path.join(projectRoot, 'dist', 'skills');
+const srcWorkspacePresetsDir = path.join(projectRoot, 'src', 'workspace', 'presets');
+const distWorkspacePresetsDir = path.join(projectRoot, 'dist', 'workspace', 'presets');
 const uiDistDir = path.join(projectRoot, 'dist', 'daemon', 'ui');
 
 if (!fs.existsSync(srcHtml)) {
@@ -32,4 +34,10 @@ if (fs.existsSync(srcSkillsDir)) {
   fs.rmSync(distSkillsDir, { recursive: true, force: true });
   fs.cpSync(srcSkillsDir, distSkillsDir, { recursive: true, force: true });
   console.log(`[copy-static] Copied skills to ${distSkillsDir}`);
+}
+
+if (fs.existsSync(srcWorkspacePresetsDir)) {
+  fs.rmSync(distWorkspacePresetsDir, { recursive: true, force: true });
+  fs.cpSync(srcWorkspacePresetsDir, distWorkspacePresetsDir, { recursive: true, force: true });
+  console.log(`[copy-static] Copied workspace presets to ${distWorkspacePresetsDir}`);
 }

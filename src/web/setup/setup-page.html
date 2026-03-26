@@ -257,7 +257,7 @@
           <label>
             Default Agent (fallback)
             <select id="autoReplyDefaultAgent">
-              <option value="orchestrator">orchestrator</option>
+              <option value="foxfang">foxfang</option>
             </select>
           </label>
           <label>
@@ -296,7 +296,7 @@
         <div class="grid-1">
           <label>
             Notion API Key
-            <input id="notionApiKey" type="password" placeholder="secret_..." />
+            <input id="notionApiKey" type="password" placeholder="ntn_..." />
           </label>
         </div>
         <div id="notionStatus" class="models-note"></div>
@@ -444,7 +444,7 @@
       signalHasPhoneNumber: false,
     };
     let githubPopup = null;
-    let availableAgentIds = ['orchestrator'];
+    let availableAgentIds = ['foxfang'];
 
     function escapeHtml(value) {
       return String(value || '')
@@ -459,7 +459,7 @@
       const ids = Array.isArray(input)
         ? input.map((item) => String(item || '').trim()).filter(Boolean)
         : [];
-      if (!ids.includes('orchestrator')) ids.unshift('orchestrator');
+      if (ids.length === 0) ids.push('foxfang');
       return [...new Set(ids)];
     }
 
@@ -477,7 +477,7 @@
     function setAvailableAgents(agentIds) {
       availableAgentIds = normalizeAgentIds(agentIds);
 
-      const currentDefault = autoReplyDefaultAgentEl.value || 'orchestrator';
+      const currentDefault = autoReplyDefaultAgentEl.value || availableAgentIds[0] || 'foxfang';
       autoReplyDefaultAgentEl.innerHTML = buildAgentOptionsMarkup(currentDefault);
       autoReplyDefaultAgentEl.value = availableAgentIds.includes(currentDefault)
         ? currentDefault
@@ -485,7 +485,7 @@
 
       const bindingSelects = Array.from(bindingsListEl.querySelectorAll('select[data-key="agentId"]'));
       for (const selectEl of bindingSelects) {
-        const current = selectEl.value || 'orchestrator';
+        const current = selectEl.value || availableAgentIds[0] || 'foxfang';
         selectEl.innerHTML = buildAgentOptionsMarkup(current);
         selectEl.value = availableAgentIds.includes(current) ? current : availableAgentIds[0];
       }
@@ -537,7 +537,9 @@
     }
 
     function createBindingRow(binding = {}) {
-      const selectedAgentId = String(binding.agentId || 'orchestrator').trim() || 'orchestrator';
+      const selectedAgentId = String(binding.agentId || availableAgentIds[0] || 'foxfang').trim()
+        || availableAgentIds[0]
+        || 'foxfang';
       const row = document.createElement('div');
       row.className = 'binding-item';
       row.innerHTML = `
@@ -632,7 +634,7 @@
 
       set('id', binding.id || '');
       set('priority', Number.isFinite(Number(binding.priority)) ? Number(binding.priority) : 0);
-      set('agentId', binding.agentId || 'orchestrator');
+      set('agentId', binding.agentId || selectedAgentId);
       set('channel', binding.channel || '');
       set('chatType', binding.chatType || '');
       set('sessionScope', binding.sessionScope || 'chat-thread');
@@ -666,7 +668,7 @@
         const binding = {
           enabled,
           priority: Number.isFinite(priorityValue) ? priorityValue : 0,
-          agentId: readValue('agentId') || 'orchestrator',
+          agentId: readValue('agentId') || availableAgentIds[0] || 'foxfang',
           sessionScope: readValue('sessionScope') || 'chat-thread',
         };
 
@@ -1157,13 +1159,13 @@
         }
 
       if (data.autoReply) {
-          setAvailableAgents(data.availableAgents || ['orchestrator']);
-          autoReplyDefaultAgentEl.value = data.autoReply.defaultAgent || 'orchestrator';
+          setAvailableAgents(data.availableAgents || ['foxfang']);
+          autoReplyDefaultAgentEl.value = data.autoReply.defaultAgent || availableAgentIds[0];
           autoReplyDefaultSessionScopeEl.value = data.autoReply.defaultSessionScope || 'chat-thread';
           setBindings(Array.isArray(data.autoReply.bindings) ? data.autoReply.bindings : []);
         } else {
-          setAvailableAgents(data.availableAgents || ['orchestrator']);
-          autoReplyDefaultAgentEl.value = 'orchestrator';
+          setAvailableAgents(data.availableAgents || ['foxfang']);
+          autoReplyDefaultAgentEl.value = availableAgentIds[0];
           autoReplyDefaultSessionScopeEl.value = 'chat-thread';
           setBindings([]);
         }
@@ -1174,7 +1176,7 @@
           firecrawlApiKeyEl.value = '';
           firecrawlApiKeyEl.placeholder = data.webTools.hasFirecrawlApiKey ? 'saved — leave blank to keep' : 'fc-...';
           notionApiKeyEl.value = '';
-          notionApiKeyEl.placeholder = data.webTools.hasNotionApiKey ? 'saved — leave blank to keep' : 'secret_...';
+          notionApiKeyEl.placeholder = data.webTools.hasNotionApiKey ? 'saved — leave blank to keep' : 'ntn_...';
           if (data.webTools.hasNotionApiKey) {
             notionStatusEl.textContent = '✓ Notion connected';
             notionStatusEl.className = 'models-note ok';
@@ -1379,7 +1381,7 @@
           },
         },
         autoReply: {
-          defaultAgent: autoReplyDefaultAgentEl.value || 'orchestrator',
+          defaultAgent: autoReplyDefaultAgentEl.value || availableAgentIds[0] || 'foxfang',
           defaultSessionScope: autoReplyDefaultSessionScopeEl.value || 'chat-thread',
           bindings: collectBindings(),
         },

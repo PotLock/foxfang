@@ -16,7 +16,7 @@ FoxFang can connect to your Notion workspace to read and write marketing content
 3. Give it a name (e.g., "FoxFang Marketing")
 4. Select the workspace you want to connect
 5. Click **"Submit"**
-6. Copy the **"Internal Integration Token"** (starts with `secret_`)
+6. Copy the **"Internal Integration Token"** (starts with `ntn_`)
 
 ### 2. Share Databases with Your Integration
 
@@ -36,7 +36,7 @@ If running FoxFang with the web gateway:
 
 1. Open `/setup` in your browser
 2. Scroll to **"Notion Integration"** section
-3. Paste your API key (starts with `secret_`)
+3. Paste your API key (starts with `ntn_`)
 4. Click **"Save & Restart"**
 
 ### Option 2: CLI Wizard
@@ -56,7 +56,7 @@ Edit `~/.foxfang/foxfang.json`:
 ```json
 {
   "notion": {
-    "apiKey": "secret_your_key_here"
+    "apiKey": "ntn_your_key_here"
   }
 }
 ```
@@ -64,7 +64,7 @@ Edit `~/.foxfang/foxfang.json`:
 Or set the environment variable:
 
 ```bash
-export NOTION_API_KEY="secret_your_key_here"
+export NOTION_API_KEY="ntn_your_key_here"
 ```
 
 ## How It Works
@@ -120,7 +120,7 @@ pnpm foxfang run "Create a new blog post draft in my Content Calendar database a
 - The integration can only access explicitly shared content
 
 **"Failed to search Notion"**
-- Verify your API key is correct and starts with `secret_`
+- Verify your API key is correct and starts with `ntn_`
 - Check that the integration has access to your workspace
 
 ## Next Steps

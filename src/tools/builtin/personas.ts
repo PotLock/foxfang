@@ -1,8 +1,8 @@
 /**
  * Personas Tool
  *
- * Fetch marketing personas from a URL and save to workspace PERSONAS.md.
- * The agent runtime automatically loads PERSONAS.md into system prompt context.
+ * Fetch marketing personas from a URL and save to a scoped personas file.
+ * Reply Cash personas should not be mixed with unrelated contexts.
  *
  * Default source: https://marketing.reply.cash
  * Override via argument or config.
@@ -10,13 +10,25 @@
 
 import { Tool, ToolCategory } from '../traits';
 import { existsSync, writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { basename, join } from 'path';
 import { homedir } from 'os';
 
 const DEFAULT_PERSONAS_URL = 'https://marketing.reply.cash';
 
 function getWorkspacePath(): string {
-  return join(homedir(), '.foxfang');
+  return join(homedir(), '.foxfang', 'workspace', 'presets');
+}
+
+function resolveOutputFileName(args: { filename?: string; scope?: string }): string {
+  const customFilename = String(args.filename || '').trim();
+  if (customFilename) return basename(customFilename);
+
+  const scope = String(args.scope || 'reply-cash').trim().toLowerCase();
+  if (scope === 'reply-cash' || scope === 'replycash') {
+    return 'PERSONAS_REPLY_CASH.md';
+  }
+
+  return 'AUDIENCE_PERSONAS.md';
 }
 
 /**
@@ -46,11 +58,11 @@ function htmlToText(html: string): string {
 
 /**
  * Personas Sync Tool
- * Fetches personas from a URL, extracts content, saves as PERSONAS.md
+ * Fetches personas from a URL, extracts content, saves as a scoped personas markdown file.
  */
 export class PersonasSyncTool implements Tool {
   name = 'personas_sync';
-  description = 'Fetch marketing personas from a URL and save to workspace PERSONAS.md. Personas guide content creation voice and style.';
+  description = 'Fetch personas from a URL and save to a scoped workspace personas file (default: PERSONAS_REPLY_CASH.md).';
   category = ToolCategory.EXTERNAL;
   parameters = {
     type: 'object' as const,
@@ -63,6 +75,14 @@ export class PersonasSyncTool implements Tool {
         type: 'string',
         description: 'Expected content format: "html" (auto-convert) or "markdown" (save as-is). Default: auto-detect.',
       },
+      scope: {
+        type: 'string',
+        description: 'Personas scope: "reply-cash" (default) or "generic".',
+      },
+      filename: {
+        type: 'string',
+        description: 'Optional output filename (overrides scope default).',
+      },
     },
     required: [],
   };
@@ -70,6 +90,8 @@ export class PersonasSyncTool implements Tool {
   async execute(args: {
     url?: string;
     format?: 'html' | 'markdown';
+    scope?: 'reply-cash' | 'generic' | string;
+    filename?: string;
   }): Promise<{ success: boolean; data?: any; error?: string }> {
     const url = args.url || DEFAULT_PERSONAS_URL;
 
@@ -105,11 +127,15 @@ export class PersonasSyncTool implements Tool {
         return { success: false, error: 'Fetched content is empty after processing.' };
       }
 
-      // Build PERSONAS.md
+      const outputFile = resolveOutputFileName(args);
+
+      // Build personas markdown
       const personasContent = `# Marketing Personas
 
 > Auto-synced from ${url}
 > Last updated: ${new Date().toISOString()}
+> Scope: ${String(args.scope || 'reply-cash')}
+> File: ${outputFile}
 
 ${content}
 `;
@@ -120,7 +146,7 @@ ${content}
         mkdirSync(workspacePath, { recursive: true });
       }
 
-      const filePath = join(workspacePath, 'PERSONAS.md');
+      const filePath = join(workspacePath, outputFile);
       writeFileSync(filePath, personasContent, 'utf-8');
 
       return {

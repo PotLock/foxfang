@@ -3,25 +3,25 @@
  *
  * Config-driven agent system — no hardcoded agents.
  * All agents are defined in foxfang.json under either agents[] or agents.list[].
- * A minimal "main" fallback agent is created only when no agents are configured.
+ * A minimal "foxfang" fallback agent is created only when no agents are configured.
  */
 
 import { loadConfig } from '../config/index';
 import { Agent } from './types';
 import { toolRegistry } from '../tools/index';
 
-export const DEFAULT_AGENT_ID = 'main';
+export const DEFAULT_AGENT_ID = 'foxfang';
 
 /**
- * Build the fallback "main" agent whose tool list is resolved lazily at runtime
+ * Build the fallback "foxfang" agent whose tool list is resolved lazily at runtime
  * so that tools added after this agent is registered are still available.
  */
-function buildDefaultMainAgent(): Agent {
+function buildDefaultFoxfangAgent(): Agent {
   return {
     id: DEFAULT_AGENT_ID,
-    name: 'Main',
+    name: 'FoxFang',
     role: 'assistant',
-    description: 'Default FoxFang assistant with all available tools',
+    description: 'Primary FoxFang agent with all available tools',
     systemPrompt: '',
     get tools() {
       return toolRegistry.getAllSpecs().map((t) => t.name);
@@ -141,7 +141,7 @@ class AgentRegistry {
 
   /**
    * Resolve the default agent ID.
-   * Priority: agent with default=true → first agent in list → "main"
+   * Priority: agent with default=true → first agent in list → "foxfang"
    */
   resolveDefaultAgentId(): string {
     const defaultAgent = Array.from(this.agents.values()).find(a => a.isDefault);
@@ -169,9 +169,9 @@ class AgentRegistry {
       console.warn(`[AgentRegistry] Dynamic fallback limit reached; returning resolved default for unknown agent "${agentId}".`);
       return this.get(this.resolveDefaultAgentId()) ?? this.list()[0] ?? {
         id: DEFAULT_AGENT_ID,
-        name: 'Main',
+        name: 'FoxFang',
         role: 'assistant',
-        description: 'Default FoxFang assistant',
+        description: 'Primary FoxFang agent',
         systemPrompt: '',
         tools: [],
       };
@@ -219,17 +219,17 @@ class AgentRegistry {
           this.register(sanitized);
         }
 
-        // If no agents configured, register the default "main" agent
+        // If no agents configured, register the fallback "foxfang" agent
         if (this.agents.size === 0) {
-          this.register(buildDefaultMainAgent());
-          console.log(`[AgentRegistry] No agents configured, using default "main" agent`);
+          this.register(buildDefaultFoxfangAgent());
+          console.log(`[AgentRegistry] No agents configured, using fallback "${DEFAULT_AGENT_ID}" agent`);
         }
 
         console.log(`[AgentRegistry] Loaded ${this.agents.size} agent(s): ${Array.from(this.agents.keys()).join(', ')}`);
       } catch {
-        // Config load failed — ensure at least the default agent exists
+        // Config load failed — ensure at least the fallback agent exists
         if (this.agents.size === 0) {
-          this.register(buildDefaultMainAgent());
+          this.register(buildDefaultFoxfangAgent());
         }
       } finally {
         this.configHydrated = true;

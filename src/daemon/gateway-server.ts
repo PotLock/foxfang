@@ -238,7 +238,7 @@ class GatewayServer {
         // Auto-reply is initially disabled to avoid using a hard-coded default
         // agent before config/agent registry hydration completes in initialize().
         enabled: false,
-        defaultAgent: 'main',
+        defaultAgent: DEFAULT_AGENT_ID,
         requireMention: false,
         replyToMessage: true,
       },
@@ -1973,7 +1973,7 @@ class GatewayServer {
     }
 
     const notionApiKey = this.sanitizeString(payload.notionApiKey);
-    if (notionApiKey && notionApiKey.startsWith('secret_')) {
+    if (notionApiKey && notionApiKey.startsWith('ntn_')) {
       await saveCredential('notion', {
         provider: 'notion',
         apiKey: notionApiKey,

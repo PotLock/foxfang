@@ -16,6 +16,7 @@ import { DiscordAdapter } from './adapters/discord';
 import { SlackAdapter } from './adapters/slack';
 import type { ChannelAdapter, ChannelMessage, ChannelResponse } from './types';
 import type { AgentOrchestrator } from '../agents/orchestrator';
+import { DEFAULT_AGENT_ID } from '../agents/registry';
 import type { WorkspaceManager } from '../workspace/manager';
 import { AutoReplyBinding, AutoReplyHandler, IncomingMessage } from '../auto-reply';
 
@@ -52,7 +53,7 @@ export class ChannelManager {
     this.config = {
       autoReply: {
         enabled: true,
-        defaultAgent: 'main',
+        defaultAgent: DEFAULT_AGENT_ID,
         defaultSessionScope: 'chat-thread',
         bindings: [],
         requireMention: false,

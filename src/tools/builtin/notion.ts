@@ -14,7 +14,7 @@
  * Setup: Add to ~/.foxfang/foxfang.json:
  * {
  *   "notion": {
- *     "apiKey": "secret_...",
+ *     "apiKey": "ntn_...",
  *     "defaultDatabaseId": "optional-database-id"
  *   }
  * }
@@ -63,7 +63,7 @@ function requireApiKey(): { apiKey: string } | { error: string } {
   const config = getNotionConfig();
   if (!config.apiKey) {
     return {
-      error: 'Notion API key not configured. Add to ~/.foxfang/foxfang.json: {"notion": {"apiKey": "secret_..."}} or set NOTION_API_KEY env var.',
+      error: 'Notion API key not configured. Add to ~/.foxfang/foxfang.json: {"notion": {"apiKey": "ntn_..."}} or set NOTION_API_KEY env var.',
     };
   }
   return { apiKey: config.apiKey };

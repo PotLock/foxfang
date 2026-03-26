@@ -8,6 +8,7 @@
  */
 
 import { AgentOrchestrator } from '../../agents/orchestrator';
+import { DEFAULT_AGENT_ID } from '../../agents/registry';
 import { AgentMessage } from '../../agents/types';
 import { SessionManager, SessionMessage } from '../../sessions/manager';
 import { Tool, ToolCategory, ToolResult } from '../traits';
@@ -202,7 +203,7 @@ export class SessionsSendTool implements Tool {
       };
     }
 
-    const agentId = String(args.agent_id || '').trim() || session.agentId || 'main';
+    const agentId = String(args.agent_id || '').trim() || session.agentId || DEFAULT_AGENT_ID;
     const projectId = String(args.project_id || '').trim() || session.projectId || undefined;
 
     const run = await runtime.runtime.orchestrator.run({

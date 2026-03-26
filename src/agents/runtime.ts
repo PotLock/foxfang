@@ -159,7 +159,15 @@ const BOOTSTRAP_TOTAL_MAX_CHARS = 8000;
 const BOOTSTRAP_MINIMAL_MAX_CHARS_PER_FILE = 1200;
 const BOOTSTRAP_MINIMAL_TOTAL_MAX_CHARS = 3500;
 // Files to include in minimal mode (skip skills, memory, agents)
-const MINIMAL_BOOTSTRAP_FILES = new Set(['SOUL.md', 'IDENTITY.md']);
+const MINIMAL_BOOTSTRAP_FILES = new Set([
+  'SOUL.md',
+  'IDENTITY.md',
+  'BRAND_VOICE.md',
+  'BRAND.md',
+  'presets/PRESETS.md',
+  'presets/REPLY_CASH_BRAND.md',
+  'presets/REPLY_CASH_BRAND_VOICE.md',
+]);
 
 function normalizeReasoningMode(mode?: ReasoningMode): ReasoningMode {
   if (mode === 'fast' || mode === 'deep' || mode === 'balanced') {
@@ -327,9 +335,14 @@ const BOOTSTRAP_FILES = [
   { name: 'SOUL.md', fallbackContent: DEFAULT_SOUL_CONTENT },
   { name: 'IDENTITY.md' },
   { name: 'USER.md' },
-  { name: 'PERSONAS.md' },
+  { name: 'presets/PRESETS.md' },
+  { name: 'presets/REPLY_CASH_BRAND.md' },
+  { name: 'presets/REPLY_CASH_BRAND_VOICE.md' },
+  { name: 'BRAND_VOICE.md' },
+  { name: 'BRAND.md' },
+  { name: 'AUDIENCE_PERSONAS.md' },
+  { name: 'PERSONAS_REPLY_CASH.md', fallbacks: ['PERSONAS.md'] },
   { name: 'MEMORY.md', fallbacks: ['memory.md'] },
-  { name: 'AGENTS.md' },
 ] as const;
 
 /**
@@ -341,9 +354,11 @@ function loadBootstrapFiles(
   workspace: WorkspaceManagerLike,
   sessionId?: string,
 ): Map<string, string | null> {
+  const snapshotKey = sessionId ? sessionId : undefined;
+
   // Layer 2: session snapshot — skip all file I/O for warm sessions
-  if (sessionId) {
-    const snapshot = getSessionSnapshot(sessionId);
+  if (snapshotKey) {
+    const snapshot = getSessionSnapshot(snapshotKey);
     if (snapshot) {
       debugLog(`[WorkspaceContext] 📦 Using session snapshot (${snapshot.size} files)`);
       return snapshot;
@@ -379,9 +394,9 @@ function loadBootstrapFiles(
   }
 
   // Store snapshot for this session
-  if (sessionId) {
-    setSessionSnapshot(sessionId, result);
-    debugLog(`[WorkspaceContext] 💾 Cached session snapshot for ${sessionId}`);
+  if (snapshotKey) {
+    setSessionSnapshot(snapshotKey, result);
+    debugLog(`[WorkspaceContext] 💾 Cached session snapshot for ${snapshotKey}`);
   }
 
   return result;
@@ -421,7 +436,7 @@ function buildWorkspaceContext(
     }
 
     if (!hasContent) {
-      lines.push('# Project Context');
+      lines.push('# Workspace Context');
       lines.push('');
       lines.push('SOUL.md defines your persona and tone. Embody it in every reply. Avoid stiff, generic, or corporate-sounding replies; follow SOUL.md guidance for voice, emoji usage, and conversational style.');
       lines.push('');
@@ -452,7 +467,7 @@ function buildWorkspaceContext(
  *   Identity + Tooling + Tool Style + Safety + Skills + Agent Role + Workspace Context + Runtime
  *
  * "minimal" mode (channel messages, subagents):
- *   Identity + Tooling + Safety (short) + Workspace Context (SOUL + IDENTITY only) + Runtime
+ *   Identity + Tooling + Safety (short) + Workspace Context (SOUL + IDENTITY + BRAND files) + Runtime
  *   Skips: skills, tool call style guidance, memory, agents.md
  *
  * "none" mode:
@@ -511,7 +526,7 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push('');
   }
 
-  // 6. Project Context — budget-constrained, mode-aware
+  // 6. Workspace Context — budget-constrained, mode-aware
   if (context.workspace) {
     const workspace = buildWorkspaceContext(context.workspace, context.sessionId, promptMode);
     if (workspace) {
