@@ -18,7 +18,7 @@ export interface FetchUrlResult {
 
 export class FetchUrlTool implements Tool {
   name = 'fetch_url';
-  description = 'Fetch and extract content from a website URL. CRITICAL: Call this immediately when user shares any website URL (except x.com/twitter.com). No API key needed. Returns clean article text, title, and links. If extracted content is low-signal on JS-rendered pages, use agent_browser as fallback.';
+  description = 'Fetch and extract static page content from a website URL (HTML text, title, links). Best for article-like/static content. For interactive or visual page tasks, prefer browser automation (agent_browser if enabled, otherwise agent-browser CLI via bash_exec).';
   category = ToolCategory.EXTERNAL;
   parameters = {
     type: 'object' as const,

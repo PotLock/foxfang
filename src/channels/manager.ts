@@ -546,6 +546,10 @@ export class ChannelManager {
 
     let textConsumedByMedia = false;
     if (mediaItems.length > 0 && adapter.sendMedia) {
+      console.log(
+        `[ChannelManager] media send channel=${adapter.name} count=${mediaItems.length} ` +
+        `withCaption=${mediaItems.some((item) => Boolean(item.caption)) ? 'yes' : 'no'}`
+      );
       for (const media of mediaItems) {
         await adapter.sendMedia(replyTarget, media, replyOptions);
         if (media.caption) {
@@ -555,7 +559,23 @@ export class ChannelManager {
     }
 
     if (payload.text && !textConsumedByMedia) {
-      await adapter.send(replyTarget, payload.text, replyOptions);
+      const textLimit = this.resolveTextLimit(adapter.name);
+      if (!textLimit || payload.text.length <= textLimit) {
+        await adapter.send(replyTarget, payload.text, replyOptions);
+        return;
+      }
+
+      const chunks = this.splitTextByLimit(payload.text, textLimit);
+      console.log(
+        `[ChannelManager] text split for ${adapter.name} (len=${payload.text.length}, limit=${textLimit}, chunks=${chunks.length})`
+      );
+      for (let index = 0; index < chunks.length; index += 1) {
+        const chunk = chunks[index];
+        const chunkReplyOptions = index === 0
+          ? replyOptions
+          : { threadId: replyOptions.threadId };
+        await adapter.send(replyTarget, chunk, chunkReplyOptions);
+      }
       return;
     }
 
@@ -572,5 +592,43 @@ export class ChannelManager {
       return 900;
     }
     return undefined;
+  }
+
+  private resolveTextLimit(adapterName: string): number | undefined {
+    if (adapterName === 'telegram') return 3500;
+    if (adapterName === 'signal') return 6000;
+    return undefined;
+  }
+
+  private splitTextByLimit(text: string, maxChars: number): string[] {
+    const input = String(text || '');
+    if (!input) return [];
+    if (input.length <= maxChars) return [input];
+
+    const chunks: string[] = [];
+    let cursor = 0;
+    while (cursor < input.length) {
+      const remaining = input.length - cursor;
+      if (remaining <= maxChars) {
+        chunks.push(input.slice(cursor).trim());
+        break;
+      }
+
+      const end = cursor + maxChars;
+      const window = input.slice(cursor, end);
+      const breakCandidates = [
+        window.lastIndexOf('\n\n'),
+        window.lastIndexOf('\n'),
+        window.lastIndexOf('. '),
+        window.lastIndexOf(' '),
+      ];
+      const splitAt = breakCandidates.find((idx) => idx >= Math.floor(maxChars * 0.5)) ?? -1;
+      const take = splitAt > 0 ? splitAt : maxChars;
+      chunks.push(input.slice(cursor, cursor + take).trim());
+      cursor += take;
+      while (cursor < input.length && /\s/.test(input[cursor])) cursor += 1;
+    }
+
+    return chunks.filter(Boolean);
   }
 }

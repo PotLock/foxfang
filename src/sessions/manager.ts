@@ -9,6 +9,7 @@ import { homedir } from 'os';
 import type { SessionSummary } from '../agents/types';
 
 const SESSIONS_DIR = join(homedir(), '.foxfang', 'sessions');
+const MAX_MESSAGES_PER_SESSION = 320;
 
 export interface SessionMessage {
   role: 'user' | 'assistant' | 'system';
@@ -96,9 +97,29 @@ export class SessionManager {
     }
     
     session.messages.push(message);
+    this.enforceSessionMessageCap(session);
     session.lastActive = Date.now();
     
     await this.saveSession(sessionId);
+  }
+
+  private enforceSessionMessageCap(session: Session): void {
+    if (session.messages.length <= MAX_MESSAGES_PER_SESSION) return;
+    const overflow = session.messages.length - MAX_MESSAGES_PER_SESSION;
+    session.messages = session.messages.slice(overflow);
+
+    const marker = `[${overflow} older message(s) trimmed from session history to keep runtime context healthy.]`;
+    const first = session.messages[0];
+    if (!first || first.role !== 'system' || !String(first.content || '').includes('trimmed from session history')) {
+      session.messages.unshift({
+        role: 'system',
+        content: marker,
+        timestamp: Date.now(),
+      });
+      if (session.messages.length > MAX_MESSAGES_PER_SESSION) {
+        session.messages = session.messages.slice(session.messages.length - MAX_MESSAGES_PER_SESSION);
+      }
+    }
   }
 
   async getSessionSummary(sessionId: string): Promise<SessionSummary | undefined> {
@@ -207,6 +228,7 @@ export class SessionManager {
         try {
           const content = await readFile(join(SESSIONS_DIR, file), 'utf-8');
           const session = JSON.parse(content) as Session;
+          this.enforceSessionMessageCap(session);
           
           // Check TTL
           const age = Date.now() - session.lastActive;

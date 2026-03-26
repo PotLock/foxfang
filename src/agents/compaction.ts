@@ -13,6 +13,10 @@ import { AgentMessage } from './types';
 const SAFETY_MARGIN = 1.2;
 const MAX_HISTORY_SHARE = 0.5; // history should use at most 50% of context window
 const DEFAULT_CONTEXT_TOKENS = 128_000;
+const MIN_SINGLE_HISTORY_MESSAGE_CHARS = 1_600;
+const MAX_SINGLE_HISTORY_MESSAGE_CHARS = 2_400;
+const MIN_TOOL_RESULTS_HISTORY_CHARS = 1_024;
+const MAX_TOOL_RESULTS_HISTORY_CHARS = 2_400;
 
 function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
@@ -20,6 +24,32 @@ function estimateTokens(text: string): number {
 
 function estimateMessageTokens(msg: AgentMessage): number {
   return estimateTokens(msg.content);
+}
+
+function compactHistoryMessage(msg: AgentMessage, limits: {
+  maxMessageChars: number;
+  maxToolResultChars: number;
+}): AgentMessage {
+  const text = String(msg.content || '');
+  if (!text) return msg;
+
+  const trimTo = (value: string, maxChars: number, reason: string): string => {
+    if (value.length <= maxChars) return value;
+    return `${value.slice(0, maxChars)}\n[...${reason}; ${value.length - maxChars} chars omitted...]`;
+  };
+
+  let nextContent = text;
+  if (text.startsWith('[Tool Results]')) {
+    nextContent = trimTo(text, limits.maxToolResultChars, 'tool results compacted');
+  } else {
+    nextContent = trimTo(text, limits.maxMessageChars, 'message compacted');
+  }
+
+  if (nextContent === text) return msg;
+  return {
+    ...msg,
+    content: nextContent,
+  };
 }
 
 /**
@@ -47,13 +77,25 @@ export function pruneHistory(params: {
   }
 
   const budgetTokens = Math.floor((maxContextTokens * maxHistoryShare) / SAFETY_MARGIN);
+  const maxMessageChars = Math.min(
+    MAX_SINGLE_HISTORY_MESSAGE_CHARS,
+    Math.max(MIN_SINGLE_HISTORY_MESSAGE_CHARS, Math.floor(maxContextTokens * 4 * 0.12)),
+  );
+  const maxToolResultChars = Math.min(
+    MAX_TOOL_RESULTS_HISTORY_CHARS,
+    Math.max(MIN_TOOL_RESULTS_HISTORY_CHARS, Math.floor(maxContextTokens * 4 * 0.08)),
+  );
+  const compactedMessages = messages.map((msg) => compactHistoryMessage(msg, {
+    maxMessageChars,
+    maxToolResultChars,
+  }));
 
   // Fill from most recent messages
   const kept: AgentMessage[] = [];
   let usedTokens = 0;
 
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const msg = messages[i];
+  for (let i = compactedMessages.length - 1; i >= 0; i--) {
+    const msg = compactedMessages[i];
     const tokens = estimateMessageTokens(msg);
     if (usedTokens + tokens > budgetTokens && kept.length > 0) {
       break; // budget exhausted, stop adding older messages
@@ -62,7 +104,7 @@ export function pruneHistory(params: {
     kept.unshift(msg);
   }
 
-  const droppedCount = messages.length - kept.length;
+  const droppedCount = compactedMessages.length - kept.length;
 
   // Repair: if first kept message is a tool result, drop it (orphaned)
   while (kept.length > 0 && kept[0].role === 'tool') {

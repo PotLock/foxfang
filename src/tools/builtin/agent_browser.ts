@@ -162,18 +162,82 @@ async function detectRunner(): Promise<AgentBrowserRunner | null> {
 }
 
 function normalizeStep(value: any): AgentBrowserCommandStep | null {
-  const command = String(value?.command || '').trim();
-  if (!command) return null;
+  const rawCommand = String(value?.command || '').trim();
+  if (!rawCommand) return null;
 
-  const args = Array.isArray(value?.args)
-    ? value.args.map((item: any) => String(item)).filter((item: string) => item.length > 0)
-    : [];
+  let command = rawCommand.toLowerCase();
+  const rawArgs = value?.args;
+  const args = Array.isArray(rawArgs)
+    ? rawArgs.map((item: any) => String(item)).filter((item: string) => item.length > 0)
+    : typeof rawArgs === 'string' || typeof rawArgs === 'number' || typeof rawArgs === 'boolean'
+      ? [String(rawArgs)]
+      : [];
+  let normalizedArgs = [...args];
+  if (normalizedArgs.length === 0 && rawArgs && typeof rawArgs === 'object' && !Array.isArray(rawArgs)) {
+    const obj = rawArgs as Record<string, unknown>;
+    const candidateKeys = ['url', 'selector', 'text', 'value', 'target', 'query'];
+    for (const key of candidateKeys) {
+      const value = obj[key];
+      if (typeof value === 'string' && value.trim()) {
+        normalizedArgs.push(value.trim());
+        break;
+      }
+    }
+  }
+  let allowFailure = value?.allowFailure === true;
+
+  // Generic command aliases from common browser-agent vocabularies.
+  if (command === 'goto' || command === 'navigate') {
+    command = 'open';
+  } else if (command === 'evaluate') {
+    command = 'eval';
+  }
+
+  const getAliasMatch = command.match(/^get(?:[_\s-]+)(text|html|value|attr)$/);
+  if (getAliasMatch) {
+    command = 'get';
+    normalizedArgs = [getAliasMatch[1], ...normalizedArgs];
+  } else if (command === 'gettext') {
+    command = 'get';
+    normalizedArgs = ['text', ...normalizedArgs];
+  } else if (command === 'gethtml') {
+    command = 'get';
+    normalizedArgs = ['html', ...normalizedArgs];
+  }
+
+  // Normalize shorthand wait forms: wait networkidle -> wait --load networkidle
+  if (command === 'wait' && normalizedArgs.length === 1) {
+    const only = normalizedArgs[0].toLowerCase();
+    if (only === 'networkidle' || only === 'load' || only === 'domcontentloaded') {
+      normalizedArgs = ['--load', only];
+      if (value?.allowFailure === undefined) allowFailure = true;
+    }
+  }
+
+  if (
+    command === 'wait' &&
+    normalizedArgs.length >= 2 &&
+    normalizedArgs[0] === '--load' &&
+    normalizedArgs[1].toLowerCase() === 'networkidle' &&
+    value?.allowFailure === undefined
+  ) {
+    allowFailure = true;
+  }
+
+  if (
+    command === 'get' &&
+    normalizedArgs.length >= 2 &&
+    normalizedArgs[0].toLowerCase() === 'text' &&
+    value?.allowFailure === undefined
+  ) {
+    allowFailure = true;
+  }
 
   return {
     command,
-    args,
+    args: normalizedArgs,
     json: value?.json !== false,
-    allowFailure: value?.allowFailure === true,
+    allowFailure,
   };
 }
 
@@ -183,6 +247,7 @@ function buildReadSteps(args: {
   interactiveOnly?: boolean;
   compact?: boolean;
   depth?: number;
+  includeText?: boolean;
   includeScreenshot?: boolean;
   waitForNetworkIdle?: boolean;
   close?: boolean;
@@ -194,7 +259,9 @@ function buildReadSteps(args: {
 
   steps.push({ command: 'open', args: [args.url], json: true });
 
-  if (args.waitForNetworkIdle !== false) {
+  // Read mode is intentionally minimal:
+  // open + snapshot by default. Extra steps must be explicitly requested.
+  if (args.waitForNetworkIdle === true) {
     steps.push({
       command: 'wait',
       args: ['--load', 'networkidle'],
@@ -215,7 +282,7 @@ function buildReadSteps(args: {
     allowFailure: false,
   });
 
-  if (selector) {
+  if (selector && args.includeText === true) {
     steps.push({
       command: 'get',
       args: ['text', selector],
@@ -224,7 +291,15 @@ function buildReadSteps(args: {
     });
   }
 
-  if (args.includeScreenshot !== false) {
+  if (args.includeScreenshot === true) {
+    if (selector) {
+      steps.push({
+        command: 'scrollintoview',
+        args: [selector],
+        json: true,
+        allowFailure: true,
+      });
+    }
     steps.push({
       command: 'screenshot',
       args: [],
@@ -233,11 +308,92 @@ function buildReadSteps(args: {
     });
   }
 
-  if (args.close !== false) {
+  if (args.close === true) {
     steps.push({ command: 'close', args: [], json: true, allowFailure: true });
   }
 
   return steps;
+}
+
+function findSnapshotScopedSelector(steps: AgentBrowserCommandStep[]): string | undefined {
+  for (const step of steps) {
+    if (step.command !== 'snapshot' || !Array.isArray(step.args)) continue;
+    const idx = step.args.findIndex((arg) => arg === '-s' || arg === '--selector');
+    if (idx >= 0) {
+      const candidate = String(step.args[idx + 1] || '').trim();
+      if (candidate) return candidate;
+    }
+  }
+  return undefined;
+}
+
+function findGetSelector(steps: AgentBrowserCommandStep[]): string | undefined {
+  for (const step of steps) {
+    if (step.command !== 'get' || !Array.isArray(step.args) || step.args.length < 2) continue;
+    const op = String(step.args[0] || '').toLowerCase();
+    if (op === 'text' || op === 'html' || op === 'value' || op === 'count' || op === 'box' || op === 'styles') {
+      const selector = String(step.args[1] || '').trim();
+      if (selector) return selector;
+    }
+    if (op === 'attr' && step.args.length >= 3) {
+      const selector = String(step.args[1] || '').trim();
+      if (selector) return selector;
+    }
+  }
+  return undefined;
+}
+
+function inferScreenshotTargetSelector(steps: AgentBrowserCommandStep[]): string | undefined {
+  // Prefer explicit snapshot scope, then fallback to selector used in "get" steps.
+  return findSnapshotScopedSelector(steps) || findGetSelector(steps);
+}
+
+function ensureScreenshotStep(steps: AgentBrowserCommandStep[], includeScreenshot: boolean): AgentBrowserCommandStep[] {
+  if (!includeScreenshot) return steps;
+  const selector = inferScreenshotTargetSelector(steps);
+  const hasScreenshot = steps.some((step) => step.command === 'screenshot');
+  const hasScrollIntoView = selector
+    ? steps.some((step) => step.command === 'scrollintoview' && String(step.args?.[0] || '').trim() === selector)
+    : false;
+
+  if (hasScreenshot && (!selector || hasScrollIntoView)) return steps;
+
+  const scrollStep: AgentBrowserCommandStep | null = selector
+    ? {
+      command: 'scrollintoview',
+      args: [selector],
+      json: true,
+      allowFailure: true,
+    }
+    : null;
+
+  const screenshotStep: AgentBrowserCommandStep = {
+    command: 'screenshot',
+    args: [],
+    json: true,
+    allowFailure: true,
+  };
+
+  if (!hasScreenshot) {
+    const closeIndex = steps.findIndex((step) => step.command === 'close');
+    if (closeIndex < 0) {
+      return scrollStep ? [...steps, scrollStep, screenshotStep] : [...steps, screenshotStep];
+    }
+    return [
+      ...steps.slice(0, closeIndex),
+      ...(scrollStep ? [scrollStep] : []),
+      screenshotStep,
+      ...steps.slice(closeIndex),
+    ];
+  }
+
+  const firstScreenshotIndex = steps.findIndex((step) => step.command === 'screenshot');
+  if (firstScreenshotIndex < 0 || !scrollStep) return steps;
+  return [
+    ...steps.slice(0, firstScreenshotIndex),
+    scrollStep,
+    ...steps.slice(firstScreenshotIndex),
+  ];
 }
 
 async function runStep(
@@ -246,6 +402,10 @@ async function runStep(
   timeoutMs: number,
   step: AgentBrowserCommandStep,
 ): Promise<AgentBrowserStepResult> {
+  const stepTimeoutMs =
+    step.command === 'wait' && Array.isArray(step.args) && step.args[0] === '--load'
+      ? Math.min(timeoutMs, 20_000)
+      : timeoutMs;
   const args = [
     ...runner.prefixArgs,
     '--session',
@@ -255,7 +415,7 @@ async function runStep(
     ...(step.json === false ? [] : ['--json']),
   ];
 
-  const result = await runProcess(runner.command, args, timeoutMs);
+  const result = await runProcess(runner.command, args, stepTimeoutMs);
   return {
     step,
     ok: result.ok,
@@ -343,15 +503,19 @@ export class AgentBrowserTool implements Tool {
       },
       includeScreenshot: {
         type: 'boolean',
-        description: 'Read mode: capture a screenshot and return its path (default true).',
+        description: 'Capture screenshot (default true). In script mode, an automatic screenshot step is appended if none exists.',
+      },
+      includeText: {
+        type: 'boolean',
+        description: 'Read mode: when selector is provided, also run get text <selector> (default false).',
       },
       waitForNetworkIdle: {
         type: 'boolean',
-        description: 'Read mode: wait for networkidle after open (default true).',
+        description: 'Read mode: wait for networkidle after open (default false).',
       },
       close: {
         type: 'boolean',
-        description: 'Close browser session at end (default true).',
+        description: 'Close browser session at end (default false, keep session alive for follow-up script commands).',
       },
       session: {
         type: 'string',
@@ -373,6 +537,7 @@ export class AgentBrowserTool implements Tool {
     const mode = String(args?.mode || 'read').trim().toLowerCase();
     const session = String(args?.session || 'foxfang').trim() || 'foxfang';
     const timeoutMs = boundedTimeout(args?.timeoutMs);
+    const includeScreenshot = args?.includeScreenshot !== false;
 
     const runner = await detectRunner();
     if (!runner) {
@@ -410,11 +575,13 @@ export class AgentBrowserTool implements Tool {
         interactiveOnly: args?.interactiveOnly,
         compact: args?.compact,
         depth: args?.depth,
-        includeScreenshot: args?.includeScreenshot,
+        includeText: args?.includeText,
+        includeScreenshot,
         waitForNetworkIdle: args?.waitForNetworkIdle,
         close: args?.close,
       });
     }
+    steps = ensureScreenshotStep(steps, includeScreenshot);
 
     const results: AgentBrowserStepResult[] = [];
     for (const step of steps) {
@@ -465,6 +632,7 @@ export class AgentBrowserTool implements Tool {
 
     const outputParts = [
       `agent-browser run completed via ${runner.label} (session: ${session}).`,
+      ...(mode === 'read' && args?.close !== true ? [`session kept open: ${session}`] : []),
       ...(screenshotPath ? [`MEDIA:${screenshotPath}`] : []),
       ...results.map((result, idx) => formatStepOutput(idx, result)),
     ];

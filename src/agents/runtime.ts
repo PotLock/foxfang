@@ -19,7 +19,7 @@ import { ensureAgentRegistered } from './registry';
 import { getProvider, getProviderConfig } from '../providers/index';
 import { toolRegistry } from '../tools/index';
 import { ChatMessage } from '../providers/traits';
-import { formatSkillsForPrompt, loadAvailableSkills } from '../skill-system';
+import { formatSkillsForPrompt, loadAvailableSkills, type SkillDefinition } from '../skill-system';
 import { cacheToolResult } from '../tools/tool-result-cache';
 import { resolveTokenBudget, trimMessagesToBudget } from './budget';
 import { getSessionSnapshot, setSessionSnapshot } from '../workspace/manager';
@@ -57,22 +57,34 @@ const TOOL_CALL_STYLE_GUIDANCE = `## Tool Call Style
 When a tool exists for the task, call it directly — do not ask the user to do it manually.
 If a tool call fails, explain the issue; do not preemptively claim inability.
 When web tools fail on a URL, try \`bash_exec\` in safe mode (for example \`curl\` + \`head\`) to diagnose and continue.
-If the user asks about visual/page-location details (for example footer/header/nav/button text, what is visible on page, click path), prefer \`agent_browser\` directly instead of static crawl.
-If \`fetch_url\`/crawl tools miss content on JS-heavy, interaction-driven, or client-rendered pages, switch to \`agent_browser\` (real browser) and inspect via snapshot/find/get text.
 Narrate only when it adds value (multi-step work, sensitive actions, or user asks).
 Keep narration brief and value-dense.`;
 
-const AGENT_BROWSER_SKILL_GUIDANCE = `## Browser Skill Routing
-When the task needs web navigation/UI inspection and \`agent_browser\` is available:
-- Prefer the \`agent-browser\` skill instructions before ad-hoc tool loops.
-- First step for browser tasks: read the skill file and command guide before calling \`agent_browser\`.
-- Read in order:
-  1) \`~/.foxfang/skills/agent-browser/SKILL.md\`
-  2) \`~/.foxfang/skills/agent-browser/AGENT_BROWSER_COMMANDS.md\`
-  3) fallback: \`docs/AGENT_BROWSER_COMMANDS.md\`
-- Use \`bash_exec\` with \`cat "<path>"\` to load only needed sections.
-- Let the agent decide command sequences explicitly in \`mode: "script"\`.
-- Use \`mode: "read"\` only for initial quick capture (open + snapshot + screenshot), not full navigation logic.`;
+const MINIMAL_TOOL_CALL_STYLE_GUIDANCE = `## Tool Call Style
+Use tools directly; do not ask the user to perform tool steps.
+Do not end with a progress-only message ("let me continue..."). Continue tool use until you can provide a concrete answer.`;
+
+function buildToolCallStyleSection(agent: Agent, promptMode: PromptMode): string {
+  const lines: string[] = [];
+  lines.push(promptMode === 'minimal' ? MINIMAL_TOOL_CALL_STYLE_GUIDANCE : TOOL_CALL_STYLE_GUIDANCE);
+
+  const toolSet = new Set((agent.tools || []).map((tool) => String(tool || '').trim()));
+  const hasAgentBrowserTool = toolSet.has('agent_browser');
+  const hasBashTool = toolSet.has('bash_exec') || toolSet.has('bash');
+
+  if (hasAgentBrowserTool) {
+    lines.push('For visual/UI page tasks (footer/header/nav/button text, what is visible), prefer `agent_browser` over static crawl.');
+    lines.push('For those UI tasks, do not call `fetch_url` or `firecrawl_*` unless the user explicitly asks for static scrape output.');
+    lines.push('When using `agent_browser` for multi-step navigation, use `mode: "script"` with explicit command sequences decided by the agent.');
+    lines.push('Treat `mode: "read"` as minimal baseline only (open + snapshot unless extra flags are explicitly provided).');
+  } else if (hasBashTool) {
+    lines.push('For visual/UI page tasks, use the `agent-browser` skill and run the `agent-browser` CLI via `bash_exec`.');
+    lines.push('Use `bash_exec` with `mode: "full"` for `agent-browser ...` commands (safe mode allowlist will block non-allowlisted binaries).');
+    lines.push('Avoid `fetch_url` as the primary tool for interactive/JS-rendered page inspection.');
+  }
+
+  return lines.join('\n');
+}
 
 /**
  * Safety guidance
@@ -175,6 +187,19 @@ const MINIMAL_BOOTSTRAP_FILES = new Set([
   'presets/REPLY_CASH_BRAND.md',
   'presets/REPLY_CASH_BRAND_VOICE.md',
 ]);
+
+const SKILL_CATALOG_CACHE_TTL_MS = 45_000;
+const TOOL_RESULTS_CONTEXT_HEADROOM_RATIO = 0.78;
+const SINGLE_TOOL_RESULT_CONTEXT_SHARE = 0.28;
+const PREEMPTIVE_TOOL_RESULTS_PLACEHOLDER = '[compacted: prior tool output removed to free context]';
+
+type SkillCatalogCacheEntry = {
+  key: string;
+  loadedAt: number;
+  skills: SkillDefinition[];
+};
+
+let skillCatalogCache: SkillCatalogCacheEntry | null = null;
 
 function normalizeReasoningMode(mode?: ReasoningMode): ReasoningMode {
   if (mode === 'fast' || mode === 'deep' || mode === 'balanced') {
@@ -332,8 +357,8 @@ function compactAgentBrowserPayload(rawData: unknown): {
 
   const failed = steps.filter((step) => !step.ok);
   const mediaUrls = collectMediaUrlsFromToolData('agent_browser', rawData);
-  const snapshotExcerpt = readNestedString(obj.snapshot, 1600);
-  const selectorExcerpt = readNestedString(obj.selectorText, 900) || readNestedString(obj.focus, 900);
+  const snapshotExcerpt = readNestedString(obj.snapshot, 700);
+  const selectorExcerpt = readNestedString(obj.selectorText, 420) || readNestedString(obj.focus, 420);
 
   const keyPoints: string[] = [];
   if (steps.length > 0) {
@@ -459,14 +484,244 @@ function buildToolSection(tools: string[]): string {
   return lines.join('\n');
 }
 
-function buildSkillsSection(context: AgentContext): string {
+function escapeXmlPrompt(input: string): string {
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function formatSkillsCompactForPrompt(skills: SkillDefinition[]): string {
+  if (skills.length === 0) return '';
+  const lines: string[] = [];
+  lines.push('<available_skills>');
+  for (const skill of skills) {
+    lines.push('  <skill>');
+    lines.push(`    <name>${escapeXmlPrompt(skill.name)}</name>`);
+    lines.push(`    <location>${escapeXmlPrompt(skill.filePath)}</location>`);
+    lines.push('  </skill>');
+  }
+  lines.push('</available_skills>');
+  return lines.join('\n');
+}
+
+function normalizeSkillFilter(raw?: string[]): Set<string> | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  if (raw.length === 0) return new Set<string>();
+  return new Set(
+    raw
+      .map((item) => String(item || '').trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+
+function resolveSkillsCacheKey(context: AgentContext): string {
+  const workspaceInfo = context.workspace?.getWorkspaceInfo?.();
+  const homeDir = workspaceInfo?.homeDir || '';
+  const workspacePath = workspaceInfo?.workspacePath || '';
+  return `${homeDir}::${workspacePath}`;
+}
+
+function loadAvailableSkillsCached(context: AgentContext): SkillDefinition[] {
+  const key = resolveSkillsCacheKey(context);
+  const now = Date.now();
+  if (
+    skillCatalogCache &&
+    skillCatalogCache.key === key &&
+    now - skillCatalogCache.loadedAt <= SKILL_CATALOG_CACHE_TTL_MS
+  ) {
+    return skillCatalogCache.skills;
+  }
+
   const workspaceInfo = context.workspace?.getWorkspaceInfo?.();
   const skills = loadAvailableSkills({
     homeDir: workspaceInfo?.homeDir,
     workspacePath: workspaceInfo?.workspacePath,
   });
+  skillCatalogCache = {
+    key,
+    loadedAt: now,
+    skills,
+  };
+  return skills;
+}
 
+function filterSkillsForAgent(skills: SkillDefinition[], agent: Agent): SkillDefinition[] {
+  const skillFilter = normalizeSkillFilter(agent.skills);
+  if (skillFilter === undefined) return skills;
+  if (skillFilter.size === 0) return [];
+
+  return skills.filter((skill) => {
+    const id = String(skill.id || '').toLowerCase();
+    const name = String(skill.name || '').toLowerCase();
+    return skillFilter.has(id) || skillFilter.has(name);
+  });
+}
+
+function tokenizeSkillIntent(input: string): string[] {
+  return String(input || '')
+    .toLowerCase()
+    .match(/[a-z0-9][a-z0-9_-]{1,}/g) || [];
+}
+
+function collectRecentUserIntent(context: AgentContext, maxMessages = 6): string {
+  return (context.messages || [])
+    .filter((message) => message.role === 'user')
+    .slice(-maxMessages)
+    .map((message) => String(message.content || ''))
+    .join('\n');
+}
+
+function scoreSkillForIntent(skill: SkillDefinition, intentTokens: Set<string>): number {
+  if (intentTokens.size === 0) return 0;
+  const haystack = `${skill.name} ${skill.description}`.toLowerCase();
+  let score = 0;
+  for (const token of intentTokens) {
+    if (token.length < 3) continue;
+    if (haystack.includes(token)) {
+      score += skill.name.toLowerCase().includes(token) ? 3 : 1;
+    }
+  }
+  return score;
+}
+
+function normalizeNameToken(value: string): string {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '');
+}
+
+function collectToolMatchedSkills(skills: SkillDefinition[], agent: Agent): SkillDefinition[] {
+  const toolTokens = new Set(
+    (agent.tools || []).map((tool) => normalizeNameToken(tool)),
+  );
+  if (toolTokens.size === 0) return [];
+  return skills.filter((skill) => {
+    const skillToken = normalizeNameToken(skill.id || skill.name || '');
+    if (!skillToken) return false;
+    for (const toolToken of toolTokens) {
+      if (!toolToken) continue;
+      if (skillToken.includes(toolToken) || toolToken.includes(skillToken)) {
+        return true;
+      }
+    }
+    return false;
+  });
+}
+
+function isLikelyWebUiIntent(context: AgentContext): boolean {
+  const text = collectRecentUserIntent(context).toLowerCase();
+  if (!text) return false;
+  const hasUrl = /(https?:\/\/|www\.)\S+/i.test(text);
+  const hasUiIntent = /\b(footer|header|nav|section|button|click|scroll|page|website|web|screenshot|snapshot)\b/i.test(text);
+  return hasUrl || hasUiIntent;
+}
+
+function adjustToolsForIntent(context: AgentContext, tools: Array<{
+  name: string;
+  description: string;
+  parameters: any;
+}>): Array<{
+  name: string;
+  description: string;
+  parameters: any;
+}> {
+  if (!isLikelyWebUiIntent(context)) return tools;
+
+  const names = new Set(tools.map((tool) => tool.name));
+  const hasAgentBrowser = names.has('agent_browser');
+  const hasBash = names.has('bash_exec') || names.has('bash');
+  const hasFirecrawl = names.has('firecrawl_search') || names.has('firecrawl_scrape');
+
+  if (hasAgentBrowser) {
+    const before = tools.length;
+    const filtered = tools.filter((tool) =>
+      tool.name !== 'fetch_url' &&
+      tool.name !== 'firecrawl_search' &&
+      tool.name !== 'firecrawl_scrape' &&
+      tool.name !== 'web_search' &&
+      tool.name !== 'brave_search'
+    );
+    if (filtered.length !== before) {
+      console.log('[ToolPolicy] Web UI intent detected with agent_browser: hide fetch_url/firecrawl_*/web_search/brave_search (browser-first)');
+    }
+    return filtered;
+  }
+
+  if (!hasAgentBrowser && hasBash && names.has('fetch_url')) {
+    console.log('[ToolPolicy] Web UI intent detected without agent_browser: hide fetch_url, prefer bash_exec + agent-browser skill');
+    return tools.filter((tool) => tool.name !== 'fetch_url');
+  }
+
+  if (!hasAgentBrowser && hasFirecrawl) {
+    console.log('[ToolPolicy] Web UI intent detected without agent_browser: firecrawl_* remains enabled as fallback');
+  }
+  return tools;
+}
+
+function selectSkillsForPrompt(params: {
+  skills: SkillDefinition[];
+  agent: Agent;
+  context: AgentContext;
+  promptMode: PromptMode;
+}): SkillDefinition[] {
+  const maxSkills = params.promptMode === 'minimal' ? 4 : 40;
+  if (params.skills.length <= maxSkills) return params.skills;
+
+  const intent = collectRecentUserIntent(params.context);
+  const intentTokens = new Set(tokenizeSkillIntent(intent));
+  const pinned = collectToolMatchedSkills(params.skills, params.agent);
+  const browserSkill = params.skills.find((skill) => {
+    const id = String(skill.id || '').toLowerCase();
+    const name = String(skill.name || '').toLowerCase();
+    return id === 'agent-browser' || name === 'agent-browser' || name.includes('agent-browser');
+  });
+  const scored = params.skills
+    .map((skill) => ({
+      skill,
+      score: scoreSkillForIntent(skill, intentTokens),
+    }))
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.skill.name.localeCompare(b.skill.name);
+    });
+
+  const ordered = scored.map((entry) => entry.skill);
+  const merged: SkillDefinition[] = [];
+  const pushUnique = (skill: SkillDefinition) => {
+    if (merged.find((item) => item.id === skill.id || item.name === skill.name)) return;
+    merged.push(skill);
+  };
+
+  for (const skill of pinned) pushUnique(skill);
+  if (browserSkill && isLikelyWebUiIntent(params.context)) {
+    pushUnique(browserSkill);
+  }
+  for (const skill of ordered) pushUnique(skill);
+
+  return merged.slice(0, maxSkills);
+}
+
+function buildSkillsSection(agent: Agent, context: AgentContext, promptMode: PromptMode): string {
+  const loadedSkills = filterSkillsForAgent(loadAvailableSkillsCached(context), agent);
+
+  if (loadedSkills.length === 0) return '';
+  const skills = selectSkillsForPrompt({
+    skills: loadedSkills,
+    agent,
+    context,
+    promptMode,
+  });
   if (skills.length === 0) return '';
+  const intentTokens = new Set(tokenizeSkillIntent(collectRecentUserIntent(context)));
+  const topIntentSkills = skills
+    .map((skill) => ({ skill, score: scoreSkillForIntent(skill, intentTokens) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4)
+    .map((item) => `${item.skill.id}:${item.score}`);
+  console.log(`[Skills] Prompt skills selected=${skills.length} mode=${promptMode} agent=${agent.id} top=${topIntentSkills.join(',')}`);
 
   const lines: string[] = [];
   lines.push('## Skills');
@@ -475,50 +730,65 @@ function buildSkillsSection(context: AgentContext): string {
   lines.push('- If exactly one skill clearly matches, follow it.');
   lines.push('- If multiple skills might match, pick the most specific one.');
   lines.push('- If needed, load full instructions via `bash_exec` (or legacy `bash`) with `cat "<location>"`.');
+  lines.push('- Before first use of a specialized tool, read the matching SKILL.md once and follow its workflow.');
   lines.push('- Read at most one skill file before your first answer.');
   lines.push('- If user asks to add/install a skill, use `skills_add`.');
   lines.push('');
-  lines.push(formatSkillsForPrompt(skills));
+  const fullPrompt = formatSkillsForPrompt(skills);
+  const maxChars = promptMode === 'minimal' ? 2400 : 9000;
+  if (fullPrompt.length <= maxChars) {
+    lines.push(fullPrompt);
+  } else {
+    lines.push('Skills catalog in compact mode (name + location only) due context budget.');
+    lines.push(formatSkillsCompactForPrompt(skills));
+  }
   lines.push('');
 
   return lines.join('\n');
 }
 
-function hasLikelyBrowserIntent(context: AgentContext): boolean {
-  const recentUserMessages = (context.messages || [])
-    .filter((message) => message.role === 'user')
-    .slice(-4)
-    .map((message) => String(message.content || '').toLowerCase());
-  if (recentUserMessages.length === 0) return false;
+function buildSessionSummarySection(context: AgentContext, promptMode: PromptMode): string {
+  const summary = context.sessionSummary;
+  if (!summary) return '';
 
-  const combined = recentUserMessages.join('\n');
-  const hasUrl = /(https?:\/\/|www\.)\S+/i.test(combined);
-  const hasToolHint = /\bagent[_\s-]?browser\b/i.test(combined);
-  const hasPageIntent =
-    /\b(open|go to|visit|navigate|scroll|click|footer|header|sidebar|section|element|selector|screenshot|snapshot)\b/i.test(combined)
-  return hasUrl || hasToolHint || hasPageIntent;
+  const lines: string[] = [];
+  lines.push('## Session Summary');
+  if (summary.currentGoal) {
+    lines.push(`- Goal: ${compactText(summary.currentGoal, promptMode === 'minimal' ? 180 : 320)}`);
+  }
+
+  const maxEntries = promptMode === 'minimal' ? 2 : 4;
+  const decisions = (summary.importantDecisions || []).slice(0, maxEntries).map((item) => compactText(item, 180));
+  const constraints = (summary.activeConstraints || []).slice(0, maxEntries).map((item) => compactText(item, 180));
+  const loops = (summary.openLoops || []).slice(0, maxEntries).map((item) => compactText(item, 180));
+
+  if (decisions.length > 0) lines.push(`- Decisions: ${decisions.join(' | ')}`);
+  if (constraints.length > 0) lines.push(`- Constraints: ${constraints.join(' | ')}`);
+  if (loops.length > 0) lines.push(`- Open loops: ${loops.join(' | ')}`);
+  if (summary.brandContext) {
+    lines.push(`- Brand context: ${compactText(summary.brandContext, 220)}`);
+  }
+  lines.push('');
+  return lines.join('\n');
 }
 
-function resolveAgentBrowserSkillLocation(context: AgentContext): string {
-  const workspaceInfo = context.workspace?.getWorkspaceInfo?.();
-  const skills = loadAvailableSkills({
-    homeDir: workspaceInfo?.homeDir,
-    workspacePath: workspaceInfo?.workspacePath,
-    maxSkills: 200,
-  });
-  const match = skills.find((skill) => {
-    const name = String(skill.name || '').toLowerCase();
-    const id = String(skill.id || '').toLowerCase();
-    return id === 'agent-browser' || name === 'agent-browser' || name.includes('agent-browser');
-  });
-  return match?.filePath || '~/.foxfang/skills/agent-browser/SKILL.md';
-}
+function buildMemoryHintsSection(context: AgentContext, promptMode: PromptMode): string {
+  const hints = Array.isArray(context.memoryHints) ? context.memoryHints : [];
+  if (hints.length === 0) return '';
 
-function buildAgentBrowserSkillSection(agent: Agent, context: AgentContext, _promptMode: PromptMode): string {
-  if (!Array.isArray(agent.tools) || !agent.tools.includes('agent_browser')) return '';
-  if (!hasLikelyBrowserIntent(context)) return '';
-  const skillPath = resolveAgentBrowserSkillLocation(context);
-  return `${AGENT_BROWSER_SKILL_GUIDANCE}\n- Preferred skill path: \`${skillPath}\``;
+  const maxHints = promptMode === 'minimal' ? 2 : 4;
+  const lines: string[] = [];
+  lines.push('## Memory Hints');
+  for (const hint of hints.slice(0, maxHints)) {
+    const detailBits: string[] = [];
+    if (hint.category) detailBits.push(hint.category);
+    if (typeof hint.importance === 'number') detailBits.push(`importance=${hint.importance}`);
+    if (hint.source) detailBits.push(hint.source);
+    const detail = detailBits.length > 0 ? ` (${detailBits.join(', ')})` : '';
+    lines.push(`- ${compactText(hint.content, promptMode === 'minimal' ? 180 : 320)}${detail}`);
+  }
+  lines.push('');
+  return lines.join('\n');
 }
 
 /**
@@ -660,8 +930,8 @@ function buildWorkspaceContext(
  *   Identity + Tooling + Tool Style + Safety + Skills + Agent Role + Workspace Context + Runtime
  *
  * "minimal" mode (channel messages, subagents):
- *   Identity + Tooling + Safety (short) + Workspace Context (SOUL + IDENTITY + BRAND files) + Runtime
- *   Skips: skills, tool call style guidance, memory, agents.md
+ *   Identity + Tooling + Safety (short) + compact Session/Memory/Skills + Workspace Context + Runtime
+ *   Skips heavy sections and keeps strict budget caps.
  *
  * "none" mode:
  *   Single identity line
@@ -688,18 +958,9 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push(toolSection);
   }
 
-  // 3. Tool Call Style (skip in minimal — saves ~200 chars)
-  if (!isMinimal) {
-    lines.push(TOOL_CALL_STYLE_GUIDANCE);
-    lines.push('');
-  }
-
-  const browserSkillSection = buildAgentBrowserSkillSection(agent, context, promptMode);
-  if (browserSkillSection) {
-    console.log('[SystemPrompt] Browser skill guidance injected (agent-browser)');
-    lines.push(browserSkillSection);
-    lines.push('');
-  }
+  // 3. Tool Call Style
+  lines.push(buildToolCallStyleSection(agent, promptMode));
+  lines.push('');
 
   // 4. Safety (shortened in minimal)
   if (isMinimal) {
@@ -711,12 +972,20 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push('');
   }
 
-  // 5. Skills (skip in minimal — saves significant tokens)
-  if (!isMinimal) {
-    const skillsSection = buildSkillsSection(context);
-    if (skillsSection) {
-      lines.push(skillsSection);
-    }
+  // 5. Session + Memory (always eligible, compacted by mode)
+  const sessionSummarySection = buildSessionSummarySection(context, promptMode);
+  if (sessionSummarySection) {
+    lines.push(sessionSummarySection);
+  }
+  const memoryHintsSection = buildMemoryHintsSection(context, promptMode);
+  if (memoryHintsSection) {
+    lines.push(memoryHintsSection);
+  }
+
+  // 6. Skills (also enabled in minimal mode with strict caps)
+  const skillsSection = buildSkillsSection(agent, context, promptMode);
+  if (skillsSection) {
+    lines.push(skillsSection);
   }
 
   // Agent-specific role guidance (from config systemPrompt)
@@ -726,7 +995,7 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push('');
   }
 
-  // 6. Workspace Context — budget-constrained, mode-aware
+  // 7. Workspace Context — budget-constrained, mode-aware
   if (context.workspace) {
     const workspace = buildWorkspaceContext(context.workspace, context.sessionId, promptMode);
     if (workspace) {
@@ -739,7 +1008,7 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     debugLog('[SystemPrompt] context.workspace is NULL — no workspace files will be loaded');
   }
 
-  // 7. Runtime
+  // 8. Runtime
   lines.push('## Runtime');
   lines.push(`Runtime: agent=${agent.id} | model=${agent.model || 'default'}`);
   lines.push('');
@@ -747,6 +1016,85 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   const finalPrompt = lines.join('\n');
   console.log(`[SystemPrompt] Final prompt length: ${finalPrompt.length} chars (mode=${promptMode})`);
   return finalPrompt;
+}
+
+function truncateToChars(text: string, maxChars: number): string {
+  if (text.length <= maxChars) return text;
+  const budget = Math.max(0, maxChars - 64);
+  if (budget <= 0) return PREEMPTIVE_TOOL_RESULTS_PLACEHOLDER;
+  return `${text.slice(0, budget)}\n[...tool results compacted; ${text.length - budget} chars omitted...]`;
+}
+
+function isToolResultsMessage(msg: ChatMessage): boolean {
+  return msg.role === 'user' && /^\[Tool Results\]/.test(String(msg.content || ''));
+}
+
+function estimateContextChars(messages: ChatMessage[]): number {
+  return messages.reduce((sum, msg) => sum + String(msg.content || '').length, 0);
+}
+
+function enforceToolResultContextBudget(messages: ChatMessage[], maxInputTokens: number): ChatMessage[] {
+  if (!Array.isArray(messages) || messages.length === 0) return messages;
+
+  const contextBudgetChars = Math.max(
+    1024,
+    Math.floor(maxInputTokens * 4 * TOOL_RESULTS_CONTEXT_HEADROOM_RATIO),
+  );
+  const maxSingleToolChars = Math.max(
+    1024,
+    Math.floor(maxInputTokens * 4 * SINGLE_TOOL_RESULT_CONTEXT_SHARE),
+  );
+
+  const next = messages.map((msg) => {
+    if (!isToolResultsMessage(msg)) return msg;
+    const text = String(msg.content || '');
+    if (text.length <= maxSingleToolChars) return msg;
+    return { ...msg, content: truncateToChars(text, maxSingleToolChars) };
+  });
+
+  let currentChars = estimateContextChars(next);
+  if (currentChars <= contextBudgetChars) return next;
+
+  for (let i = 0; i < next.length; i += 1) {
+    if (!isToolResultsMessage(next[i])) continue;
+    const original = String(next[i].content || '');
+    if (original === PREEMPTIVE_TOOL_RESULTS_PLACEHOLDER) continue;
+    next[i] = { ...next[i], content: PREEMPTIVE_TOOL_RESULTS_PLACEHOLDER };
+    currentChars = estimateContextChars(next);
+    if (currentChars <= contextBudgetChars) break;
+  }
+
+  return next;
+}
+
+function compactForModelInputText(value: unknown, maxChars = 1800): string {
+  const raw = typeof value === 'string' ? value : safeJson(value);
+  const text = raw.replace(/\s+/g, ' ').trim();
+  if (text.length <= maxChars) return text;
+  return `${text.slice(0, maxChars)}...[truncated ${text.length - maxChars} chars]`;
+}
+
+function formatToolResultForModelLine(toolName: string | undefined, r: ToolResult): string {
+  const label = toolName || 'tool';
+  if (r.error) {
+    return `${label}: Error: ${compactForModelInputText(r.error, 420)}`;
+  }
+
+  if (r.compact) {
+    const compact = r.compact;
+    const keyPoints = Array.isArray(compact.keyPoints)
+      ? compact.keyPoints
+          .slice(0, 4)
+          .map((item) => compactForModelInputText(item, 220))
+          .join(' | ')
+      : '';
+    const summary = compactForModelInputText(compact.summary, 420);
+    const rawRef = compact.rawRef ? ` rawRef=${compact.rawRef}` : '';
+    return `${label}: summary=${summary}${keyPoints ? ` | keyPoints=${keyPoints}` : ''}${rawRef}`;
+  }
+
+  const payload = r.data ?? r.output ?? '';
+  return `${label}: ${compactForModelInputText(payload, 1800)}`;
 }
 
 // ─── Agent Loop ───────────────────────────────────────────────────────────
@@ -775,8 +1123,9 @@ export async function runAgent(
       description: tool!.description,
       parameters: tool!.parameters,
     }));
+  const effectiveTools = adjustToolsForIntent(context, tools);
 
-  debugLog(`[AgentRuntime] Agent ${agentId} has ${tools.length} tools:`, tools.map(t => t.name).join(', '));
+  debugLog(`[AgentRuntime] Agent ${agentId} has ${effectiveTools.length} tools:`, effectiveTools.map(t => t.name).join(', '));
 
   const reasoningMode = normalizeReasoningMode(context.reasoningMode);
   const budget = context.budget || resolveTokenBudget({ agentId, mode: reasoningMode });
@@ -786,12 +1135,19 @@ export async function runAgent(
     ...context.messages
       .filter(m => m.role !== 'tool')
       .map(m => ({
-        role: m.role === 'user' ? 'user' as const : 'assistant' as const,
+        role: m.role === 'user'
+          ? 'user' as const
+          : m.role === 'system'
+            ? 'system' as const
+            : 'assistant' as const,
         content: m.content,
       })),
   ];
   const trimmedInput = trimMessagesToBudget(initialMessages, budget.requestMaxInputTokens);
-  let messages: ChatMessage[] = trimmedInput.messages;
+  let messages: ChatMessage[] = enforceToolResultContextBudget(
+    trimmedInput.messages,
+    budget.requestMaxInputTokens,
+  );
 
   const providerId = agent.provider || defaultProviderId;
   let provider = providerId ? getProvider(providerId) : undefined;
@@ -831,15 +1187,50 @@ export async function runAgent(
   };
   const isLikelyProgressOnlyText = (content: string): boolean => {
     const text = String(content || '').trim();
-    if (!text || text.length > 320) return false;
+    if (!text) return false;
+    const short = text.length <= 420;
     const hasProgressLead =
-      /(?:^|\b)(let me|i(?:'| )ll|i will|working on|continuing|next,?\s*i(?:'| )ll)\b/i.test(text) ||
-      /(?:^|\b)(để tôi|mình sẽ|đang|tiếp tục|chờ mình)\b/u.test(text);
+      /(?:^|\b)(let me|i(?:'| )ll|i will|working on|continuing|next,?\s*i(?:'| )ll|i need to|need to)\b/i.test(text) ||
+      /(?:^|\b)(để tôi|mình sẽ|đang|tiếp tục|chờ mình|cần)\b/u.test(text);
     if (!hasProgressLead) return false;
     const hasActionVerb =
-      /\b(scroll|check|inspect|open|fetch|read|get|click|analyze)\b/i.test(text) ||
-      /\b(cuộn|kiểm tra|mở|đọc|lấy|bấm|phân tích|xem)\b/u.test(text);
-    return hasActionVerb;
+      /\b(scroll|check|inspect|open|fetch|read|get|click|analyze|locate|find|extract|try)\b/i.test(text) ||
+      /\b(cuộn|kiểm tra|mở|đọc|lấy|bấm|phân tích|xem|tìm|thử)\b/u.test(text);
+    return short && hasActionVerb;
+  };
+  const isLikelyPlanningChatterLoop = (content: string): boolean => {
+    const text = String(content || '').trim();
+    if (!text || text.length < 220) return false;
+    const hasPlanningCue =
+      /(let me|i(?:'| )ll use|i(?:'| )ll try|different approach|script mode|use .*skill|continue scrolling|extract .*content)/i.test(text) ||
+      /(để tôi|mình sẽ|thử cách khác|chế độ script|tiếp tục cuộn|trích xuất nội dung)/u.test(text);
+    if (!hasPlanningCue) return false;
+
+    const segments = text
+      .split(/(?:\r?\n)+|(?<=[.!?])\s+/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (segments.length < 4) return false;
+
+    const normalizedSegments = segments.map((segment) =>
+      segment
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, ' ')
+        .replace(/\s+/g, ' ')
+        .trim(),
+    );
+    const counts = new Map<string, number>();
+    for (const segment of normalizedSegments) {
+      if (!segment) continue;
+      counts.set(segment, (counts.get(segment) || 0) + 1);
+    }
+
+    const total = normalizedSegments.length;
+    const unique = counts.size;
+    const repeatRatio = total > 0 ? 1 - unique / total : 0;
+    const maxRepeat = Math.max(0, ...Array.from(counts.values()));
+
+    return maxRepeat >= 3 || repeatRatio >= 0.35;
   };
   const finalizeWithoutTools = async (reason: string): Promise<{ content?: string; usage?: { promptTokens: number; completionTokens: number; totalTokens: number } }> => {
     const finalizeInstruction = [
@@ -875,10 +1266,11 @@ export async function runAgent(
 
     let response;
     try {
+      messages = enforceToolResultContextBudget(messages, budget.requestMaxInputTokens);
       response = await provider.chat({
         model,
         messages,
-        tools: tools.length > 0 ? tools : undefined,
+        tools: effectiveTools.length > 0 ? effectiveTools : undefined,
       });
     } catch (error) {
       console.error('Provider chat error:', error);
@@ -915,25 +1307,47 @@ export async function runAgent(
         };
       }
 
-      if (
-        allToolCalls.length > 0 &&
-        isLikelyProgressOnlyText(normalizedContent) &&
-        progressContinuationStreak < maxProgressContinuation
-      ) {
-        progressContinuationStreak += 1;
-        messages = trimMessagesToBudget(
-          [
-            ...messages,
-            { role: 'assistant' as const, content: normalizedContent || '[status update]' },
-            {
-              role: 'user' as const,
-              content:
-                'Continue executing the same task now. The previous message was only a progress update. Use tools again if needed and only stop when you can provide the final answer with concrete findings.',
-            },
-          ],
-          budget.requestMaxInputTokens,
-        ).messages;
-        continue;
+      if (isLikelyProgressOnlyText(normalizedContent) || isLikelyPlanningChatterLoop(normalizedContent)) {
+        if (progressContinuationStreak < maxProgressContinuation) {
+          progressContinuationStreak += 1;
+          const enforceToolInstruction = effectiveTools.length > 0
+            ? 'You MUST call at least one available tool before your next reply.'
+            : 'No tools are available; produce the best final answer from current context.';
+          messages = trimMessagesToBudget(
+            [
+              ...messages,
+              { role: 'assistant' as const, content: normalizedContent || '[status update]' },
+              {
+                role: 'user' as const,
+                content:
+                  `Continue executing the same task now. The previous message was only a progress update. ${enforceToolInstruction} Only stop when you can provide the final answer with concrete findings.`,
+              },
+            ],
+            budget.requestMaxInputTokens,
+          ).messages;
+          continue;
+        }
+
+        try {
+          const finalized = await finalizeWithoutTools(
+            'The previous assistant response was progress-only; return the final answer now based on completed tool results.',
+          );
+          if (
+            finalized.content &&
+            !isLikelyProgressOnlyText(finalized.content) &&
+            !isLikelyPlanningChatterLoop(finalized.content)
+          ) {
+            return {
+              content: finalized.content,
+              toolCalls: allToolCalls.length > 0 ? allToolCalls : undefined,
+              mediaUrls: mediaUrls.size > 0 ? Array.from(mediaUrls) : undefined,
+              usage: finalized.usage || response.usage,
+              toolTelemetry: toolTelemetry.length > 0 ? toolTelemetry : undefined,
+            };
+          }
+        } catch (error) {
+          debugWarn(`[AgentRuntime] Progress-only finalization failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
       }
 
       debugLog(`[AgentRuntime] No tool calls, returning final response`);
@@ -987,9 +1401,6 @@ export async function runAgent(
 
     const toolResultsForModel = results.map(r => {
       const toolName = toolCallsWithIds.find(tc => tc.id === r.toolCallId)?.name;
-      if (r.error) {
-        return `${toolName}: Error: ${r.error}`;
-      }
       if (toolName && typeof r.rawSize === 'number' && typeof r.compactSize === 'number') {
         toolTelemetry.push({
           tool: toolName,
@@ -1002,8 +1413,7 @@ export async function runAgent(
           mediaUrls.add(mediaUrl);
         }
       }
-      const data = r.compact || r.data || r.output;
-      return `${toolName}: ${typeof data === 'object' ? JSON.stringify(data) : data}`;
+      return formatToolResultForModelLine(toolName, r);
     }).join('\n');
 
     const assistantContent = (response.content || '').trim() || '[Tool invocation]';
@@ -1012,7 +1422,10 @@ export async function runAgent(
       { role: 'assistant', content: assistantContent },
       { role: 'user', content: `[Tool Results]\n${toolResultsForModel}` },
     ];
-    messages = trimMessagesToBudget(messages, budget.requestMaxInputTokens).messages;
+    messages = enforceToolResultContextBudget(
+      trimMessagesToBudget(messages, budget.requestMaxInputTokens).messages,
+      budget.requestMaxInputTokens,
+    );
   }
 
   debugWarn(`[AgentRuntime] Max iterations (${maxIterations}) reached`);
@@ -1069,6 +1482,7 @@ export async function* runAgentStream(
       description: tool!.description,
       parameters: tool!.parameters,
     }));
+  const effectiveTools = adjustToolsForIntent(context, tools);
 
   const reasoningMode = normalizeReasoningMode(context.reasoningMode);
   const budget = context.budget || resolveTokenBudget({ agentId, mode: reasoningMode });
@@ -1078,12 +1492,19 @@ export async function* runAgentStream(
     ...context.messages
       .filter(m => m.role !== 'tool')
       .map(m => ({
-        role: m.role === 'user' ? 'user' as const : 'assistant' as const,
+        role: m.role === 'user'
+          ? 'user' as const
+          : m.role === 'system'
+            ? 'system' as const
+            : 'assistant' as const,
         content: m.content,
       })),
   ];
   const trimmedInput = trimMessagesToBudget(initialMessages, budget.requestMaxInputTokens);
-  let messages: ChatMessage[] = trimmedInput.messages;
+  let messages: ChatMessage[] = enforceToolResultContextBudget(
+    trimmedInput.messages,
+    budget.requestMaxInputTokens,
+  );
 
   const providerId = agent.provider || defaultProviderId;
   let provider = providerId ? getProvider(providerId) : undefined;
@@ -1118,10 +1539,11 @@ export async function* runAgentStream(
     let fullContent = '';
 
     try {
+      messages = enforceToolResultContextBudget(messages, budget.requestMaxInputTokens);
       const stream = provider.chatStream({
         model,
         messages,
-        tools: tools.length > 0 ? tools : undefined,
+        tools: effectiveTools.length > 0 ? effectiveTools : undefined,
       });
 
       for await (const chunk of stream) {
@@ -1175,11 +1597,7 @@ export async function* runAgentStream(
 
       const toolResultContent = results.map(r => {
         const toolName = pendingToolCalls.find(tc => tc.id === r.toolCallId)?.name;
-        if (r.error) {
-          return `${toolName}: Error: ${r.error}`;
-        }
-        const data = r.compact || r.data || r.output;
-        return `${toolName}: ${typeof data === 'object' ? JSON.stringify(data) : data}`;
+        return formatToolResultForModelLine(toolName, r);
       }).join('\n');
 
       messages = [
@@ -1187,7 +1605,10 @@ export async function* runAgentStream(
         { role: 'assistant', content: fullContent },
         { role: 'user', content: `[Tool Results]\n${toolResultContent}` },
       ];
-      messages = trimMessagesToBudget(messages, budget.requestMaxInputTokens).messages;
+      messages = enforceToolResultContextBudget(
+        trimMessagesToBudget(messages, budget.requestMaxInputTokens).messages,
+        budget.requestMaxInputTokens,
+      );
 
     } catch (error) {
       yield { type: 'text', content: `\nError: ${error instanceof Error ? error.message : String(error)}\n` };
@@ -1276,15 +1697,21 @@ async function executeToolCalls(toolCalls: ToolCall[]): Promise<ToolResult[]> {
       const result = await tool.execute(toolCall.arguments);
       const elapsedMs = Date.now() - startedAt;
       if (
-        toolCall.name === 'bash_exec' &&
+        (toolCall.name === 'bash_exec' || toolCall.name === 'bash') &&
         typeof toolCall.arguments?.command === 'string'
       ) {
         const commandText = toolCall.arguments.command;
-        if (/skills\/agent-browser\/SKILL\.md/i.test(commandText)) {
-          console.log('[SkillUsage] agent-browser skill file read via bash_exec');
+        const skillFileMatches = Array.from(
+          new Set(commandText.match(/[^\s"'`]*\/[^/\s"'`]+\/SKILL\.md/gi) || []),
+        );
+        for (const skillPath of skillFileMatches.slice(0, 3)) {
+          console.log(`[SkillUsage] skill file read: ${skillPath}`);
         }
-        if (/AGENT_BROWSER_COMMANDS\.md/i.test(commandText)) {
-          console.log('[SkillUsage] agent-browser commands guide read via bash_exec');
+        const skillDocMatches = Array.from(
+          new Set(commandText.match(/[^\s"'`]*\/(?:docs\/)?[A-Z0-9_]+_COMMANDS\.md/gi) || []),
+        );
+        for (const docPath of skillDocMatches.slice(0, 3)) {
+          console.log(`[SkillUsage] skill guide read: ${docPath}`);
         }
       }
       const toolData = result.success ? (result.data ?? result.output ?? '') : '';

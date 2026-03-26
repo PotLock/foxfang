@@ -130,10 +130,10 @@ export async function registerChatCommand(program: Command): Promise<void> {
         
         if (message === '/tools') {
           console.log(chalk.cyan('Available tools:'));
-          console.log('  - web_search - Search the web');
-          console.log('  - agent_browser - Browse JS-rendered pages with a real browser');
-          console.log('  - memory_store - Store information');
-          console.log('  - memory_recall - Recall stored information');
+          const tools = orchestrator.getAvailableTools();
+          for (const tool of tools) {
+            console.log(`  - ${tool.name} - ${tool.description}`);
+          }
           console.log();
           rl.prompt();
           return;

@@ -206,6 +206,20 @@ function validateSafeMkdirSegment(segment: string): { safe: boolean; reason?: st
   return { safe: true };
 }
 
+function isAgentBrowserCommand(command: string): boolean {
+  const text = command.trim().toLowerCase();
+  return (
+    text.startsWith('agent-browser ') ||
+    text === 'agent-browser' ||
+    text.startsWith('pnpm exec agent-browser ') ||
+    text.startsWith('npx agent-browser ')
+  );
+}
+
+function hasUnsupportedAgentBrowserScriptFlag(command: string): boolean {
+  return /(^|\s)--script(\s|$)/i.test(command);
+}
+
 function cleanupOldSessions(): void {
   const now = Date.now();
   const maxAge = 60 * 60 * 1000; // 1 hour
@@ -443,10 +457,28 @@ export class BashExecTool implements Tool {
       if (!args.command?.trim()) {
         return { success: false, error: 'No command provided' };
       }
-      const mode = String(args.mode || 'safe').toLowerCase() === 'full' ? 'full' : 'safe';
+      const command = args.command.trim();
+      let mode = String(args.mode || 'safe').toLowerCase() === 'full' ? 'full' : 'safe';
+      let modeAutoUpgraded = false;
+
+      if (isAgentBrowserCommand(command) && mode === 'safe') {
+        mode = 'full';
+        modeAutoUpgraded = true;
+      }
+
+      if (isAgentBrowserCommand(command) && hasUnsupportedAgentBrowserScriptFlag(command)) {
+        return {
+          success: false,
+          error: 'agent-browser CLI does not support "--script" JavaScript blocks. Use command-by-command CLI calls or `agent-browser batch --json`.',
+          data: {
+            command,
+            hint: 'Example: agent-browser open <url> && agent-browser wait --load networkidle && agent-browser scroll down 1200 && agent-browser snapshot -c -d 12',
+          },
+        };
+      }
 
       // Security check
-      if (isDangerousCommand(args.command)) {
+      if (isDangerousCommand(command)) {
         return {
           success: false,
           error: 'Command blocked for security reasons. This command appears dangerous.',
@@ -454,14 +486,14 @@ export class BashExecTool implements Tool {
       }
 
       if (mode === 'safe') {
-        const safeCheck = isSafeReadonlyCommand(args.command);
+        const safeCheck = isSafeReadonlyCommand(command);
         if (!safeCheck.safe) {
           return {
             success: false,
             error: `Safe-mode policy blocked command: ${safeCheck.reason}.`,
             data: {
               policy: 'safe',
-              command: args.command,
+              command,
               hint: 'Use safe allowlist commands (curl, rg, cat, ls, mkdir -p, etc.) or set mode="full".',
             },
           };
@@ -470,14 +502,14 @@ export class BashExecTool implements Tool {
 
       // Warning for risky commands
       let warning = '';
-      if (mode === 'full' && isRiskyCommand(args.command)) {
+      if (mode === 'full' && isRiskyCommand(command)) {
         if (args.confirm !== true) {
           return {
             success: false,
             error: 'Approval required: risky command detected. Re-run with `confirm: true` to execute intentionally.',
             data: {
               approvalRequired: true,
-              command: args.command,
+              command,
               hint: 'Use readonly commands first when possible.',
             },
           };
@@ -488,7 +520,7 @@ export class BashExecTool implements Tool {
       const requestedYield = Math.floor(Number(args.yield_ms || 0));
       const shouldYield = requestedYield > 0 && !args.background;
       if (shouldYield) {
-        const { session } = await executeCommand(args.command, {
+        const { session } = await executeCommand(command, {
           workdir: args.workdir,
           timeout: args.timeout_ms,
           env: args.env,
@@ -512,6 +544,7 @@ export class BashExecTool implements Tool {
             workdir: latest.workdir,
             command: latest.command,
             mode,
+            mode_auto_upgraded: modeAutoUpgraded || undefined,
             yielded: true,
             yield_ms: yieldMs,
             note: latest.status === 'running'
@@ -521,7 +554,7 @@ export class BashExecTool implements Tool {
         };
       }
 
-      const { session, output } = await executeCommand(args.command, {
+      const { session, output } = await executeCommand(command, {
         workdir: args.workdir,
         timeout: args.timeout_ms,
         env: args.env,
@@ -539,6 +572,7 @@ export class BashExecTool implements Tool {
           workdir: session.workdir,
           command: session.command,
           mode,
+          mode_auto_upgraded: modeAutoUpgraded || undefined,
         },
       };
     } catch (error) {
