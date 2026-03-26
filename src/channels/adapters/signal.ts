@@ -30,6 +30,8 @@ export class SignalAdapter implements ChannelAdapter {
 
   /** Track sent messages for editing support */
   private sentMessages: Map<string, { to: string; timestamp: number }> = new Map();
+  /** Track received message authors for quote/reply support */
+  private receivedMessageAuthors: Map<string, string> = new Map();
 
   constructor() {}
 
@@ -107,7 +109,7 @@ export class SignalAdapter implements ChannelAdapter {
     console.log('[Signal] Disconnected');
   }
 
-  async send(to: string, content: string, _options?: { replyToMessageId?: string; threadId?: string }): Promise<string> {
+  async send(to: string, content: string, options?: { replyToMessageId?: string; threadId?: string }): Promise<string> {
     if (!this.connected) {
       throw new Error('Signal not connected');
     }
@@ -121,10 +123,14 @@ export class SignalAdapter implements ChannelAdapter {
       const targetType = this.isLikelyGroupId(recipient) ? 'group' : 'dm';
       console.log(`[Signal] 📤 Sending ${targetType} reply`);
 
+      // Build quote info for reply-to-message
+      const quoteTimestamp = this.parseTimestamp(options?.replyToMessageId);
+      const quoteAuthor = quoteTimestamp ? this.resolveQuoteAuthor(options?.replyToMessageId) : undefined;
+
       const plainContent = stripMarkdown(content);
       const messageId = this.apiMode === 'daemon-rpc'
-        ? await this.sendViaDaemonRpc(recipient, plainContent)
-        : await this.sendViaRestWrapper(recipient, plainContent);
+        ? await this.sendViaDaemonRpc(recipient, plainContent, quoteTimestamp, quoteAuthor)
+        : await this.sendViaRestWrapper(recipient, plainContent, quoteTimestamp, quoteAuthor);
 
       const parsedTimestamp = this.parseTimestamp(messageId) || Date.now();
       this.sentMessages.set(messageId, { to: recipient, timestamp: parsedTimestamp });
@@ -205,17 +211,28 @@ export class SignalAdapter implements ChannelAdapter {
 
     try {
       if (this.apiMode === 'daemon-rpc') {
-        await this.callDaemonRpc('sendTyping', {
+        const params: Record<string, unknown> = {
           account: this.phoneNumber,
-          recipient: [to],
-        });
+        };
+        if (this.isLikelyGroupId(to)) {
+          params.groupId = to;
+        } else {
+          params.recipient = [to];
+        }
+        await this.callDaemonRpc('sendTyping', params);
         return;
       }
 
+      const body: Record<string, unknown> = {};
+      if (this.isLikelyGroupId(to)) {
+        body.group_id = to;
+      } else {
+        body.recipient = to;
+      }
       await fetch(`${this.httpUrl}/v1/typing-indicator/${encodeURIComponent(this.phoneNumber)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipient: to }),
+        body: JSON.stringify(body),
       });
     } catch {
       // Ignore typing errors
@@ -380,7 +397,7 @@ export class SignalAdapter implements ChannelAdapter {
     }
   }
 
-  private async sendViaDaemonRpc(to: string, message: string): Promise<string> {
+  private async sendViaDaemonRpc(to: string, message: string, quoteTimestamp?: number | null, quoteAuthor?: string): Promise<string> {
     const params: Record<string, unknown> = {
       account: this.phoneNumber,
       message,
@@ -392,13 +409,19 @@ export class SignalAdapter implements ChannelAdapter {
       params.recipient = [to];
     }
 
+    // Quote (reply-to-message) support
+    if (quoteTimestamp && quoteAuthor) {
+      params.quoteTimestamp = quoteTimestamp;
+      params.quoteAuthor = quoteAuthor;
+    }
+
     const response = await this.callDaemonRpc('send', params);
 
     const fromResult = this.extractJsonRpcTimestamp(response);
     return String(fromResult || Date.now());
   }
 
-  private async sendViaRestWrapper(to: string, message: string): Promise<string> {
+  private async sendViaRestWrapper(to: string, message: string, quoteTimestamp?: number | null, quoteAuthor?: string): Promise<string> {
     const body: Record<string, unknown> = {
       number: this.phoneNumber,
       message,
@@ -408,6 +431,12 @@ export class SignalAdapter implements ChannelAdapter {
       body.groupId = to;
     } else {
       body.recipients = [to];
+    }
+
+    // Quote (reply-to-message) support
+    if (quoteTimestamp && quoteAuthor) {
+      body.quote_timestamp = quoteTimestamp;
+      body.quote_author = quoteAuthor;
     }
 
     const response = await fetch(`${this.httpUrl}/v2/send`, {
@@ -738,9 +767,20 @@ export class SignalAdapter implements ChannelAdapter {
       },
     };
 
+    // Track message author for quote/reply support
+    this.receivedMessageAuthors.set(String(timestamp), sourceAddress);
+
     this.messageHandler(channelMsg).catch((err) => {
       console.error('[Signal] Error:', err);
     });
+  }
+
+  /**
+   * Look up the author of a received message by its ID (timestamp).
+   */
+  private resolveQuoteAuthor(messageId?: string): string | undefined {
+    if (!messageId) return undefined;
+    return this.receivedMessageAuthors.get(messageId);
   }
 
   /**
