@@ -5,7 +5,7 @@
  * 
  * Supported platforms:
  * - macOS: Keychain (security command)
- * - Linux: libsecret (secret-tool)
+ * - Linux: encrypted file fallback (VPS/headless-friendly)
  * - Windows: Windows Credential Manager (vault/cmdkey)
  * 
  * Fallback: Encrypted file if keychain unavailable
@@ -67,8 +67,9 @@ export function isKeychainAvailable(): boolean {
       return true;
     }
     if (platform === 'linux') {
-      execSync('which secret-tool', { stdio: 'ignore' });
-      return true;
+      // Match OpenClaw behavior: Linux uses file-backed credentials by default.
+      // This avoids hard dependency on libsecret + DBus session on VPS/headless hosts.
+      return false;
     }
     if (platform === 'windows') {
       // Windows has built-in vault via PowerShell
@@ -94,15 +95,6 @@ export async function saveCredential(provider: string, entry: CredentialEntry): 
       execSync(
         `security add-generic-password -s "${SERVICE_NAME}" -a "${account}" -w "${data.replace(/"/g, '\\"')}" -U`,
         { stdio: 'ignore' }
-      );
-      return;
-    }
-    
-    if (platform === 'linux') {
-      // Linux libsecret
-      execSync(
-        `echo "${data.replace(/"/g, '\\"')}" | secret-tool store --label="FoxFang ${provider}" service "${SERVICE_NAME}" account "${account}"`,
-        { stdio: 'pipe' }
       );
       return;
     }
@@ -139,14 +131,6 @@ export async function getCredential(provider: string): Promise<CredentialEntry |
     if (platform === 'macos') {
       const result = execSync(
         `security find-generic-password -s "${SERVICE_NAME}" -a "${account}" -w`,
-        { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }
-      );
-      return JSON.parse(result.trim());
-    }
-    
-    if (platform === 'linux') {
-      const result = execSync(
-        `secret-tool lookup service "${SERVICE_NAME}" account "${account}"`,
         { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }
       );
       return JSON.parse(result.trim());
@@ -189,14 +173,6 @@ export async function deleteCredential(provider: string): Promise<void> {
     if (platform === 'macos') {
       execSync(
         `security delete-generic-password -s "${SERVICE_NAME}" -a "${account}"`,
-        { stdio: 'ignore' }
-      );
-      return;
-    }
-    
-    if (platform === 'linux') {
-      execSync(
-        `secret-tool clear service "${SERVICE_NAME}" account "${account}"`,
         { stdio: 'ignore' }
       );
       return;
