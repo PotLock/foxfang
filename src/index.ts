@@ -9,6 +9,7 @@ import { loadConfig } from './config/index';
 import { initializeProviders } from './providers/index';
 import { initializeTools, wireDelegateOrchestrator } from './tools/index';
 import { AgentOrchestrator } from './agents/orchestrator';
+import { setDefaultProvider } from './agents/runtime';
 import { SessionManager } from './sessions/manager';
 import { Gateway } from './gateway/index';
 import { initializeLogging } from './logging/index';
@@ -29,6 +30,7 @@ async function main() {
     // Initialize providers
     console.log('[2/5] Initializing providers...');
     initializeProviders(config.providers);
+    setDefaultProvider(config.defaultProvider);
     console.log(`      Initialized ${config.providers.length} provider(s)`);
     
     // Initialize tools

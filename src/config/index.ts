@@ -220,6 +220,14 @@ export async function loadConfig(): Promise<AppConfig> {
       ...(defaultConfig.autoReply || {}),
       ...((parsed?.autoReply as AppConfig['autoReply']) || {}),
     };
+    merged.agentRuntime = {
+      ...(defaultConfig.agentRuntime || {}),
+      ...((parsed?.agentRuntime as AppConfig['agentRuntime']) || {}),
+      routing: {
+        ...(defaultConfig.agentRuntime?.routing || {}),
+        ...(((parsed?.agentRuntime as AppConfig['agentRuntime'])?.routing || {}) as NonNullable<AppConfig['agentRuntime']>['routing']),
+      },
+    };
     return merged;
   } catch (error) {
     console.error('Failed to load config, using defaults:', error);

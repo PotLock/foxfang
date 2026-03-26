@@ -177,6 +177,78 @@ function normalizeStep(value: any): AgentBrowserCommandStep | null {
   };
 }
 
+const GOAL_STOP_WORDS = new Set<string>([
+  'a', 'an', 'and', 'at', 'by', 'for', 'from', 'get', 'go', 'in', 'into', 'is', 'it', 'of', 'on', 'or',
+  'page', 'part', 'please', 'read', 'section', 'see', 'show', 'site', 'that', 'the', 'this', 'to', 'url',
+  'view', 'what', 'where', 'with',
+  'de', 'den', 'di', 'đi', 'đến', 'hãy', 'lay', 'lấy', 'nay', 'này', 'noi', 'nơi', 'o', 'ở', 'phan', 'phần',
+  'trang', 'trong', 'tu', 'từ', 'va', 'và', 'xem',
+]);
+
+function escapeCssAttrValue(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+function uniqueNonEmpty(values: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    const item = String(value || '').trim();
+    if (!item || seen.has(item)) continue;
+    seen.add(item);
+    result.push(item);
+  }
+  return result;
+}
+
+function extractGoalKeywords(goal: string): string[] {
+  const words = (goal.toLowerCase().match(/[\p{L}\p{N}_-]+/gu) || [])
+    .map((item) => item.trim())
+    .filter((item) => item.length >= 3)
+    .filter((item) => !GOAL_STOP_WORDS.has(item));
+
+  return uniqueNonEmpty(words).slice(0, 4);
+}
+
+function inferSelectorFromGoal(goal: string): string | undefined {
+  const raw = String(goal || '').trim();
+  if (!raw) return undefined;
+
+  const explicitSelector = raw.match(/(?:css\s+selector|selector)\s*[:=]\s*["'`]?([^"'`\n]+)["'`]?/i)?.[1];
+  if (explicitSelector) {
+    return explicitSelector.trim();
+  }
+
+  const inlineSelector = raw.match(/[#.][a-zA-Z0-9_-][a-zA-Z0-9_\-:.#\[\]="']*/)?.[0];
+  if (inlineSelector) return inlineSelector.trim();
+
+  const keywords = extractGoalKeywords(raw);
+  if (keywords.length === 0) return undefined;
+
+  const selectors: string[] = [];
+  for (const keyword of keywords) {
+    const escapedKeyword = escapeCssAttrValue(keyword);
+    selectors.push(`[id*="${escapedKeyword}" i]`);
+    selectors.push(`[class*="${escapedKeyword}" i]`);
+    selectors.push(`[data-testid*="${escapedKeyword}" i]`);
+    selectors.push(`[aria-label*="${escapedKeyword}" i]`);
+    selectors.push(`[role*="${escapedKeyword}" i]`);
+
+    const slug = keyword
+      .normalize('NFKD')
+      .replace(/\p{M}/gu, '')
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    if (/^[a-z][a-z0-9_-]{1,40}$/.test(slug)) {
+      selectors.push(`#${slug}`);
+      selectors.push(`.${slug}`);
+      selectors.push(slug);
+    }
+  }
+
+  return uniqueNonEmpty(selectors)[0];
+}
+
 function buildReadSteps(args: {
   url: string;
   goal?: string;
@@ -189,8 +261,11 @@ function buildReadSteps(args: {
 }): AgentBrowserCommandStep[] {
   const steps: AgentBrowserCommandStep[] = [];
   const depth = Math.max(1, Math.min(Math.floor(Number(args.depth || 8)), 20));
-  const selector = String(args.selector || '').trim();
+  const explicitSelector = String(args.selector || '').trim();
   const goal = String(args.goal || '').trim();
+  const inferredSelector = explicitSelector ? '' : String(inferSelectorFromGoal(goal) || '').trim();
+  const selector = explicitSelector || inferredSelector;
+  const selectorIsInferred = !explicitSelector && !!inferredSelector;
 
   steps.push({ command: 'open', args: [args.url], json: true });
 
@@ -208,9 +283,29 @@ function buildReadSteps(args: {
   if (args.compact !== false) snapshotArgs.push('-c');
   snapshotArgs.push('-d', String(depth));
   if (selector) snapshotArgs.push('-s', selector);
-  steps.push({ command: 'snapshot', args: snapshotArgs, json: true });
+  steps.push({
+    command: 'snapshot',
+    args: snapshotArgs,
+    json: true,
+    allowFailure: selectorIsInferred,
+  });
 
   if (goal) {
+    steps.push({
+      command: 'find',
+      args: ['text', goal, 'text'],
+      json: true,
+      allowFailure: true,
+    });
+  }
+
+  if (goal && !explicitSelector) {
+    steps.push({
+      command: 'scroll',
+      args: ['down', '1200'],
+      json: true,
+      allowFailure: true,
+    });
     steps.push({
       command: 'find',
       args: ['text', goal, 'text'],
@@ -291,7 +386,7 @@ export class AgentBrowserTool implements Tool {
       },
       selector: {
         type: 'string',
-        description: 'Optional CSS selector to scope snapshot and extract text.',
+        description: 'Optional CSS selector to scope snapshot and extract text. If omitted, read mode infers a selector candidate from the goal text.',
       },
       interactiveOnly: {
         type: 'boolean',
@@ -403,8 +498,10 @@ export class AgentBrowserTool implements Tool {
     }
 
     const snapshot = results.find((item) => item.step.command === 'snapshot');
-    const focusResult = results.find((item) => item.step.command === 'find');
-    const selectorResult = results.find((item) => item.step.command === 'get');
+    const focusResults = results.filter((item) => item.step.command === 'find');
+    const selectorResults = results.filter((item) => item.step.command === 'get');
+    const focusResult = focusResults.length > 0 ? focusResults[focusResults.length - 1] : undefined;
+    const selectorResult = selectorResults.length > 0 ? selectorResults[selectorResults.length - 1] : undefined;
 
     const outputParts = [
       `agent-browser run completed via ${runner.label} (session: ${session}).`,
@@ -421,6 +518,7 @@ export class AgentBrowserTool implements Tool {
         snapshot: snapshot?.parsed || snapshot?.stdout || '',
         focus: focusResult?.parsed || focusResult?.stdout || '',
         selectorText: selectorResult?.parsed || selectorResult?.stdout || '',
+        selectorTextAll: selectorResults.map((item) => item.parsed || item.stdout || ''),
         steps: results.map((item, idx) => ({
           index: idx,
           command: item.step.command,
@@ -434,4 +532,3 @@ export class AgentBrowserTool implements Tool {
     };
   }
 }
-

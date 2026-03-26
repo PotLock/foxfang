@@ -320,6 +320,19 @@ function isAgentBrowserInstalled(): boolean {
   }
 }
 
+function isCommandAvailable(command: string, probeArgs: string[] = ['--help']): boolean {
+  try {
+    const probe = spawnSync(command, probeArgs, {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      encoding: 'utf8',
+    });
+    if (probe.error) return false;
+    return probe.status === 0;
+  } catch {
+    return false;
+  }
+}
+
 async function runInstallCommand(command: string, args: string[]): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     const child = spawn(command, args, {
@@ -364,7 +377,39 @@ async function ensureAgentBrowserSetup(): Promise<void> {
 
   s.stop(chalk.yellow('agent-browser not found'));
 
+  const platform = process.platform;
+  const isMacOS = platform === 'darwin';
+  const isLinux = platform === 'linux';
+
   try {
+    if (isMacOS) {
+      if (isCommandAvailable('brew', ['--version'])) {
+        s.start('Installing agent-browser via Homebrew (please wait)...');
+        await runInstallCommand('brew', ['install', 'agent-browser']);
+        s.stop(chalk.green('✓ agent-browser Homebrew install complete'));
+      } else {
+        s.start('Installing agent-browser globally with npm (please wait)...');
+        await runInstallCommand('npm', ['install', '-g', 'agent-browser']);
+        s.stop(chalk.green('✓ agent-browser global install complete'));
+      }
+
+      s.start('Downloading Chrome for Testing (please wait)...');
+      await runInstallCommand('agent-browser', ['install']);
+      s.stop(chalk.green('✓ Agent Browser installed successfully'));
+      return;
+    }
+
+    if (isLinux) {
+      s.start('Installing agent-browser globally (please wait)...');
+      await runInstallCommand('npm', ['install', '-g', 'agent-browser']);
+      s.stop(chalk.green('✓ agent-browser global install complete'));
+
+      s.start('Installing Linux browser dependencies + Chrome (please wait)...');
+      await runInstallCommand('agent-browser', ['install', '--with-deps']);
+      s.stop(chalk.green('✓ Agent Browser installed successfully'));
+      return;
+    }
+
     s.start('Installing agent-browser globally (please wait)...');
     await runInstallCommand('npm', ['install', '-g', 'agent-browser']);
     s.stop(chalk.green('✓ agent-browser global install complete'));
@@ -377,6 +422,19 @@ async function ensureAgentBrowserSetup(): Promise<void> {
     console.log(chalk.yellow('\n⚠ Could not auto-install agent-browser.'));
     console.log(chalk.dim(`Reason: ${error instanceof Error ? error.message : String(error)}`));
     console.log(chalk.dim('\nRun manually:'));
+
+    if (isMacOS) {
+      console.log(chalk.dim('  brew install agent-browser'));
+      console.log(chalk.dim('  agent-browser install'));
+      return;
+    }
+
+    if (isLinux) {
+      console.log(chalk.dim('  npm install -g agent-browser'));
+      console.log(chalk.dim('  agent-browser install --with-deps'));
+      return;
+    }
+
     console.log(chalk.dim('  npm install -g agent-browser'));
     console.log(chalk.dim('  agent-browser install'));
   }

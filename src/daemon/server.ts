@@ -36,11 +36,13 @@ export async function startDaemonServer(options: DaemonServerOptions): Promise<v
       const { SessionManager } = await import('../sessions/manager');
       const { loadConfig } = await import('../config/index');
       const { initializeProviders } = await import('../providers/index');
+      const { setDefaultProvider } = await import('../agents/runtime');
       const { initializeTools, wireDelegateOrchestrator } = await import('../tools/index');
       const { createWorkspaceManager, initFoxFangHome } = await import('../workspace');
       
       const config = await loadConfig();
       initializeProviders(config.providers);
+      setDefaultProvider(config.defaultProvider);
       initializeTools(config.tools?.tools || {});
       
       const sessionManager = new SessionManager(config.sessions);

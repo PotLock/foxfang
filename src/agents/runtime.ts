@@ -62,6 +62,16 @@ If \`fetch_url\`/crawl tools miss content on JS-heavy, interaction-driven, or cl
 Narrate only when it adds value (multi-step work, sensitive actions, or user asks).
 Keep narration brief and value-dense.`;
 
+const AGENT_BROWSER_PLAYBOOK_MINIMAL = `## Agent Browser Playbook
+Use this playbook when tool \`agent_browser\` is available:
+- Start with \`mode: "read"\` for extraction requests.
+- Default sequence: \`open\` -> \`wait --load networkidle\` -> \`snapshot -i\`.
+- Prefer refs from snapshot (\`@e1\`, \`@e2\`) or explicit selectors from user.
+- If content is below the fold, run \`scroll down\` then retry \`find text\`.
+- Use \`get text <selector>\` for precise extraction and return concise output.
+- For custom flows, switch to \`mode: "script"\` with explicit command steps.
+- Linux install hint if missing deps: \`agent-browser install --with-deps\`.`;
+
 /**
  * Safety guidance
  */
@@ -323,6 +333,28 @@ function buildSkillsSection(context: AgentContext): string {
   return lines.join('\n');
 }
 
+function hasLikelyBrowserIntent(context: AgentContext): boolean {
+  const recentUserMessages = (context.messages || [])
+    .filter((message) => message.role === 'user')
+    .slice(-4)
+    .map((message) => String(message.content || '').toLowerCase());
+  if (recentUserMessages.length === 0) return false;
+
+  const combined = recentUserMessages.join('\n');
+  const hasUrl = /(https?:\/\/|www\.)\S+/i.test(combined);
+  const hasToolHint = /\bagent[_\s-]?browser\b/i.test(combined);
+  const hasPageIntent =
+    /\b(open|go to|visit|navigate|scroll|click|footer|header|sidebar|section|element|selector|screenshot|snapshot)\b/i.test(combined)
+  return hasUrl || hasToolHint || hasPageIntent;
+}
+
+function buildAgentBrowserPlaybookSection(agent: Agent, context: AgentContext, promptMode: PromptMode): string {
+  if (promptMode !== 'full') return '';
+  if (!Array.isArray(agent.tools) || !agent.tools.includes('agent_browser')) return '';
+  if (!hasLikelyBrowserIntent(context)) return '';
+  return AGENT_BROWSER_PLAYBOOK_MINIMAL;
+}
+
 /**
  * Bootstrap file definitions for workspace context injection.
  */
@@ -494,6 +526,12 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   if (!isMinimal) {
     lines.push(TOOL_CALL_STYLE_GUIDANCE);
     lines.push('');
+
+    const playbookSection = buildAgentBrowserPlaybookSection(agent, context, promptMode);
+    if (playbookSection) {
+      lines.push(playbookSection);
+      lines.push('');
+    }
   }
 
   // 4. Safety (shortened in minimal)
