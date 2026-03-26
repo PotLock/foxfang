@@ -177,11 +177,25 @@ export interface RunRequest {
 }
 
 export interface StreamChunk {
-  type: 'text' | 'tool_call' | 'tool_result' | 'done';
+  type: 'text' | 'assistant_update' | 'tool_call' | 'tool_result' | 'done';
   content?: string;
   tool?: string;
   args?: any;
   result?: any;
+  error?: string;
+  mediaUrls?: string[];
+  toolCalls?: ToolCall[];
+  finalContent?: string;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+  toolTelemetry?: Array<{
+    tool: string;
+    rawSize: number;
+    compactSize: number;
+  }>;
 }
 
 export interface RunResponse {

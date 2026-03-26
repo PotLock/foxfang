@@ -84,11 +84,28 @@ export async function registerRunCommand(program: Command): Promise<void> {
           });
           
           if (result.stream) {
+            let streamedText = '';
+            const normalizeComparableText = (value: string): string => (
+              String(value || '')
+                .toLowerCase()
+                .replace(/[^\p{L}\p{N}]+/gu, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+            );
             for await (const chunk of result.stream) {
               if (chunk.type === 'text' && chunk.content) {
+                streamedText += chunk.content;
                 process.stdout.write(chunk.content);
               } else if (chunk.type === 'tool_call') {
                 console.log(chalk.cyan(`\n[Using tool: ${chunk.tool}]`));
+              } else if (chunk.type === 'done' && chunk.finalContent) {
+                const finalContent = chunk.finalContent.trim();
+                if (
+                  finalContent &&
+                  normalizeComparableText(finalContent) !== normalizeComparableText(streamedText)
+                ) {
+                  process.stdout.write(finalContent);
+                }
               }
             }
           }

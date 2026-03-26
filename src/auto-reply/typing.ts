@@ -33,6 +33,7 @@ export function createTypingController(options: TypingControllerOptions): Typing
   let sealed = false;
   let typingTtlTimer: NodeJS.Timeout | undefined;
   let typingLoopInterval: NodeJS.Timeout | undefined;
+  let dispatchIdleTimer: NodeJS.Timeout | undefined;
   const typingIntervalMs = typingIntervalSeconds * 1000;
 
   const formatTypingTtl = (ms: number): string => {
@@ -60,6 +61,10 @@ export function createTypingController(options: TypingControllerOptions): Typing
       clearInterval(typingLoopInterval);
       typingLoopInterval = undefined;
     }
+    if (dispatchIdleTimer) {
+      clearTimeout(dispatchIdleTimer);
+      dispatchIdleTimer = undefined;
+    }
     
     // Notify cleanup
     if (active) {
@@ -79,8 +84,19 @@ export function createTypingController(options: TypingControllerOptions): Typing
       clearTimeout(typingTtlTimer);
     }
     
-    typingTtlTimer = setTimeout(() => {
-      if (!typingLoopInterval) return;
+    typingTtlTimer = setTimeout(async () => {
+      if (sealed) return;
+      if (!runComplete) {
+        // Do not stop typing while work is still in progress; renew keepalive.
+        try {
+          await onReplyStart?.();
+        } catch {
+          // Ignore typing keepalive errors.
+        }
+        refreshTypingTtl();
+        return;
+      }
+      if (!typingLoopInterval && !active) return;
       log?.(`Typing TTL reached (${formatTypingTtl(typingTtlMs)}); stopping`);
       cleanup();
     }, typingTtlMs);
@@ -144,7 +160,6 @@ export function createTypingController(options: TypingControllerOptions): Typing
     await startTypingLoop();
   };
 
-  let dispatchIdleTimer: NodeJS.Timeout | undefined;
   const DISPATCH_IDLE_GRACE_MS = 10_000;
 
   const markRunComplete = (): void => {

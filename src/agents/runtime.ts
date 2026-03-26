@@ -11,6 +11,7 @@ import {
   CompactToolResult,
   PromptMode,
   ReasoningMode,
+  StreamChunk,
   ToolCall,
   ToolResult,
   WorkspaceManagerLike,
@@ -62,7 +63,203 @@ Keep narration brief and value-dense.`;
 
 const MINIMAL_TOOL_CALL_STYLE_GUIDANCE = `## Tool Call Style
 Use tools directly; do not ask the user to perform tool steps.
-Do not end with a progress-only message ("let me continue..."). Continue tool use until you can provide a concrete answer.`;
+Do not end with a progress-only message ("let me continue..."). Continue tool use until you can provide a concrete answer.
+Status/progress-only lines like "I need to scroll more" or "let me continue checking" are not final answers.
+For direct inspection requests, answer the requested question directly from the latest tool results. Do not end by asking whether the user wants a different approach.`;
+
+const URL_IN_TEXT_REGEX = /https?:\/\/[^\s<>"')\]]+/gi;
+
+export function isProgressOnlyStatusUpdate(content: string): boolean {
+  const text = String(content || '').trim();
+  if (!text) return false;
+
+  const normalized = text.toLowerCase();
+  const directProgressPhrases = [
+    'let me continue',
+    'let me try a different approach',
+    "i'll try a different approach",
+    'trying a different approach',
+    "i'll fetch",
+    'i will fetch',
+    'let me fetch',
+    "i'll read",
+    'i will read',
+    'let me read',
+    "i'll check",
+    'i will check',
+    'let me check',
+    "i'll inspect",
+    'i will inspect',
+    'let me inspect',
+    "i'll open",
+    'i will open',
+    'let me open',
+    "i'll look into",
+    'i will look into',
+    'let me look into',
+    'continue scrolling',
+    'continue checking',
+    'continue looking',
+    'continue searching',
+    'continue browsing',
+    'continue inspecting',
+    'continue navigating',
+    'i can see the page loaded but i need to',
+    'i need to scroll',
+    'still need to',
+  ];
+  if (directProgressPhrases.some((phrase) => normalized.includes(phrase))) {
+    return true;
+  }
+
+  const finalAnswerMarkers = [
+    'here are',
+    "here's",
+    'i found',
+    'it shows',
+    'the footer shows',
+    'the answer is',
+    'providers:',
+    'chain assets:',
+  ];
+  if (finalAnswerMarkers.some((marker) => normalized.includes(marker))) {
+    return false;
+  }
+
+  const progressCuePatterns = [
+    /\blet me\b/,
+    /\bi need to\b/,
+    /\bstill need to\b/,
+    /\bi(?:'| wi)ll\b/,
+    /\bone moment\b/,
+    /\bhang on\b/,
+    /\bgive me a moment\b/,
+  ];
+  const actionCuePatterns = [
+    /\bscroll(?:ing)?\b/,
+    /\bcheck(?:ing)?\b/,
+    /\blook(?:ing)?\b/,
+    /\binspect(?:ing)?\b/,
+    /\bsearch(?:ing)?\b/,
+    /\bbrows(?:e|ing)\b/,
+    /\bopen(?:ing)?\b/,
+    /\bfetch(?:ing)?\b/,
+    /\bnavigat(?:e|ing)\b/,
+    /\bfind(?:ing)?\b/,
+    /\bread(?:ing)?\b/,
+    /\bverify(?:ing)?\b/,
+    /\bwait(?:ing)?\b/,
+    /\bload(?:ed|ing)?\b/,
+    /\btry(?:ing)?\b/,
+  ];
+
+  const hasProgressCue = progressCuePatterns.some((pattern) => pattern.test(normalized));
+  const hasActionCue = actionCuePatterns.some((pattern) => pattern.test(normalized));
+  if (!hasProgressCue || !hasActionCue) {
+    return false;
+  }
+
+  return /[:.]$/.test(text) || text.length <= 280;
+}
+
+function normalizeExtractedUrl(url: string): string {
+  return String(url || '')
+    .trim()
+    .replace(/[),.!?\]]+$/g, '');
+}
+
+function extractRecentUrlsFromContext(context: AgentContext): string[] {
+  const urls: string[] = [];
+  for (const message of (context.messages || []).filter((item) => item.role === 'user').slice(-8)) {
+    const content = String(message.content || '');
+    const matches = content.match(URL_IN_TEXT_REGEX) || [];
+    for (const match of matches) {
+      const normalized = normalizeExtractedUrl(match);
+      if (!normalized || urls.includes(normalized)) continue;
+      urls.push(normalized);
+    }
+  }
+  return urls;
+}
+
+function repairToolCallForContext(
+  toolCall: ToolCall,
+  contextHints: { urls: string[] },
+): { toolCall: ToolCall; repaired: boolean; reason?: string } {
+  const args = toolCall.arguments && typeof toolCall.arguments === 'object'
+    ? { ...toolCall.arguments }
+    : {};
+  const firstUrl = contextHints.urls[0];
+  const hasUrl = typeof args.url === 'string' && args.url.trim().length > 0;
+
+  if (!firstUrl) {
+    return { toolCall: { ...toolCall, arguments: args }, repaired: false };
+  }
+
+  if ((toolCall.name === 'fetch_url' || toolCall.name === 'firecrawl_scrape') && !hasUrl) {
+    args.url = firstUrl;
+    return {
+      toolCall: { ...toolCall, arguments: args },
+      repaired: true,
+      reason: `inferred url from conversation (${firstUrl})`,
+    };
+  }
+
+  if (toolCall.name === 'agent_browser' && !hasUrl) {
+    args.url = firstUrl;
+    if (typeof args.mode !== 'string' || !args.mode.trim()) {
+      args.mode = 'read';
+    }
+    return {
+      toolCall: { ...toolCall, arguments: args },
+      repaired: true,
+      reason: `inferred browser url from conversation (${firstUrl})`,
+    };
+  }
+
+  return { toolCall: { ...toolCall, arguments: args }, repaired: false };
+}
+
+function looksLikeVisualBrowserIntent(context: AgentContext): boolean {
+  const intent = (context.messages || [])
+    .filter((message) => message.role === 'user')
+    .slice(-6)
+    .map((message) => String(message.content || ''))
+    .join('\n')
+    .toLowerCase();
+  if (!intent) return false;
+
+  const visualCuePatterns = [
+    /\bfooter\b/,
+    /\bheader\b/,
+    /\bnavbar\b/,
+    /\bnav\b/,
+    /\bmenu\b/,
+    /\bbutton\b/,
+    /\bcta\b/,
+    /\bhero\b/,
+    /\bsection\b/,
+    /\bvisible\b/,
+    /\bscreenshot\b/,
+    /\bscroll\b/,
+    /\bclick\b/,
+    /\bhover\b/,
+    /\bopen\b/,
+    /\bpage\b/,
+    /\bsite\b/,
+    /\bwebsite\b/,
+  ];
+  const hasVisualCue = visualCuePatterns.some((pattern) => pattern.test(intent));
+  if (!hasVisualCue) return false;
+
+  return (
+    /https?:\/\//.test(intent) ||
+    /\b[a-z0-9.-]+\.[a-z]{2,}\b/.test(intent) ||
+    /\bwhat is visible\b/.test(intent) ||
+    /\blook(?:ing)? at\b/.test(intent) ||
+    /\bsee\b/.test(intent)
+  );
+}
 
 function buildToolCallStyleSection(agent: Agent, promptMode: PromptMode): string {
   const lines: string[] = [];
@@ -74,7 +271,7 @@ function buildToolCallStyleSection(agent: Agent, promptMode: PromptMode): string
 
   if (hasAgentBrowserTool) {
     lines.push('For visual/UI page tasks (footer/header/nav/button text, what is visible), prefer `agent_browser` over static crawl.');
-    lines.push('For those UI tasks, do not call `fetch_url` or `firecrawl_*` unless the user explicitly asks for static scrape output.');
+    lines.push('If browser execution is blocked/failing repeatedly, choose fallback tools (`fetch_url`, `firecrawl_*`, or search) yourself instead of stopping.');
     lines.push('When using `agent_browser` for multi-step navigation, use `mode: "script"` with explicit command sequences decided by the agent.');
     lines.push('Treat `mode: "read"` as minimal baseline only (open + snapshot unless extra flags are explicitly provided).');
   } else if (hasBashTool) {
@@ -611,15 +808,7 @@ function collectToolMatchedSkills(skills: SkillDefinition[], agent: Agent): Skil
   });
 }
 
-function isLikelyWebUiIntent(context: AgentContext): boolean {
-  const text = collectRecentUserIntent(context).toLowerCase();
-  if (!text) return false;
-  const hasUrl = /(https?:\/\/|www\.)\S+/i.test(text);
-  const hasUiIntent = /\b(footer|header|nav|section|button|click|scroll|page|website|web|screenshot|snapshot)\b/i.test(text);
-  return hasUrl || hasUiIntent;
-}
-
-function adjustToolsForIntent(context: AgentContext, tools: Array<{
+export function adjustToolsForIntent(context: AgentContext, tools: Array<{
   name: string;
   description: string;
   parameters: any;
@@ -628,37 +817,32 @@ function adjustToolsForIntent(context: AgentContext, tools: Array<{
   description: string;
   parameters: any;
 }> {
-  if (!isLikelyWebUiIntent(context)) return tools;
+  if (tools.length <= 1) return tools;
 
-  const names = new Set(tools.map((tool) => tool.name));
-  const hasAgentBrowser = names.has('agent_browser');
-  const hasBash = names.has('bash_exec') || names.has('bash');
-  const hasFirecrawl = names.has('firecrawl_search') || names.has('firecrawl_scrape');
+  const toolNames = new Set(tools.map((tool) => tool.name));
+  if (!toolNames.has('agent_browser') || !looksLikeVisualBrowserIntent(context)) {
+    return tools;
+  }
 
-  if (hasAgentBrowser) {
-    const before = tools.length;
-    const filtered = tools.filter((tool) =>
-      tool.name !== 'fetch_url' &&
-      tool.name !== 'firecrawl_search' &&
-      tool.name !== 'firecrawl_scrape' &&
-      tool.name !== 'web_search' &&
-      tool.name !== 'brave_search'
-    );
-    if (filtered.length !== before) {
-      console.log('[ToolPolicy] Web UI intent detected with agent_browser: hide fetch_url/firecrawl_*/web_search/brave_search (browser-first)');
+  const priority = new Map<string, number>([
+    ['agent_browser', 0],
+    ['bash_exec', 1],
+    ['bash', 1],
+    ['fetch_url', 3],
+    ['firecrawl_scrape', 4],
+    ['firecrawl_search', 5],
+  ]);
+
+  return [...tools].sort((a, b) => {
+    const aPriority = priority.get(a.name) ?? 2;
+    const bPriority = priority.get(b.name) ?? 2;
+    if (aPriority !== bPriority) {
+      return aPriority - bPriority;
     }
-    return filtered;
-  }
 
-  if (!hasAgentBrowser && hasBash && names.has('fetch_url')) {
-    console.log('[ToolPolicy] Web UI intent detected without agent_browser: hide fetch_url, prefer bash_exec + agent-browser skill');
-    return tools.filter((tool) => tool.name !== 'fetch_url');
-  }
-
-  if (!hasAgentBrowser && hasFirecrawl) {
-    console.log('[ToolPolicy] Web UI intent detected without agent_browser: firecrawl_* remains enabled as fallback');
-  }
-  return tools;
+    if (a.name === b.name) return 0;
+    return a.name.localeCompare(b.name);
+  });
 }
 
 function selectSkillsForPrompt(params: {
@@ -696,7 +880,7 @@ function selectSkillsForPrompt(params: {
   };
 
   for (const skill of pinned) pushUnique(skill);
-  if (browserSkill && isLikelyWebUiIntent(params.context)) {
+  if (browserSkill) {
     pushUnique(browserSkill);
   }
   for (const skill of ordered) pushUnique(skill);
@@ -1168,13 +1352,19 @@ export async function runAgent(
       smallModel: providerConfig?.smallModel,
       tier: agent.executionProfile?.modelTier,
     });
+  const toolContextHints = {
+    urls: extractRecentUrlsFromContext(context),
+  };
 
   const allToolCalls: ToolCall[] = [];
   let iteration = 0;
   const maxIterations = budget.maxToolIterations;
   let toolErrorStreak = 0;
-  let progressContinuationStreak = 0;
-  const maxProgressContinuation = 2;
+  let repetitiveNoToolStreak = 0;
+  const maxRepetitiveNoToolStreak = 2;
+  let postToolCompletionPassUsed = false;
+  let progressOnlyRepromptCount = 0;
+  const maxProgressOnlyReprompts = context.isChannelSession ? 2 : 1;
   const toolTelemetry: Array<{ tool: string; rawSize: number; compactSize: number }> = [];
   const mediaUrls = new Set<string>();
   const isToolIntentOnlyText = (content: string): boolean => {
@@ -1185,26 +1375,18 @@ export async function runAgent(
       /^let me use the [a-z0-9_\- ]+ tool(?: to help)?\.?$/i.test(text)
     );
   };
-  const isLikelyProgressOnlyText = (content: string): boolean => {
-    const text = String(content || '').trim();
+  const isInternalToolPlaceholder = (content: string): boolean => {
+    const text = String(content || '').trim().toLowerCase();
     if (!text) return false;
-    const short = text.length <= 420;
-    const hasProgressLead =
-      /(?:^|\b)(let me|i(?:'| )ll|i will|working on|continuing|next,?\s*i(?:'| )ll|i need to|need to)\b/i.test(text) ||
-      /(?:^|\b)(để tôi|mình sẽ|đang|tiếp tục|chờ mình|cần)\b/u.test(text);
-    if (!hasProgressLead) return false;
-    const hasActionVerb =
-      /\b(scroll|check|inspect|open|fetch|read|get|click|analyze|locate|find|extract|try)\b/i.test(text) ||
-      /\b(cuộn|kiểm tra|mở|đọc|lấy|bấm|phân tích|xem|tìm|thử)\b/u.test(text);
-    return short && hasActionVerb;
+    return (
+      text === '[tool invocation]' ||
+      text === '[tool results]' ||
+      text.startsWith('[tool results]')
+    );
   };
-  const isLikelyPlanningChatterLoop = (content: string): boolean => {
+  const isLikelyRepetitiveLoopText = (content: string): boolean => {
     const text = String(content || '').trim();
-    if (!text || text.length < 220) return false;
-    const hasPlanningCue =
-      /(let me|i(?:'| )ll use|i(?:'| )ll try|different approach|script mode|use .*skill|continue scrolling|extract .*content)/i.test(text) ||
-      /(để tôi|mình sẽ|thử cách khác|chế độ script|tiếp tục cuộn|trích xuất nội dung)/u.test(text);
-    if (!hasPlanningCue) return false;
+    if (!text || text.length < 160) return false;
 
     const segments = text
       .split(/(?:\r?\n)+|(?<=[.!?])\s+/)
@@ -1281,11 +1463,21 @@ export async function runAgent(
 
     if (!response.toolCalls || response.toolCalls.length === 0) {
       const normalizedContent = String(response.content || '').trim();
-      if (isToolIntentOnlyText(normalizedContent)) {
+      const normalizedLoopSignature = normalizedContent
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const hasExecutedTools = allToolCalls.length > 0;
+      if (isToolIntentOnlyText(normalizedContent) || isInternalToolPlaceholder(normalizedContent)) {
         debugWarn(`[AgentRuntime] Detected tool-intent placeholder text from provider; forcing no-tools finalization`);
         try {
           const finalized = await finalizeWithoutTools('The previous assistant response was a tool-intent placeholder.');
-          if (finalized.content && !isToolIntentOnlyText(finalized.content)) {
+          if (
+            finalized.content &&
+            !isToolIntentOnlyText(finalized.content) &&
+            !isInternalToolPlaceholder(finalized.content)
+          ) {
             return {
               content: finalized.content,
               toolCalls: allToolCalls.length > 0 ? allToolCalls : undefined,
@@ -1307,52 +1499,133 @@ export async function runAgent(
         };
       }
 
-      if (isLikelyProgressOnlyText(normalizedContent) || isLikelyPlanningChatterLoop(normalizedContent)) {
-        if (progressContinuationStreak < maxProgressContinuation) {
-          progressContinuationStreak += 1;
-          const enforceToolInstruction = effectiveTools.length > 0
-            ? 'You MUST call at least one available tool before your next reply.'
-            : 'No tools are available; produce the best final answer from current context.';
-          messages = trimMessagesToBudget(
-            [
-              ...messages,
-              { role: 'assistant' as const, content: normalizedContent || '[status update]' },
-              {
-                role: 'user' as const,
-                content:
-                  `Continue executing the same task now. The previous message was only a progress update. ${enforceToolInstruction} Only stop when you can provide the final answer with concrete findings.`,
-              },
-            ],
+      if (isProgressOnlyStatusUpdate(normalizedContent)) {
+        if (
+          effectiveTools.length > 0 &&
+          iteration < maxIterations &&
+          progressOnlyRepromptCount < maxProgressOnlyReprompts
+        ) {
+          progressOnlyRepromptCount += 1;
+          const progressFollowUp = hasExecutedTools
+            ? 'Your previous message was only a progress/status update. Continue this same task now. Use tools again if needed, then provide the concrete answer. Do not reply with another progress update.'
+            : 'Your previous message was only a progress/status update. Start or resume the actual work now. If tools are needed, call them immediately. Do not reply with another progress update.';
+          messages = enforceToolResultContextBudget(
+            trimMessagesToBudget(
+              [
+                ...messages,
+                { role: 'assistant' as const, content: normalizedContent || '[status update]' },
+                { role: 'user' as const, content: progressFollowUp },
+              ],
+              budget.requestMaxInputTokens,
+            ).messages,
             budget.requestMaxInputTokens,
-          ).messages;
+          );
           continue;
         }
 
-        try {
-          const finalized = await finalizeWithoutTools(
-            'The previous assistant response was progress-only; return the final answer now based on completed tool results.',
-          );
-          if (
-            finalized.content &&
-            !isLikelyProgressOnlyText(finalized.content) &&
-            !isLikelyPlanningChatterLoop(finalized.content)
-          ) {
-            return {
-              content: finalized.content,
-              toolCalls: allToolCalls.length > 0 ? allToolCalls : undefined,
-              mediaUrls: mediaUrls.size > 0 ? Array.from(mediaUrls) : undefined,
-              usage: finalized.usage || response.usage,
-              toolTelemetry: toolTelemetry.length > 0 ? toolTelemetry : undefined,
-            };
+        if (hasExecutedTools) {
+          try {
+            const finalized = await finalizeWithoutTools(
+              'Your previous response was only a progress/status update. Use the existing tool results and provide the final user-facing answer now.',
+            );
+            const finalizedContent = String(finalized.content || '').trim();
+            if (
+              finalizedContent &&
+              !isToolIntentOnlyText(finalizedContent) &&
+              !isInternalToolPlaceholder(finalizedContent) &&
+              !isProgressOnlyStatusUpdate(finalizedContent)
+            ) {
+              return {
+                content: finalizedContent,
+                toolCalls: allToolCalls.length > 0 ? allToolCalls : undefined,
+                mediaUrls: mediaUrls.size > 0 ? Array.from(mediaUrls) : undefined,
+                usage: finalized.usage || response.usage,
+                toolTelemetry: toolTelemetry.length > 0 ? toolTelemetry : undefined,
+              };
+            }
+          } catch (error) {
+            debugWarn(`[AgentRuntime] Progress-only finalization failed: ${error instanceof Error ? error.message : String(error)}`);
           }
-        } catch (error) {
-          debugWarn(`[AgentRuntime] Progress-only finalization failed: ${error instanceof Error ? error.message : String(error)}`);
         }
+
+        return {
+          content: 'I gathered context but could not finalize the answer in time. Please retry.',
+          toolCalls: allToolCalls.length > 0 ? allToolCalls : undefined,
+          mediaUrls: mediaUrls.size > 0 ? Array.from(mediaUrls) : undefined,
+          usage: response.usage,
+          toolTelemetry: toolTelemetry.length > 0 ? toolTelemetry : undefined,
+        };
+      }
+
+      if (
+        hasExecutedTools &&
+        context.isChannelSession === true &&
+        !postToolCompletionPassUsed &&
+        iteration < maxIterations
+      ) {
+        postToolCompletionPassUsed = true;
+        messages = trimMessagesToBudget(
+          [
+            ...messages,
+            { role: 'assistant' as const, content: normalizedContent || '[status update]' },
+            {
+              role: 'user' as const,
+              content:
+                'Continue this same task now. You already executed tools in this turn. If your previous message was only a progress/status update, call tools again and finish the task. If your previous message was already final, repeat the final user-facing answer now. Do not stop at a status update.',
+            },
+          ],
+          budget.requestMaxInputTokens,
+        ).messages;
+        continue;
+      }
+
+      if (hasExecutedTools && normalizedLoopSignature) {
+        const recentAssistant = [...messages]
+          .reverse()
+          .find((entry) => entry.role === 'assistant');
+        const previousSignature = String(recentAssistant?.content || '')
+          .toLowerCase()
+          .replace(/[^\p{L}\p{N}]+/gu, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        const repeatedSameReply = Boolean(previousSignature) && previousSignature === normalizedLoopSignature;
+        if (repeatedSameReply || isLikelyRepetitiveLoopText(normalizedContent)) {
+          repetitiveNoToolStreak += 1;
+        } else {
+          repetitiveNoToolStreak = 0;
+        }
+
+        if (repetitiveNoToolStreak >= maxRepetitiveNoToolStreak) {
+          try {
+            const finalized = await finalizeWithoutTools(
+              'You have already run tools. Stop looping and provide the final user-facing answer from existing tool results.',
+            );
+            if (
+              finalized.content &&
+              !isInternalToolPlaceholder(finalized.content)
+            ) {
+              return {
+                content: finalized.content,
+                toolCalls: allToolCalls.length > 0 ? allToolCalls : undefined,
+                mediaUrls: mediaUrls.size > 0 ? Array.from(mediaUrls) : undefined,
+                usage: finalized.usage || response.usage,
+                toolTelemetry: toolTelemetry.length > 0 ? toolTelemetry : undefined,
+              };
+            }
+          } catch (error) {
+            debugWarn(`[AgentRuntime] Repetitive-loop finalization failed: ${error instanceof Error ? error.message : String(error)}`);
+          }
+        }
+      } else {
+        repetitiveNoToolStreak = 0;
       }
 
       debugLog(`[AgentRuntime] No tool calls, returning final response`);
+      const safeContent = isInternalToolPlaceholder(normalizedContent)
+        ? 'I gathered context but could not finalize the answer in time. Please retry.'
+        : response.content;
       return {
-        content: response.content,
+        content: safeContent,
         toolCalls: allToolCalls.length > 0 ? allToolCalls : undefined,
         mediaUrls: mediaUrls.size > 0 ? Array.from(mediaUrls) : undefined,
         usage: response.usage,
@@ -1366,7 +1639,13 @@ export async function runAgent(
       id: `call_${Date.now()}_${idx}_${iteration}`,
       name: tc.name,
       arguments: tc.arguments,
-    }));
+    })).map((toolCall) => {
+      const repaired = repairToolCallForContext(toolCall, toolContextHints);
+      if (repaired.repaired) {
+        console.log(`[ToolRunner] 🔧 repaired ${toolCall.name}: ${repaired.reason}`);
+      }
+      return repaired.toolCall;
+    });
     allToolCalls.push(...toolCallsWithIds);
 
     const results = await executeToolCalls(toolCallsWithIds);
@@ -1390,8 +1669,29 @@ export async function runAgent(
         const toolName = toolCallsWithIds.find(tc => tc.id === r.toolCallId)?.name;
         return `${toolName}: ${r.error}`;
       }).join('\n');
+      if (allToolCalls.length > 0 || mediaUrls.size > 0) {
+        try {
+          const finalized = await finalizeWithoutTools(
+            'Some tool calls failed repeatedly. Use successful tool outputs already in context and provide the best final answer now.',
+          );
+          const finalizedContent = String(finalized.content || '').trim();
+          if (finalizedContent && !isInternalToolPlaceholder(finalizedContent)) {
+            return {
+              content: finalizedContent,
+              toolCalls: allToolCalls,
+              mediaUrls: mediaUrls.size > 0 ? Array.from(mediaUrls) : undefined,
+              usage: finalized.usage || response.usage,
+              toolTelemetry: toolTelemetry.length > 0 ? toolTelemetry : undefined,
+            };
+          }
+        } catch (error) {
+          debugWarn(`[AgentRuntime] Error-recovery finalization failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
       return {
-        content: `Tool execution failed repeatedly:\n${errorSummary}`,
+        content: mediaUrls.size > 0
+          ? `I captured the screenshot, but follow-up tool steps kept failing.\n${errorSummary}`
+          : `Tool execution failed repeatedly:\n${errorSummary}`,
         toolCalls: allToolCalls,
         mediaUrls: mediaUrls.size > 0 ? Array.from(mediaUrls) : undefined,
         usage: response.usage,
@@ -1469,7 +1769,7 @@ export async function runAgent(
 export async function* runAgentStream(
   agentId: string,
   context: AgentContext
-): AsyncGenerator<{ type: 'text' | 'tool_call' | 'tool_result' | 'done'; content?: string; tool?: string; args?: any; result?: any }> {
+): AsyncGenerator<StreamChunk> {
   const agent = await ensureAgentRegistered(agentId);
 
   const systemPrompt = buildSystemPrompt(agent, context);
@@ -1525,10 +1825,112 @@ export async function* runAgentStream(
       smallModel: providerConfig?.smallModel,
       tier: agent.executionProfile?.modelTier,
     });
+  const toolContextHints = {
+    urls: extractRecentUrlsFromContext(context),
+  };
 
   let iteration = 0;
   const maxIterations = budget.maxToolIterations;
   let toolErrorStreak = 0;
+  let repetitiveNoToolStreak = 0;
+  const maxRepetitiveNoToolStreak = 2;
+  let postToolCompletionPassUsed = false;
+  let progressOnlyRepromptCount = 0;
+  const maxProgressOnlyReprompts = context.isChannelSession ? 2 : 1;
+  const allToolCalls: ToolCall[] = [];
+  const toolTelemetry: Array<{ tool: string; rawSize: number; compactSize: number }> = [];
+  const mediaUrls = new Set<string>();
+
+  const isToolIntentOnlyTextLocal = (content: string): boolean => {
+    const text = String(content || '').trim();
+    if (!text) return false;
+    return (
+      /^i(?:'| wi)ll use the [a-z0-9_\- ]+ tool(?: to help you)?\.?$/i.test(text) ||
+      /^let me use the [a-z0-9_\- ]+ tool(?: to help)?\.?$/i.test(text)
+    );
+  };
+  const isInternalToolPlaceholderLocal = (content: string): boolean => {
+    const text = String(content || '').trim().toLowerCase();
+    if (!text) return false;
+    return (
+      text === '[tool invocation]' ||
+      text === '[tool results]' ||
+      text.startsWith('[tool results]')
+    );
+  };
+  const isLikelyRepetitiveLoopTextLocal = (content: string): boolean => {
+    const text = String(content || '').trim();
+    if (!text || text.length < 160) return false;
+
+    const segments = text
+      .split(/(?:\r?\n)+|(?<=[.!?])\s+/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (segments.length < 4) return false;
+
+    const normalizedSegments = segments.map((segment) =>
+      segment
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, ' ')
+        .replace(/\s+/g, ' ')
+        .trim(),
+    );
+    const counts = new Map<string, number>();
+    for (const segment of normalizedSegments) {
+      if (!segment) continue;
+      counts.set(segment, (counts.get(segment) || 0) + 1);
+    }
+
+    const total = normalizedSegments.length;
+    const unique = counts.size;
+    const repeatRatio = total > 0 ? 1 - unique / total : 0;
+    const maxRepeat = Math.max(0, ...Array.from(counts.values()));
+
+    return maxRepeat >= 3 || repeatRatio >= 0.35;
+  };
+  const buildDoneChunk = (
+    finalContent: string,
+    usage?: {
+      promptTokens: number;
+      completionTokens: number;
+      totalTokens: number;
+    },
+  ): StreamChunk => ({
+    type: 'done',
+    finalContent,
+    toolCalls: allToolCalls.length > 0 ? allToolCalls : undefined,
+    mediaUrls: mediaUrls.size > 0 ? Array.from(mediaUrls) : undefined,
+    usage,
+    toolTelemetry: toolTelemetry.length > 0 ? toolTelemetry : undefined,
+  });
+  const finalizeWithoutTools = async (
+    reason: string,
+  ): Promise<{ content?: string; usage?: { promptTokens: number; completionTokens: number; totalTokens: number } }> => {
+    const finalizeInstruction = [
+      reason,
+      'Provide the final user-facing answer now.',
+      'Do not call or mention tools.',
+      'Do not output placeholders like tool invocation or tool results.',
+    ].join(' ');
+
+    const finalizeMessages = trimMessagesToBudget(
+      [
+        ...messages,
+        { role: 'user' as const, content: finalizeInstruction },
+      ],
+      budget.requestMaxInputTokens,
+    ).messages;
+
+    const finalized = await provider.chat({
+      model,
+      messages: finalizeMessages,
+      tools: undefined,
+    });
+    return {
+      content: String(finalized.content || '').trim(),
+      usage: finalized.usage,
+    };
+  };
 
   // AGENT LOOP
   while (iteration < maxIterations) {
@@ -1551,20 +1953,173 @@ export async function* runAgentStream(
           fullContent += chunk.content || '';
           yield { type: 'text', content: chunk.content || '' };
         } else if (chunk.type === 'tool_call') {
-          const toolCall: ToolCall = {
+          const rawToolCall: ToolCall = {
             id: `call_${Date.now()}_${pendingToolCalls.length}_${iteration}`,
             name: chunk.tool || '',
             arguments: chunk.args,
           };
-          pendingToolCalls.push(toolCall);
-          yield { type: 'tool_call', tool: chunk.tool, args: chunk.args };
+          const repaired = repairToolCallForContext(rawToolCall, toolContextHints);
+          if (repaired.repaired) {
+            console.log(`[ToolRunner] 🔧 repaired ${rawToolCall.name}: ${repaired.reason}`);
+          }
+          pendingToolCalls.push(repaired.toolCall);
+          allToolCalls.push(repaired.toolCall);
+          yield { type: 'tool_call', tool: repaired.toolCall.name, args: repaired.toolCall.arguments };
         }
       }
 
+      const normalizedContent = String(fullContent || '').trim();
       if (pendingToolCalls.length === 0) {
+        const hasExecutedTools = allToolCalls.length > 0;
+        const normalizedLoopSignature = normalizedContent
+          .toLowerCase()
+          .replace(/[^\p{L}\p{N}]+/gu, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        if (
+          isToolIntentOnlyTextLocal(normalizedContent) ||
+          isInternalToolPlaceholderLocal(normalizedContent)
+        ) {
+          try {
+            const finalized = await finalizeWithoutTools(
+              'The previous assistant response was a tool-intent placeholder.',
+            );
+            const finalizedContent = String(finalized.content || '').trim();
+            if (
+              finalizedContent &&
+              !isToolIntentOnlyTextLocal(finalizedContent) &&
+              !isInternalToolPlaceholderLocal(finalizedContent)
+            ) {
+              yield buildDoneChunk(finalizedContent, finalized.usage);
+              return;
+            }
+          } catch (error) {
+            debugWarn(`[AgentRuntime] Stream placeholder finalization failed: ${error instanceof Error ? error.message : String(error)}`);
+          }
+
+          yield buildDoneChunk('I gathered context but could not finalize the answer in time. Please retry.');
+          return;
+        }
+
+        if (isProgressOnlyStatusUpdate(normalizedContent)) {
+          if (
+            effectiveTools.length > 0 &&
+            iteration < maxIterations &&
+            progressOnlyRepromptCount < maxProgressOnlyReprompts
+          ) {
+            progressOnlyRepromptCount += 1;
+            const progressFollowUp = hasExecutedTools
+              ? 'Your previous message was only a progress/status update. Continue this same task now. Use tools again if needed, then provide the concrete answer. Do not reply with another progress update.'
+              : 'Your previous message was only a progress/status update. Start or resume the actual work now. If tools are needed, call them immediately. Do not reply with another progress update.';
+            messages = enforceToolResultContextBudget(
+              trimMessagesToBudget(
+                [
+                  ...messages,
+                  { role: 'assistant' as const, content: normalizedContent || '[status update]' },
+                  { role: 'user' as const, content: progressFollowUp },
+                ],
+                budget.requestMaxInputTokens,
+              ).messages,
+              budget.requestMaxInputTokens,
+            );
+            continue;
+          }
+
+          if (hasExecutedTools) {
+            try {
+              const finalized = await finalizeWithoutTools(
+                'Your previous response was only a progress/status update. Use the existing tool results and provide the final user-facing answer now.',
+              );
+              const finalizedContent = String(finalized.content || '').trim();
+              if (
+                finalizedContent &&
+                !isToolIntentOnlyTextLocal(finalizedContent) &&
+                !isInternalToolPlaceholderLocal(finalizedContent) &&
+                !isProgressOnlyStatusUpdate(finalizedContent)
+              ) {
+                yield buildDoneChunk(finalizedContent, finalized.usage);
+                return;
+              }
+            } catch (error) {
+              debugWarn(`[AgentRuntime] Stream progress-only finalization failed: ${error instanceof Error ? error.message : String(error)}`);
+            }
+          }
+
+          yield buildDoneChunk('I gathered context but could not finalize the answer in time. Please retry.');
+          return;
+        }
+
+        if (
+          hasExecutedTools &&
+          context.isChannelSession === true &&
+          !postToolCompletionPassUsed &&
+          iteration < maxIterations
+        ) {
+          postToolCompletionPassUsed = true;
+          messages = trimMessagesToBudget(
+            [
+              ...messages,
+              { role: 'assistant' as const, content: normalizedContent || '[status update]' },
+              {
+                role: 'user' as const,
+                content:
+                  'Continue this same task now. You already executed tools in this turn. If your previous message was only a progress/status update, call tools again and finish the task. If your previous message was already final, repeat the final user-facing answer now. Do not stop at a status update.',
+              },
+            ],
+            budget.requestMaxInputTokens,
+          ).messages;
+          continue;
+        }
+
+        if (hasExecutedTools && normalizedLoopSignature) {
+          const recentAssistant = [...messages]
+            .reverse()
+            .find((entry) => entry.role === 'assistant');
+          const previousSignature = String(recentAssistant?.content || '')
+            .toLowerCase()
+            .replace(/[^\p{L}\p{N}]+/gu, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+          const repeatedSameReply = Boolean(previousSignature) && previousSignature === normalizedLoopSignature;
+          if (repeatedSameReply || isLikelyRepetitiveLoopTextLocal(normalizedContent)) {
+            repetitiveNoToolStreak += 1;
+          } else {
+            repetitiveNoToolStreak = 0;
+          }
+
+          if (repetitiveNoToolStreak >= maxRepetitiveNoToolStreak) {
+            try {
+              const finalized = await finalizeWithoutTools(
+                'You have already run tools. Stop looping and provide the final user-facing answer from existing tool results.',
+              );
+              const finalizedContent = String(finalized.content || '').trim();
+              if (finalizedContent && !isInternalToolPlaceholderLocal(finalizedContent)) {
+                yield buildDoneChunk(finalizedContent, finalized.usage);
+                return;
+              }
+            } catch (error) {
+              debugWarn(`[AgentRuntime] Stream repetitive-loop finalization failed: ${error instanceof Error ? error.message : String(error)}`);
+            }
+          }
+        } else {
+          repetitiveNoToolStreak = 0;
+        }
+
         debugLog(`[AgentRuntime] No tool calls in iteration ${iteration}, streaming complete`);
-        yield { type: 'done' };
+        const safeContent = isInternalToolPlaceholderLocal(normalizedContent)
+          ? 'I gathered context but could not finalize the answer in time. Please retry.'
+          : normalizedContent;
+        yield buildDoneChunk(safeContent);
         return;
+      }
+
+      if (
+        normalizedContent &&
+        !isToolIntentOnlyTextLocal(normalizedContent) &&
+        !isInternalToolPlaceholderLocal(normalizedContent)
+      ) {
+        yield { type: 'assistant_update', content: normalizedContent };
       }
 
       debugLog(`[AgentRuntime] Executing ${pendingToolCalls.length} tool calls`);
@@ -1582,16 +2137,50 @@ export async function* runAgentStream(
           const toolName = pendingToolCalls.find(tc => tc.id === r.toolCallId)?.name;
           return `${toolName}: ${r.error}`;
         }).join('\n');
-        yield { type: 'text', content: `\nTool execution failed repeatedly:\n${errorSummary}\n` };
-        yield { type: 'done' };
+        try {
+          if (allToolCalls.length > 0 || mediaUrls.size > 0) {
+            const finalized = await finalizeWithoutTools(
+              'Some tool calls failed repeatedly. Use successful tool outputs already in context and provide the best final answer now.',
+            );
+            const finalizedContent = String(finalized.content || '').trim();
+            if (finalizedContent && !isInternalToolPlaceholderLocal(finalizedContent)) {
+              yield buildDoneChunk(finalizedContent, finalized.usage);
+              return;
+            }
+          }
+        } catch (error) {
+          debugWarn(`[AgentRuntime] Stream error-recovery finalization failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+        yield buildDoneChunk(
+          mediaUrls.size > 0
+            ? `I captured the screenshot, but follow-up tool steps kept failing.\n${errorSummary}`
+            : `Tool execution failed repeatedly:\n${errorSummary}`,
+        );
         return;
       }
 
       for (const result of results) {
+        const toolName = pendingToolCalls.find(tc => tc.id === result.toolCallId)?.name;
+        if (toolName && typeof result.rawSize === 'number' && typeof result.compactSize === 'number') {
+          toolTelemetry.push({
+            tool: toolName,
+            rawSize: result.rawSize,
+            compactSize: result.compactSize,
+          });
+        }
+        const resultMediaUrls =
+          toolName && result.data
+            ? collectMediaUrlsFromToolData(toolName, result.data)
+            : [];
+        for (const mediaUrl of resultMediaUrls) {
+          mediaUrls.add(mediaUrl);
+        }
         yield {
           type: 'tool_result',
-          tool: pendingToolCalls.find(tc => tc.id === result.toolCallId)?.name,
-          result: result.error ? { error: result.error } : { data: result.compact || result.data || result.output }
+          tool: toolName,
+          result: result.error ? { error: result.error } : { data: result.compact || result.data || result.output },
+          error: result.error,
+          mediaUrls: resultMediaUrls.length > 0 ? resultMediaUrls : undefined,
         };
       }
 
@@ -1611,15 +2200,26 @@ export async function* runAgentStream(
       );
 
     } catch (error) {
-      yield { type: 'text', content: `\nError: ${error instanceof Error ? error.message : String(error)}\n` };
-      yield { type: 'done' };
+      const errorText = error instanceof Error ? error.message : String(error);
+      yield buildDoneChunk(`Error: ${errorText}`);
       return;
     }
   }
 
   debugWarn(`[AgentRuntime] Stream max iterations (${maxIterations}) reached`);
-  yield { type: 'text', content: '\n[Max tool iterations reached]\n' };
-  yield { type: 'done' };
+  try {
+    const finalized = await finalizeWithoutTools(
+      'Tool iteration limit reached. Use the latest tool results already in context.',
+    );
+    const finalizedContent = String(finalized.content || '').trim();
+    if (finalizedContent) {
+      yield buildDoneChunk(finalizedContent, finalized.usage);
+      return;
+    }
+  } catch (error) {
+    debugWarn(`[AgentRuntime] Stream finalize-without-tools failed after max iterations: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  yield buildDoneChunk('I gathered context but could not finalize the answer in time. Please retry.');
 }
 
 /**

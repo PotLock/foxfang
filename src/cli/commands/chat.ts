@@ -178,8 +178,17 @@ export async function registerChatCommand(program: Command): Promise<void> {
           });
           
           if (result.stream) {
+            let streamedText = '';
+            const normalizeComparableText = (value: string): string => (
+              String(value || '')
+                .toLowerCase()
+                .replace(/[^\p{L}\p{N}]+/gu, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+            );
             for await (const chunk of result.stream) {
               if (chunk.type === 'text' && chunk.content) {
+                streamedText += chunk.content;
                 if (!hasStarted) {
                   // First chunk received - clear spinner and start streaming
                   hasStarted = true;
@@ -204,9 +213,24 @@ export async function registerChatCommand(program: Command): Promise<void> {
                 const toolLabel = chunk.tool || 'unknown';
                 process.stdout.write('\n' + chalk.yellow(`Tool: ${toolLabel}`));
                 currentSection = 'tool';
+              } else if (chunk.type === 'done' && chunk.finalContent) {
+                const finalContent = chunk.finalContent.trim();
+                if (
+                  finalContent &&
+                  normalizeComparableText(finalContent) !== normalizeComparableText(streamedText)
+                ) {
+                  if (!hasStarted) {
+                    hasStarted = true;
+                    clearInterval(spinnerInterval);
+                    process.stdout.write('\r' + chalk.blue('Agent: ') + '                    ');
+                    process.stdout.write('\r' + chalk.blue('Agent: '));
+                  } else if (currentSection !== 'agent') {
+                    process.stdout.write('\n' + chalk.blue('Agent: '));
+                  }
+                  process.stdout.write(finalContent);
+                  currentSection = 'agent';
+                }
               }
-              // tool_result chunks are internal - model will generate text based on them
-              // We don't display them to avoid duplication with model's response
             }
           }
           

@@ -18,7 +18,7 @@ export interface FetchUrlResult {
 
 export class FetchUrlTool implements Tool {
   name = 'fetch_url';
-  description = 'Fetch and extract static page content from a website URL (HTML text, title, links). Best for article-like/static content. For interactive or visual page tasks, prefer browser automation (agent_browser if enabled, otherwise agent-browser CLI via bash_exec).';
+  description = 'Fetch and extract static page content from a website URL (HTML text, title, links). Best for article-like/static content. Do not use this as the primary tool for footer/header/nav/button text, what-is-visible, or scroll/click tasks; prefer browser automation (`agent_browser` if enabled, otherwise agent-browser CLI via `bash_exec`).';
   category = ToolCategory.EXTERNAL;
   parameters = {
     type: 'object' as const,
@@ -51,6 +51,14 @@ export class FetchUrlTool implements Tool {
     error?: string 
   }> {
     try {
+      const url = typeof args?.url === 'string' ? args.url.trim() : '';
+      if (!url) {
+        return {
+          success: false,
+          error: 'URL is required',
+        };
+      }
+
       const result = await fetchAndExtract(args.url, args.maxLength || 10000, args.includeLinks !== false);
       return { success: true, data: result };
     } catch (error) {

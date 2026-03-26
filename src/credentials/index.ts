@@ -11,7 +11,7 @@
  * Fallback: Encrypted file if keychain unavailable
  */
 
-import { execSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
 import { randomBytes, scryptSync, createCipheriv, createDecipheriv } from 'crypto';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, chmodSync } from 'fs';
 import { homedir } from 'os';
@@ -55,6 +55,35 @@ function getPlatform(): 'macos' | 'linux' | 'windows' | 'unknown' {
   return 'unknown';
 }
 
+function saveCredentialToMacosKeychain(account: string, data: string): void {
+  execFileSync(
+    'security',
+    ['add-generic-password', '-s', SERVICE_NAME, '-a', account, '-w', data, '-U'],
+    { stdio: 'ignore' },
+  );
+}
+
+function getCredentialFromMacosKeychain(account: string): CredentialEntry | null {
+  try {
+    const result = execFileSync(
+      'security',
+      ['find-generic-password', '-s', SERVICE_NAME, '-a', account, '-w'],
+      { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] },
+    );
+    return JSON.parse(result.trim());
+  } catch {
+    return null;
+  }
+}
+
+function deleteCredentialFromMacosKeychain(account: string): void {
+  execFileSync(
+    'security',
+    ['delete-generic-password', '-s', SERVICE_NAME, '-a', account],
+    { stdio: 'ignore' },
+  );
+}
+
 /**
  * Check if keychain is available
  */
@@ -91,11 +120,11 @@ export async function saveCredential(provider: string, entry: CredentialEntry): 
   
   try {
     if (platform === 'macos') {
-      // macOS Keychain
-      execSync(
-        `security add-generic-password -s "${SERVICE_NAME}" -a "${account}" -w "${data.replace(/"/g, '\\"')}" -U`,
-        { stdio: 'ignore' }
-      );
+      saveCredentialToMacosKeychain(account, data);
+      const stored = getCredentialFromMacosKeychain(account);
+      if (!stored || stored.provider !== entry.provider || stored.apiKey !== entry.apiKey) {
+        throw new Error(`Keychain verification failed for provider "${provider}"`);
+      }
       return;
     }
     
@@ -129,11 +158,7 @@ export async function getCredential(provider: string): Promise<CredentialEntry |
   
   try {
     if (platform === 'macos') {
-      const result = execSync(
-        `security find-generic-password -s "${SERVICE_NAME}" -a "${account}" -w`,
-        { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }
-      );
-      return JSON.parse(result.trim());
+      return getCredentialFromMacosKeychain(account);
     }
     
     if (platform === 'windows') {
@@ -171,10 +196,7 @@ export async function deleteCredential(provider: string): Promise<void> {
   
   try {
     if (platform === 'macos') {
-      execSync(
-        `security delete-generic-password -s "${SERVICE_NAME}" -a "${account}"`,
-        { stdio: 'ignore' }
-      );
+      deleteCredentialFromMacosKeychain(account);
       return;
     }
     

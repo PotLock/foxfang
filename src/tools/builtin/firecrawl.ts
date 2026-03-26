@@ -73,7 +73,7 @@ async function getFirecrawlConfig(): Promise<{ apiKey?: string; baseUrl: string 
  */
 export class FirecrawlSearchTool implements Tool {
   name = 'firecrawl_search';
-  description = 'Search the web using Firecrawl AI (requires API key). Returns AI-powered search results with extracted content.';
+  description = 'Search the web using Firecrawl AI (requires API key). Useful for search-style research, not for visual page inspection such as footer/header/button/what-is-visible tasks.';
   category = ToolCategory.EXTERNAL;
   parameters = {
     type: 'object' as const,
@@ -138,7 +138,7 @@ export class FirecrawlSearchTool implements Tool {
  */
 export class FirecrawlScrapeTool implements Tool {
   name = 'firecrawl_scrape';
-  description = 'Scrape and extract content from a URL using Firecrawl (requires API key). Returns clean markdown, links, and metadata.';
+  description = 'Scrape and extract content from a URL using Firecrawl (requires API key). Returns clean markdown, links, and metadata. Use for static extraction/research, not as the primary tool for footer/header/nav/button text, visible page layout, or scrolling tasks; prefer `agent_browser` first.';
   category = ToolCategory.EXTERNAL;
   parameters = {
     type: 'object' as const,

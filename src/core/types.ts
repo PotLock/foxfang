@@ -3,12 +3,14 @@
  */
 
 export interface StreamChunk {
-  type: 'text' | 'tool_call' | 'tool_result' | 'done' | 'error';
+  type: 'text' | 'assistant_update' | 'tool_call' | 'tool_result' | 'done' | 'error';
   content?: string;
   tool?: string;
   args?: any;
   result?: any;
   error?: string;
+  mediaUrls?: string[];
+  finalContent?: string;
 }
 
 export interface ToolCall {

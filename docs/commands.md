@@ -34,6 +34,7 @@ Reference this section when tools/agents need deterministic CLI invocations.
   - `target=all` (default) for full onboarding
   - `target=providers` for provider-only setup
   - `target=channels` for channel-only setup
+  - `target=github` for GitHub integration setup
 - `pnpm foxfang channels setup` remains valid for direct channel configuration.
 
 ---
@@ -52,9 +53,10 @@ Reference this section when tools/agents need deterministic CLI invocations.
 foxfang [--debug] [--config <path>] <command>
   onboard (alias: wizard)
   wizard
-    setup [all|providers|channels]
+    setup [all|providers|channels|github]
     providers
     channels
+    github
   chat
   run
   dashboard
@@ -131,8 +133,10 @@ pnpm foxfang wizard setup
 pnpm foxfang wizard setup all
 pnpm foxfang wizard setup providers
 pnpm foxfang wizard setup channels
+pnpm foxfang wizard setup github
 pnpm foxfang wizard providers
 pnpm foxfang wizard channels
+pnpm foxfang wizard github
 ```
 
 ### `config`

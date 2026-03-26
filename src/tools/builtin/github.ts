@@ -6,8 +6,8 @@
  */
 
 import { Tool, ToolCategory, ToolResult } from '../traits';
+import { loadConfig } from '../../config';
 import {
-  isGitHubConnected,
   getGitHubToken,
   saveGitHubToken,
   disconnectGitHub,
@@ -23,6 +23,34 @@ import {
   startGitHubOAuthFlow,
 } from '../../integrations/github';
 import { spawn } from 'child_process';
+
+async function buildGitHubReconnectMessage(): Promise<string> {
+  const generic = `GitHub is not connected.\n\nTo connect:\n1. Use OAuth: github_connect with action: "oauth" (opens browser)\n2. Or set token manually: github_connect with action: "set", token: "your_token_here"\n\nGet a token at: https://github.com/settings/tokens (scopes: repo, read:user)`;
+
+  try {
+    const config = await loadConfig();
+    const github = config.github;
+    if (!github?.connected) {
+      return generic;
+    }
+
+    if (github.mode === 'app') {
+      return [
+        'GitHub App is marked connected in config, but the stored app credentials are missing or unreadable.',
+        'FoxFang needs the saved private key credential, not just foxfang.json metadata.',
+        '',
+        'Reconnect the GitHub App via `pnpm foxfang wizard setup` so `github` and `github-app` credentials are saved again.',
+      ].join('\n');
+    }
+
+    return [
+      'GitHub is marked connected in config, but the stored credential is missing or unreadable.',
+      'Reconnect via OAuth or set a PAT again so the credential store is repopulated.',
+    ].join('\n');
+  } catch {
+    return generic;
+  }
+}
 
 /**
  * GitHub Connect Tool - Check/set GitHub connection
@@ -42,6 +70,7 @@ ACTIONS:
 If not connected, you can either:
 1. Use OAuth (action: "oauth") - opens browser, no token needed
 2. Set token manually (action: "set", token: "ghp_xxxx")
+3. GitHub App connections are usually configured in the wizard
 
 Get a personal access token at: https://github.com/settings/tokens
 Required scopes: repo, read:user
@@ -87,7 +116,7 @@ Examples:
             return {
               success: false,
               output: '',
-              error: `GitHub is not connected.\n\nTo connect:\n1. Use OAuth: github_connect with action: "oauth" (opens browser)\n2. Or set token manually: github_connect with action: "set", token: "your_token_here"\n\nGet a token at: https://github.com/settings/tokens (scopes: repo, read:user)`,
+              error: await buildGitHubReconnectMessage(),
             };
           }
         }
@@ -228,7 +257,7 @@ The user must have connected their GitHub account first (use github_connect).`;
       if (!token) {
         return {
           success: false,
-          error: 'GitHub is not connected. Run "github_connect" first to authenticate.',
+          error: await buildGitHubReconnectMessage(),
         };
       }
 
@@ -383,7 +412,7 @@ The user must have connected their GitHub account first (use github_connect).`;
       if (!token) {
         return {
           success: false,
-          error: 'GitHub is not connected. Run "github_connect" first to authenticate.',
+          error: await buildGitHubReconnectMessage(),
         };
       }
 
@@ -514,7 +543,7 @@ export class GitHubListIssuesTool implements Tool {
       if (!token) {
         return {
           success: false,
-          error: 'GitHub is not connected. Run "github_connect" first.',
+          error: await buildGitHubReconnectMessage(),
         };
       }
 
@@ -601,7 +630,7 @@ export class GitHubListPRsTool implements Tool {
       if (!token) {
         return {
           success: false,
-          error: 'GitHub is not connected. Run "github_connect" first.',
+          error: await buildGitHubReconnectMessage(),
         };
       }
 

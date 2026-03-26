@@ -13,6 +13,7 @@ import {
   AgentResponse,
   RunRequest,
   RunResponse,
+  StreamChunk,
 } from './types';
 import { agentRegistry, ensureAgentRegistered, resolveDefaultAgentId } from './registry';
 import { runAgent, runAgentStream } from './runtime';
@@ -24,6 +25,7 @@ import { searchMemories, storeMemory } from '../memory/database';
 import { WorkspaceManager } from '../workspace/manager';
 import { buildRollingSessionSummary } from '../sessions/summary';
 import { addAgentUsage, addToolTelemetry, createRequestTrace, flushRequestTrace } from '../observability/request-trace';
+import { parseReplyControls } from './governance';
 
 const MAX_MEMORY_HINTS = 4;
 
@@ -109,6 +111,57 @@ function selectMemoryHints(params: {
   });
 }
 
+function normalizeRetryText(value: string): string {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/@\S+/g, ' ')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function resetRepeatedChannelRetryHistory(messages: AgentMessage[], latestMessage?: string): AgentMessage[] {
+  if (!latestMessage || messages.length === 0) return messages;
+
+  const normalizedLatest = normalizeRetryText(latestMessage);
+  if (!normalizedLatest || normalizedLatest.length < 18) {
+    return messages;
+  }
+
+  const previousUsers = messages
+    .slice(0, -1)
+    .filter((message) => message.role === 'user')
+    .map((message) => normalizeRetryText(message.content));
+
+  if (!previousUsers.includes(normalizedLatest)) {
+    return messages;
+  }
+
+  const latestUserMessage = messages[messages.length - 1];
+  if (!latestUserMessage || latestUserMessage.role !== 'user') {
+    return messages;
+  }
+
+  console.log('[AgentExecutor] 🔄 Repeated channel request detected; resetting history for a fresh retry');
+  return [
+    ...messages.filter((message) => message.role === 'system'),
+    latestUserMessage,
+  ];
+}
+
+function normalizeStoredAssistantContent(rawContent: string): string {
+  const trimmed = String(rawContent || '').trim();
+  if (!trimmed) return '';
+
+  const parsed = parseReplyControls(trimmed);
+  const visible = String(parsed.content || '').trim();
+  if (!visible) return '';
+  if (/^\[tool invocation\]$/i.test(visible) || /^\[tool results\]/i.test(visible)) {
+    return '';
+  }
+  return visible;
+}
+
 /**
  * AgentOrchestrator — the execution engine for agent runs.
  * Despite the name (kept for backward compatibility), this is NOT an orchestrator agent.
@@ -179,6 +232,9 @@ export class AgentOrchestrator {
     // Use minimal prompt mode for channel sessions to reduce token usage
     const isChannelSession = request.sessionId.startsWith('channel-');
     const promptMode = isChannelSession ? 'minimal' as const : 'full' as const;
+    if (isChannelSession && enhancedMessage) {
+      messages = resetRepeatedChannelRetryHistory(messages, enhancedMessage);
+    }
 
     const budget = resolveTokenBudget({ agentId: request.agentId, mode: 'balanced' });
     const sessionSummary = await this.sessionManager.getSessionSummary(request.sessionId);
@@ -225,11 +281,17 @@ export class AgentOrchestrator {
       isChannelSession,
     };
 
-    let runResponse: RunResponse;
-
     if (request.stream) {
-      runResponse = await this.runStreaming(request.agentId, agentContext);
-    } else {
+      return await this.runStreaming({
+        agentId: request.agentId,
+        context: agentContext,
+        trace,
+        requestStartedAt,
+      });
+    }
+
+    let runResponse: RunResponse;
+    {
       const result = await runAgent(request.agentId, agentContext);
       addAgentUsage(trace, request.agentId, result.usage
         ? { promptTokens: result.usage.promptTokens, completionTokens: result.usage.completionTokens }
@@ -277,9 +339,58 @@ export class AgentOrchestrator {
     await this.sessionManager.updateSessionSummary(sessionId, summary);
   }
 
-  private async runStreaming(agentId: string, context: AgentContext): Promise<RunResponse> {
-    await ensureAgentRegistered(agentId);
-    const stream = runAgentStream(agentId, context);
+  private async runStreaming(params: {
+    agentId: string;
+    context: AgentContext;
+    trace: ReturnType<typeof createRequestTrace>;
+    requestStartedAt: number;
+  }): Promise<RunResponse> {
+    await ensureAgentRegistered(params.agentId);
+    const source = runAgentStream(params.agentId, params.context);
+    const sessionId = params.context.sessionId;
+    const projectId = params.context.projectId;
+    const agentId = params.agentId;
+    const trace = params.trace;
+    const requestStartedAt = params.requestStartedAt;
+    const sessionManager = this.sessionManager;
+    const refreshSessionSummary = this.refreshSessionSummary.bind(this);
+
+    const stream = (async function* (): AsyncGenerator<StreamChunk> {
+      let finalContent = '';
+      try {
+        for await (const chunk of source) {
+          if (chunk.type === 'done') {
+            finalContent = normalizeStoredAssistantContent(chunk.finalContent || '');
+            addAgentUsage(trace, agentId, chunk.usage
+              ? { promptTokens: chunk.usage.promptTokens, completionTokens: chunk.usage.completionTokens }
+              : undefined);
+            addToolTelemetry(trace, chunk.toolTelemetry);
+          }
+          yield chunk;
+        }
+      } finally {
+        if (finalContent) {
+          if (finalContent.length > 50) {
+            storeMemory(
+              `Agent ${agentId}: ${finalContent.slice(0, 200)}...`,
+              'pattern',
+              { projectId, sessionId, importance: 7 },
+            );
+          }
+
+          await sessionManager.addMessage(sessionId, {
+            role: 'assistant',
+            content: finalContent,
+            timestamp: Date.now(),
+          });
+        }
+
+        trace.totalLatencyMs = Date.now() - requestStartedAt;
+        flushRequestTrace(trace);
+        await refreshSessionSummary(sessionId);
+      }
+    })();
+
     return { content: '', stream };
   }
 

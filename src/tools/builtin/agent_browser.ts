@@ -165,7 +165,7 @@ function normalizeStep(value: any): AgentBrowserCommandStep | null {
   const rawCommand = String(value?.command || '').trim();
   if (!rawCommand) return null;
 
-  let command = rawCommand.toLowerCase();
+  let command = rawCommand.toLowerCase().replace(/\s+/g, ' ').trim();
   const rawArgs = value?.args;
   const args = Array.isArray(rawArgs)
     ? rawArgs.map((item: any) => String(item)).filter((item: string) => item.length > 0)
@@ -173,6 +173,15 @@ function normalizeStep(value: any): AgentBrowserCommandStep | null {
       ? [String(rawArgs)]
       : [];
   let normalizedArgs = [...args];
+  if (command.includes(' ')) {
+    const [head, ...tail] = command.split(' ').map((item) => item.trim()).filter(Boolean);
+    if (head) {
+      command = head;
+      if (normalizedArgs.length === 0 && tail.length > 0) {
+        normalizedArgs = [...tail];
+      }
+    }
+  }
   if (normalizedArgs.length === 0 && rawArgs && typeof rawArgs === 'object' && !Array.isArray(rawArgs)) {
     const obj = rawArgs as Record<string, unknown>;
     const candidateKeys = ['url', 'selector', 'text', 'value', 'target', 'query'];
@@ -184,13 +193,21 @@ function normalizeStep(value: any): AgentBrowserCommandStep | null {
       }
     }
   }
-  let allowFailure = value?.allowFailure === true;
+  if (normalizedArgs.length === 0 && typeof value?.url === 'string' && value.url.trim()) {
+    normalizedArgs.push(value.url.trim());
+  }
+  const hasExplicitAllowFailure = value?.allowFailure !== undefined;
+  let allowFailure = hasExplicitAllowFailure ? value?.allowFailure === true : false;
 
   // Generic command aliases from common browser-agent vocabularies.
   if (command === 'goto' || command === 'navigate') {
     command = 'open';
   } else if (command === 'evaluate') {
     command = 'eval';
+  }
+
+  if (command === 'get_snapshot' || command === 'getsnapshot') {
+    command = 'snapshot';
   }
 
   const getAliasMatch = command.match(/^get(?:[_\s-]+)(text|html|value|attr)$/);
@@ -204,6 +221,10 @@ function normalizeStep(value: any): AgentBrowserCommandStep | null {
     command = 'get';
     normalizedArgs = ['html', ...normalizedArgs];
   }
+  if (command === 'get' && String(normalizedArgs[0] || '').toLowerCase() === 'snapshot') {
+    command = 'snapshot';
+    normalizedArgs = normalizedArgs.slice(1);
+  }
 
   // Normalize shorthand wait forms: wait networkidle -> wait --load networkidle
   if (command === 'wait' && normalizedArgs.length === 1) {
@@ -211,6 +232,32 @@ function normalizeStep(value: any): AgentBrowserCommandStep | null {
     if (only === 'networkidle' || only === 'load' || only === 'domcontentloaded') {
       normalizedArgs = ['--load', only];
       if (value?.allowFailure === undefined) allowFailure = true;
+    }
+  }
+
+  // Normalize common scroll shorthand variants.
+  if (command === 'scroll') {
+    const arg0 = String(normalizedArgs[0] || '').trim().toLowerCase();
+    const arg1 = String(normalizedArgs[1] || '').trim();
+    const toSteps = (value: string): string[] => {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return ['down', '1200'];
+      const absPx = Math.max(1, Math.round(Math.abs(numeric)));
+      return [numeric >= 0 ? 'down' : 'up', String(absPx)];
+    };
+
+    if (!arg0) {
+      normalizedArgs = ['down', '1200'];
+    } else if (arg0 === 'bottom') {
+      normalizedArgs = ['down', '20000'];
+    } else if (arg0 === 'top') {
+      normalizedArgs = ['up', '20000'];
+    } else if ((arg0 === 'y' || arg0 === 'vertical') && arg1) {
+      normalizedArgs = toSteps(arg1);
+    } else if (/^-?\d+(?:\.\d+)?$/.test(arg0)) {
+      normalizedArgs = toSteps(arg0);
+    } else if (arg0 === 'up' || arg0 === 'down' || arg0 === 'left' || arg0 === 'right') {
+      normalizedArgs = [arg0, arg1 || '1200'];
     }
   }
 
@@ -224,6 +271,20 @@ function normalizeStep(value: any): AgentBrowserCommandStep | null {
     allowFailure = true;
   }
 
+  if (command === 'get') {
+    const op = String(normalizedArgs[0] || '').toLowerCase();
+    const selectorRequiredOps = new Set(['text', 'html', 'value', 'count', 'box', 'styles']);
+    if (!op) {
+      normalizedArgs = ['text', 'body'];
+    } else if (selectorRequiredOps.has(op) && normalizedArgs.length === 1) {
+      // Model sometimes emits "get text" without selector.
+      normalizedArgs = [op, 'body'];
+    }
+    if (value?.allowFailure === undefined) {
+      allowFailure = true;
+    }
+  }
+
   if (
     command === 'get' &&
     normalizedArgs.length >= 2 &&
@@ -231,6 +292,22 @@ function normalizeStep(value: any): AgentBrowserCommandStep | null {
     value?.allowFailure === undefined
   ) {
     allowFailure = true;
+  }
+
+  if (!hasExplicitAllowFailure) {
+    if (
+      command === 'find' ||
+      command === 'get' ||
+      command === 'wait' ||
+      command === 'click' ||
+      command === 'focus' ||
+      command === 'hover' ||
+      command === 'scroll' ||
+      command === 'scrollintoview' ||
+      command === 'snapshot'
+    ) {
+      allowFailure = true;
+    }
   }
 
   return {
@@ -468,7 +545,7 @@ function extractScreenshotPath(result?: AgentBrowserStepResult): string | undefi
 
 export class AgentBrowserTool implements Tool {
   name = 'agent_browser';
-  description = 'Control a real browser via vercel-labs/agent-browser (Chromium/Playwright). Use when fetch_url/firecrawl miss JS-rendered or interaction-required content. Supports read mode (open + snapshot + optional selector text + screenshot) and script mode (custom command steps decided by the agent).';
+  description = 'Primary tool for visual webpage tasks. Control a real browser via vercel-labs/agent-browser (Chromium/Playwright) to inspect footer/header/nav/button text, what is visible on the page, scrolling, clicking, and JS-rendered content. Prefer this before fetch_url/firecrawl for interactive or layout-dependent tasks. Supports read mode (open + snapshot + optional selector text + screenshot) and script mode (custom command steps decided by the agent).';
   category = ToolCategory.EXTERNAL;
   parameters = {
     type: 'object' as const,
@@ -625,8 +702,11 @@ export class AgentBrowserTool implements Tool {
     const screenshotResult = results.find((item) => item.step.command === 'screenshot');
     const focusResults = results.filter((item) => item.step.command === 'find');
     const selectorResults = results.filter((item) => item.step.command === 'get');
+    const selectorTextResults = selectorResults.filter((item) => String(item.step.args?.[0] || '').toLowerCase() === 'text');
+    const selectorHtmlResults = selectorResults.filter((item) => String(item.step.args?.[0] || '').toLowerCase() === 'html');
     const focusResult = focusResults.length > 0 ? focusResults[focusResults.length - 1] : undefined;
-    const selectorResult = selectorResults.length > 0 ? selectorResults[selectorResults.length - 1] : undefined;
+    const selectorTextResult = selectorTextResults.length > 0 ? selectorTextResults[selectorTextResults.length - 1] : undefined;
+    const selectorHtmlResult = selectorHtmlResults.length > 0 ? selectorHtmlResults[selectorHtmlResults.length - 1] : undefined;
     const screenshotPath = extractScreenshotPath(screenshotResult);
     const mediaUrls = screenshotPath ? [screenshotPath] : [];
 
@@ -649,8 +729,10 @@ export class AgentBrowserTool implements Tool {
         screenshotPath: screenshotPath || '',
         mediaUrls,
         focus: focusResult?.parsed || focusResult?.stdout || '',
-        selectorText: selectorResult?.parsed || selectorResult?.stdout || '',
-        selectorTextAll: selectorResults.map((item) => item.parsed || item.stdout || ''),
+        selectorText: selectorTextResult?.parsed || selectorTextResult?.stdout || '',
+        selectorTextAll: selectorTextResults.map((item) => item.parsed || item.stdout || ''),
+        selectorHtml: selectorHtmlResult?.parsed || selectorHtmlResult?.stdout || '',
+        selectorHtmlAll: selectorHtmlResults.map((item) => item.parsed || item.stdout || ''),
         steps: results.map((item, idx) => ({
           index: idx,
           command: item.step.command,

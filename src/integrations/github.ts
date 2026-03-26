@@ -140,6 +140,11 @@ export async function saveGitHubToken(
     },
     createdAt: new Date().toISOString(),
   });
+
+  const stored = await getCredential('github');
+  if (!stored || stored.apiKey !== token) {
+    throw new Error('GitHub credential could not be persisted');
+  }
 }
 
 /**
@@ -204,6 +209,18 @@ export async function saveGitHubAppConnection(input: GitHubAppConnectionInput): 
     },
     createdAt,
   });
+
+  const storedAppMarker = await getCredential('github');
+  const storedAppSecret = await getCredential('github-app');
+  if (
+    !storedAppMarker ||
+    storedAppMarker.headers?.mode !== 'app' ||
+    !storedAppSecret ||
+    !String(storedAppSecret.headers?.appId || '').trim() ||
+    !String(storedAppSecret.headers?.installationId || '').trim()
+  ) {
+    throw new Error('GitHub App credentials could not be persisted');
+  }
 
   return {
     token: installationToken.token,

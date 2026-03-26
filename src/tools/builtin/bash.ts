@@ -209,10 +209,8 @@ function validateSafeMkdirSegment(segment: string): { safe: boolean; reason?: st
 function isAgentBrowserCommand(command: string): boolean {
   const text = command.trim().toLowerCase();
   return (
-    text.startsWith('agent-browser ') ||
-    text === 'agent-browser' ||
-    text.startsWith('pnpm exec agent-browser ') ||
-    text.startsWith('npx agent-browser ')
+    /^agent-browser(?:\s|$)/.test(text) ||
+    /^(?:pnpm\s+(?:exec|dlx)|npx|bunx|yarn\s+dlx)\s+agent-browser(?:@[^\s]+)?(?:\s|$)/.test(text)
   );
 }
 

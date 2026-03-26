@@ -10,8 +10,8 @@
  */
 
 import { AgentOrchestrator } from '../agents/orchestrator';
-import { parseReplyControls } from '../agents/governance';
 import { createReplyDispatcher } from './dispatcher';
+import { createReplyProjector } from './reply-projector';
 import { createTypingController } from './typing';
 import { CommandRegistryManager, registerBuiltinCommands } from './commands';
 import { 
@@ -205,7 +205,7 @@ export class AutoReplyHandler {
           this.typingControllers.delete(sessionKey);
         },
         typingIntervalSeconds: this.config.typingIntervalSeconds ?? 3,
-        typingTtlMs: 2 * 60 * 1000, // 2 min TTL
+        typingTtlMs: 15 * 60 * 1000, // keep typing alive for long-running tool sessions
       });
       this.typingControllers.set(sessionKey, controller);
     }
@@ -345,51 +345,41 @@ export class AutoReplyHandler {
       // Start typing
       await typingController.startTypingLoop();
 
-      // Run agent
+      // Run agent in streaming mode so progress/tool lifecycle can be projected
       const inboundPrompt = this.buildInboundPrompt(message);
       const result = await this.orchestrator.run({
         sessionId,
         agentId: route.agentId,
         message: inboundPrompt,
-        stream: false,
+        stream: true,
       });
 
-      // Mark run complete
-      typingController.markRunComplete();
-
-      const parsedReply = parseReplyControls(result.content || '', {
+      const projector = createReplyProjector({
+        dispatcher,
         currentMessageId: message.id,
+        defaultReplyToMessageId: this.config.replyToMessage ? message.id : undefined,
+        threadId: message.threadId,
       });
 
-      // Send final reply with runtime-governance control parsing
-      {
-        const parsed = parsedReply;
-        const mediaUrl = Array.isArray(result.mediaUrls) && result.mediaUrls.length > 0
-          ? String(result.mediaUrls[0] || '').trim()
-          : undefined;
-        if (parsed.suppress && !mediaUrl) {
-          console.log(`[AutoReply] Suppressed outbound message (${parsed.reason || 'policy'}) for session=${sessionId}`);
-        } else {
-          const replyToMessageId = parsed.replyToMessageId
-            ?? (this.config.replyToMessage ? message.id : undefined);
-
-          const payload: ReplyPayload = {
-            text: parsed.content || undefined,
-            mediaUrl: mediaUrl || undefined,
-            replyToMessageId,
-            threadId: message.threadId,
-          };
-          dispatcher.sendFinalReply(payload);
+      if (result.stream) {
+        for await (const chunk of result.stream) {
+          typingController.refreshTypingTtl();
+          await projector.consume(chunk);
         }
       }
+
+      const projected = await projector.finalize();
+
+      // Mark run complete after the stream and projection have fully settled
+      typingController.markRunComplete();
 
       // Mark dispatcher complete and wait
       dispatcher.markComplete();
       await dispatcher.waitForIdle();
 
       return {
-        content: parsedReply.content,
-        toolCalls: result.toolCalls?.map(tc => ({
+        content: projected.content,
+        toolCalls: projected.toolCalls?.map(tc => ({
           name: tc.name,
           args: tc.arguments,
         })),
