@@ -14,7 +14,7 @@ import { SignalAdapter } from './adapters/signal';
 import { TelegramAdapter } from './adapters/telegram';
 import { DiscordAdapter } from './adapters/discord';
 import { SlackAdapter } from './adapters/slack';
-import type { ChannelAdapter, ChannelMessage, ChannelResponse } from './types';
+import type { ChannelAdapter, ChannelMediaPayload, ChannelMessage, ChannelResponse } from './types';
 import type { AgentOrchestrator } from '../agents/orchestrator';
 import { DEFAULT_AGENT_ID } from '../agents/registry';
 import type { WorkspaceManager } from '../workspace/manager';
@@ -194,7 +194,8 @@ export class ChannelManager {
     const threadId = this.resolveThreadId(msg);
     const wasMentioned = msg.metadata?.wasMentioned;
     const canDetectMention = msg.metadata?.canDetectMention;
-    const preview = msg.content.substring(0, 40);
+    const previewSource = msg.content || this.describeMediaForPreview(msg.metadata?.media);
+    const preview = previewSource.substring(0, 40);
 
     console.log(
       `[ChannelManager] 📩 ${msg.channel}:${chatKind}:${msg.from.split(' ')[0]}: ` +
@@ -243,6 +244,7 @@ export class ChannelManager {
     // Convert to IncomingMessage format
     const metadata = msgMetadata;
     const senderName = String(metadata.senderName || msg.from || 'Unknown');
+    const incomingMedia = this.extractIncomingMedia(metadata.media);
     const incomingMessage: IncomingMessage = {
       id: msg.id,
       channel: msg.channel,
@@ -254,7 +256,8 @@ export class ChannelManager {
         id: chatId || msg.from,
         type: chatType,
       },
-      text: msg.content,
+      text: msg.content || undefined,
+      media: incomingMedia,
       replyToMessageId: msg.metadata?.replyToMessageId,
       threadId,
       timestamp: new Date(),
@@ -278,9 +281,12 @@ export class ChannelManager {
         },
         // Send reply callback
         async (payload) => {
-          await adapter.send(replyTarget, payload.text || '', {
-            replyToMessageId: payload.replyToMessageId ?? (this.config.autoReply.replyToMessage ? msg.id : undefined),
-            threadId: payload.threadId ?? this.resolveThreadId(msg),
+          await this.sendReplyPayload({
+            adapter,
+            replyTarget,
+            payload,
+            incomingMessageId: msg.id,
+            fallbackThreadId: this.resolveThreadId(msg),
           });
         },
         // Bot username (for mention checking)
@@ -424,5 +430,107 @@ export class ChannelManager {
       return channelValue;
     }
     return Boolean(this.config.autoReply.requireMention);
+  }
+
+  private extractIncomingMedia(rawMedia: unknown): IncomingMessage['media'] | undefined {
+    if (!Array.isArray(rawMedia)) return undefined;
+
+    const normalized = rawMedia
+      .map((item) => this.normalizeIncomingMediaItem(item))
+      .filter((item): item is NonNullable<IncomingMessage['media']>[number] => Boolean(item));
+
+    return normalized.length > 0 ? normalized : undefined;
+  }
+
+  private normalizeIncomingMediaItem(item: unknown): NonNullable<IncomingMessage['media']>[number] | null {
+    if (!item || typeof item !== 'object') return null;
+
+    const media = item as Record<string, unknown>;
+    const type = this.normalizeIncomingMediaType(media.type);
+    if (!type) return null;
+
+    const url = typeof media.url === 'string' && media.url.trim() ? media.url.trim() : undefined;
+    const fileId = typeof media.fileId === 'string' && media.fileId.trim() ? media.fileId.trim() : undefined;
+    const caption = typeof media.caption === 'string' && media.caption.trim() ? media.caption.trim() : undefined;
+    const filename = typeof media.filename === 'string' && media.filename.trim() ? media.filename.trim() : undefined;
+    const mimeType = typeof media.mimeType === 'string' && media.mimeType.trim() ? media.mimeType.trim() : undefined;
+    const size = typeof media.size === 'number' && Number.isFinite(media.size) ? media.size : undefined;
+    const localPath = typeof media.localPath === 'string' && media.localPath.trim() ? media.localPath.trim() : undefined;
+    const extractedText = typeof media.extractedText === 'string' && media.extractedText.trim() ? media.extractedText.trim() : undefined;
+    const extractionMethod = typeof media.extractionMethod === 'string' && media.extractionMethod.trim() ? media.extractionMethod.trim() : undefined;
+    const extractionError = typeof media.extractionError === 'string' && media.extractionError.trim() ? media.extractionError.trim() : undefined;
+
+    return { type, url, fileId, caption, filename, mimeType, size, localPath, extractedText, extractionMethod, extractionError };
+  }
+
+  private normalizeIncomingMediaType(rawType: unknown): NonNullable<IncomingMessage['media']>[number]['type'] | null {
+    if (typeof rawType !== 'string') return null;
+
+    const normalized = rawType.trim().toLowerCase();
+    if (normalized === 'photo' || normalized === 'image') return 'photo';
+    if (normalized === 'video') return 'video';
+    if (normalized === 'audio') return 'audio';
+    if (normalized === 'voice') return 'voice';
+    if (normalized === 'document' || normalized === 'file') return 'document';
+    return null;
+  }
+
+  private describeMediaForPreview(rawMedia: unknown): string {
+    const media = this.extractIncomingMedia(rawMedia);
+    if (!media || media.length === 0) return '';
+    const labels = media.map((item) => item.type).join(', ');
+    return `[media: ${labels}]`;
+  }
+
+  private async sendReplyPayload(params: {
+    adapter: ChannelAdapter;
+    replyTarget: string;
+    payload: { text?: string; mediaUrl?: string; audioUrl?: string; audioAsVoice?: boolean; replyToMessageId?: string; threadId?: string };
+    incomingMessageId: string;
+    fallbackThreadId?: string;
+  }): Promise<void> {
+    const { adapter, replyTarget, payload, incomingMessageId, fallbackThreadId } = params;
+    const replyOptions = {
+      replyToMessageId: payload.replyToMessageId ?? (this.config.autoReply.replyToMessage ? incomingMessageId : undefined),
+      threadId: payload.threadId ?? fallbackThreadId,
+    };
+
+    const mediaItems: ChannelMediaPayload[] = [];
+    if (payload.mediaUrl) {
+      mediaItems.push({
+        url: payload.mediaUrl,
+        type: 'photo',
+        caption: payload.text,
+      });
+    }
+    if (payload.audioUrl) {
+      mediaItems.push({
+        url: payload.audioUrl,
+        type: payload.audioAsVoice ? 'voice' : 'audio',
+        caption: payload.mediaUrl ? undefined : payload.text,
+      });
+    }
+
+    let textConsumedByMedia = false;
+    if (mediaItems.length > 0 && adapter.sendMedia) {
+      for (const media of mediaItems) {
+        await adapter.sendMedia(replyTarget, media, replyOptions);
+        if (media.caption) {
+          textConsumedByMedia = true;
+        }
+      }
+    }
+
+    if (payload.text && !textConsumedByMedia) {
+      await adapter.send(replyTarget, payload.text, replyOptions);
+      return;
+    }
+
+    if (mediaItems.length > 0 && !adapter.sendMedia) {
+      const fallbackParts = [payload.text, ...mediaItems.map((item) => item.url)].filter(Boolean) as string[];
+      if (fallbackParts.length > 0) {
+        await adapter.send(replyTarget, fallbackParts.join('\n'), replyOptions);
+      }
+    }
   }
 }

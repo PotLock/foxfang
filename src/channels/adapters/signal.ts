@@ -6,9 +6,15 @@
  * - bbernhard/signal-cli-rest-api (`/v1`, `/v2`)
  */
 
-import type { ChannelAdapter, ChannelMessage, ChannelResponse } from '../types';
+import type { ChannelAdapter, ChannelMediaPayload, ChannelMessage, ChannelResponse } from '../types';
 import { loadConfig } from '../../config';
 import { stripMarkdown } from '../formatters';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+import { analyzeInboundMedia, saveInboundMediaBuffer } from '../media-understanding';
 
 interface SignalSseEvent {
   event?: string;
@@ -129,9 +135,7 @@ export class SignalAdapter implements ChannelAdapter {
       const quoteAuthor = quoteTimestamp ? this.resolveQuoteAuthor(options?.replyToMessageId) : undefined;
 
       const plainContent = stripMarkdown(content);
-      const messageId = this.apiMode === 'daemon-rpc'
-        ? await this.sendViaDaemonRpc(recipient, plainContent, quoteTimestamp, quoteAuthor)
-        : await this.sendViaRestWrapper(recipient, plainContent, quoteTimestamp, quoteAuthor);
+      const messageId = await this.sendInternal(recipient, plainContent, quoteTimestamp, quoteAuthor);
 
       const parsedTimestamp = this.parseTimestamp(messageId) || Date.now();
       this.sentMessages.set(messageId, { to: recipient, timestamp: parsedTimestamp });
@@ -140,6 +144,32 @@ export class SignalAdapter implements ChannelAdapter {
       console.error('[Signal] Failed to send message:', error);
       throw error;
     }
+  }
+
+  async sendMedia(
+    to: string,
+    media: ChannelMediaPayload,
+    options?: { replyToMessageId?: string; threadId?: string }
+  ): Promise<string> {
+    if (!this.connected) {
+      throw new Error('Signal not connected');
+    }
+
+    const recipient = this.normalizeRecipient(to);
+    if (!recipient) {
+      throw new Error('Signal recipient is empty');
+    }
+
+    const quoteTimestamp = this.parseTimestamp(options?.replyToMessageId);
+    const quoteAuthor = quoteTimestamp ? this.resolveQuoteAuthor(options?.replyToMessageId) : undefined;
+    const attachmentPath = await this.resolveAttachmentPath(media.url, media.filename);
+    const cleanedCaption = stripMarkdown(media.caption || '').trim();
+    const content = cleanedCaption || this.buildMediaPlaceholder(media.type);
+
+    const messageId = await this.sendInternal(recipient, content, quoteTimestamp, quoteAuthor, [attachmentPath]);
+    const parsedTimestamp = this.parseTimestamp(messageId) || Date.now();
+    this.sentMessages.set(messageId, { to: recipient, timestamp: parsedTimestamp });
+    return messageId;
   }
 
   async edit(messageId: string, newContent: string, to?: string): Promise<boolean> {
@@ -456,7 +486,26 @@ export class SignalAdapter implements ChannelAdapter {
     }
   }
 
-  private async sendViaDaemonRpc(to: string, message: string, quoteTimestamp?: number | null, quoteAuthor?: string): Promise<string> {
+  private async sendInternal(
+    to: string,
+    message: string,
+    quoteTimestamp?: number | null,
+    quoteAuthor?: string,
+    attachments?: string[]
+  ): Promise<string> {
+    if (this.apiMode === 'daemon-rpc') {
+      return this.sendViaDaemonRpc(to, message, quoteTimestamp, quoteAuthor, attachments);
+    }
+    return this.sendViaRestWrapper(to, message, quoteTimestamp, quoteAuthor, attachments);
+  }
+
+  private async sendViaDaemonRpc(
+    to: string,
+    message: string,
+    quoteTimestamp?: number | null,
+    quoteAuthor?: string,
+    attachments?: string[]
+  ): Promise<string> {
     const params: Record<string, unknown> = {
       account: this.phoneNumber,
       message,
@@ -466,6 +515,10 @@ export class SignalAdapter implements ChannelAdapter {
       params.groupId = to;
     } else {
       params.recipient = [to];
+    }
+
+    if (Array.isArray(attachments) && attachments.length > 0) {
+      params.attachments = attachments;
     }
 
     // Quote (reply-to-message) support
@@ -480,7 +533,13 @@ export class SignalAdapter implements ChannelAdapter {
     return String(fromResult || Date.now());
   }
 
-  private async sendViaRestWrapper(to: string, message: string, quoteTimestamp?: number | null, quoteAuthor?: string): Promise<string> {
+  private async sendViaRestWrapper(
+    to: string,
+    message: string,
+    quoteTimestamp?: number | null,
+    quoteAuthor?: string,
+    attachments?: string[]
+  ): Promise<string> {
     const body: Record<string, unknown> = {
       number: this.phoneNumber,
       message,
@@ -496,6 +555,15 @@ export class SignalAdapter implements ChannelAdapter {
     if (quoteTimestamp && quoteAuthor) {
       body.quote_timestamp = quoteTimestamp;
       body.quote_author = quoteAuthor;
+    }
+
+    if (Array.isArray(attachments) && attachments.length > 0) {
+      body.base64_attachments = await Promise.all(
+        attachments.map(async (filePath) => {
+          const data = await readFile(filePath);
+          return data.toString('base64');
+        })
+      );
     }
 
     const response = await fetch(`${this.httpUrl}/v2/send`, {
@@ -701,7 +769,7 @@ export class SignalAdapter implements ChannelAdapter {
   private async streamRestEvents(abortSignal: AbortSignal): Promise<void> {
     const receiveUrl =
       `${this.httpUrl}/v1/receive/${encodeURIComponent(this.phoneNumber)}` +
-      '?timeout=5&ignore_attachments=true';
+      '?timeout=5&ignore_attachments=false';
 
     // Combine the caller's abortSignal with a per-request timeout so that
     // disconnect() promptly stops an in-flight receive request.
@@ -757,20 +825,20 @@ export class SignalAdapter implements ChannelAdapter {
     }
 
     if (data?.envelope) {
-      this.handleEnvelope(data.envelope);
+      void this.handleEnvelope(data.envelope);
       return;
     }
 
     if (data?.data?.envelope) {
-      this.handleEnvelope(data.data.envelope);
+      void this.handleEnvelope(data.data.envelope);
     }
   }
 
-  private handleEnvelope(envelope: any): void {
+  private async handleEnvelope(envelope: any): Promise<void> {
     if (!this.messageHandler) return;
 
     const dataMessage = envelope?.dataMessage;
-    if (!dataMessage?.message) return;
+    if (!dataMessage) return;
 
     const rawSource = String(envelope?.sourceNumber || envelope?.source || '').trim();
     const normalizedSource = this.normalizeRecipient(rawSource);
@@ -797,9 +865,12 @@ export class SignalAdapter implements ChannelAdapter {
 
     const chatType = groupId ? 'group' : 'private';
 
+    const inboundMedia = await this.resolveInboundMedia(dataMessage?.attachments, sourceAddress, groupId);
     // Mention detection: check if message text contains the bot's phone number
     // Signal uses \uFFFC (object replacement char) for mentions in some versions
-    const messageText = String(dataMessage.message || '');
+    const messageText = String(dataMessage.message || '').trim();
+    const content = messageText || this.buildInboundMediaSummary(inboundMedia);
+    if (!content && inboundMedia.length === 0) return;
     const wasMentioned = this.detectMention(messageText, dataMessage?.mentions);
     const canDetectMention = Boolean(this.phoneNumber);
 
@@ -809,7 +880,7 @@ export class SignalAdapter implements ChannelAdapter {
       id: String(timestamp),
       channel: 'signal',
       from,
-      content: messageText,
+      content,
       timestamp: new Date(timestamp),
       threadId: groupId || undefined,
       metadata: {
@@ -823,6 +894,7 @@ export class SignalAdapter implements ChannelAdapter {
         senderName: sourceName,
         wasMentioned,
         canDetectMention,
+        media: inboundMedia,
       },
     };
 
@@ -860,6 +932,256 @@ export class SignalAdapter implements ChannelAdapter {
     if (this.phoneNumber && text.includes(this.phoneNumber)) return true;
 
     return false;
+  }
+
+  private buildMediaPlaceholder(type?: ChannelMediaPayload['type']): string {
+    if (type === 'photo') return '<media:image>';
+    if (type === 'video') return '<media:video>';
+    if (type === 'audio') return '<media:audio>';
+    if (type === 'voice') return '<media:voice>';
+    return '<media:file>';
+  }
+
+  private buildInboundMediaSummary(media: Array<{ type: 'photo' | 'video' | 'audio' | 'document' | 'voice' }>): string {
+    if (media.length === 0) return '';
+    if (media.length === 1) {
+      return `<media:${media[0].type}>`;
+    }
+    return `<media:${media.map((item) => item.type).join(',')}>`;
+  }
+
+  private async resolveInboundMedia(
+    rawAttachments: unknown,
+    sourceAddress: string,
+    groupId: string
+  ): Promise<Array<{
+    type: 'photo' | 'video' | 'audio' | 'document' | 'voice';
+    fileId?: string;
+    filename?: string;
+    mimeType?: string;
+    size?: number;
+    url?: string;
+    localPath?: string;
+    extractedText?: string;
+    extractionMethod?: string;
+    extractionError?: string;
+  }>> {
+    if (!Array.isArray(rawAttachments)) return [];
+
+    const media: Array<{
+      type: 'photo' | 'video' | 'audio' | 'document' | 'voice';
+      fileId?: string;
+      filename?: string;
+      mimeType?: string;
+      size?: number;
+      url?: string;
+      localPath?: string;
+      extractedText?: string;
+      extractionMethod?: string;
+      extractionError?: string;
+      _raw?: Record<string, unknown>;
+    }> = [];
+
+    for (const item of rawAttachments) {
+      if (!item || typeof item !== 'object') continue;
+      const attachment = item as Record<string, unknown>;
+      const contentType = typeof attachment.contentType === 'string'
+        ? attachment.contentType
+        : typeof attachment.mimeType === 'string'
+          ? attachment.mimeType
+          : undefined;
+      const fileIdRaw = attachment.id ?? attachment.attachmentId ?? attachment.attachment_id;
+      const fileId = typeof fileIdRaw === 'string' && fileIdRaw.trim()
+        ? fileIdRaw.trim()
+        : typeof fileIdRaw === 'number'
+          ? String(fileIdRaw)
+          : undefined;
+      const filename = typeof attachment.filename === 'string' && attachment.filename.trim()
+        ? attachment.filename.trim()
+        : typeof attachment.fileName === 'string' && attachment.fileName.trim()
+          ? attachment.fileName.trim()
+          : undefined;
+      const size = typeof attachment.size === 'number' && Number.isFinite(attachment.size)
+        ? attachment.size
+        : undefined;
+
+      media.push({
+        type: this.mapSignalContentType(contentType),
+        fileId,
+        filename,
+        mimeType: contentType,
+        size,
+        _raw: attachment,
+      });
+    }
+
+    const enrichTargets = media.slice(0, 3);
+    for (const item of enrichTargets) {
+      try {
+        const local = await this.fetchSignalInboundAttachment(item._raw, item.fileId, item.filename, item.mimeType, sourceAddress, groupId);
+        if (!local) continue;
+
+        item.localPath = local.localPath;
+        item.url = local.localPath;
+        item.filename = item.filename || local.filename;
+        item.mimeType = item.mimeType || local.mimeType;
+
+        const understood = await analyzeInboundMedia({
+          localPath: local.localPath,
+          type: item.type,
+          filename: item.filename,
+          mimeType: item.mimeType,
+        });
+        item.extractedText = understood.extractedText;
+        item.extractionMethod = understood.extractionMethod;
+        item.extractionError = understood.extractionError;
+      } catch (error) {
+        item.extractionError = error instanceof Error ? error.message : String(error);
+      }
+    }
+
+    return media.map((item) => ({
+      type: item.type,
+      fileId: item.fileId,
+      filename: item.filename,
+      mimeType: item.mimeType,
+      size: item.size,
+      url: item.url,
+      localPath: item.localPath,
+      extractedText: item.extractedText,
+      extractionMethod: item.extractionMethod,
+      extractionError: item.extractionError,
+    }));
+  }
+
+  private async fetchSignalInboundAttachment(
+    rawAttachment: Record<string, unknown> | undefined,
+    fileId: string | undefined,
+    filenameHint: string | undefined,
+    mimeTypeHint: string | undefined,
+    sourceAddress: string,
+    groupId: string
+  ): Promise<{ localPath: string; filename: string; mimeType?: string } | null> {
+    if (rawAttachment) {
+      const dataField = rawAttachment.data ?? rawAttachment.base64 ?? rawAttachment.base64Data;
+      if (typeof dataField === 'string' && dataField.trim()) {
+        const decoded = Buffer.from(dataField.trim(), 'base64');
+        if (decoded.length > 0) {
+          return saveInboundMediaBuffer({
+            data: decoded,
+            filenameHint,
+            mimeType: mimeTypeHint,
+            prefix: 'foxfang-signal-inbound',
+          });
+        }
+      }
+
+      const localField = rawAttachment.storedFilename ?? rawAttachment.path ?? rawAttachment.file;
+      if (typeof localField === 'string' && localField.trim()) {
+        const candidate = localField.trim();
+        const localPath = path.isAbsolute(candidate)
+          ? candidate
+          : path.resolve(process.cwd(), candidate);
+        await readFile(localPath);
+        return {
+          localPath,
+          filename: filenameHint || path.basename(localPath),
+          mimeType: mimeTypeHint,
+        };
+      }
+    }
+
+    if (this.apiMode !== 'daemon-rpc' || !fileId) {
+      return null;
+    }
+
+    const rpcParams: Record<string, unknown> = {
+      account: this.phoneNumber,
+      id: fileId,
+    };
+    if (groupId) {
+      rpcParams.groupId = groupId;
+    } else if (sourceAddress) {
+      rpcParams.recipient = sourceAddress;
+    }
+
+    const result = await this.callDaemonRpc('getAttachment', rpcParams).catch(() => null);
+    const dataField = result?.result?.data ?? result?.data;
+    if (typeof dataField !== 'string' || !dataField.trim()) {
+      return null;
+    }
+    const decoded = Buffer.from(dataField.trim(), 'base64');
+    if (decoded.length === 0) {
+      return null;
+    }
+    return saveInboundMediaBuffer({
+      data: decoded,
+      filenameHint: filenameHint || `signal-attachment-${fileId}`,
+      mimeType: mimeTypeHint,
+      prefix: 'foxfang-signal-inbound',
+    });
+  }
+
+  private mapSignalContentType(contentType?: string): 'photo' | 'video' | 'audio' | 'document' | 'voice' {
+    const normalized = (contentType || '').toLowerCase();
+    if (normalized.startsWith('image/')) return 'photo';
+    if (normalized.startsWith('video/')) return 'video';
+    if (normalized.startsWith('audio/')) {
+      if (normalized.includes('ogg') || normalized.includes('opus')) return 'voice';
+      return 'audio';
+    }
+    return 'document';
+  }
+
+  private isHttpUrl(value: string): boolean {
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }
+
+  private async resolveAttachmentPath(rawPath: string, filenameHint?: string): Promise<string> {
+    if (this.isHttpUrl(rawPath)) {
+      const response = await fetch(rawPath);
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`Failed to download media: HTTP ${response.status} ${errorText}`);
+      }
+
+      const buffer = Buffer.from(await response.arrayBuffer());
+      const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'foxfang-signal-media-'));
+      const extension = this.resolveMediaExtension(filenameHint || rawPath, response.headers.get('content-type') || undefined);
+      const filename = `${Date.now()}-${randomUUID()}${extension}`;
+      const filePath = path.join(tmpDir, filename);
+      await writeFile(filePath, buffer);
+      return filePath;
+    }
+
+    const localPath = rawPath.startsWith('file://')
+      ? fileURLToPath(rawPath)
+      : path.isAbsolute(rawPath)
+        ? rawPath
+        : path.resolve(process.cwd(), rawPath);
+    await readFile(localPath); // Validate file readability up-front
+    return localPath;
+  }
+
+  private resolveMediaExtension(source: string, contentType?: string): string {
+    const fromSource = path.extname(source.split('?')[0] || '').toLowerCase();
+    if (fromSource) return fromSource;
+
+    const normalizedType = (contentType || '').toLowerCase();
+    if (normalizedType.includes('jpeg')) return '.jpg';
+    if (normalizedType.includes('png')) return '.png';
+    if (normalizedType.includes('gif')) return '.gif';
+    if (normalizedType.includes('webp')) return '.webp';
+    if (normalizedType.includes('mp4')) return '.mp4';
+    if (normalizedType.includes('mpeg')) return '.mp3';
+    if (normalizedType.includes('ogg')) return '.ogg';
+    if (normalizedType.includes('pdf')) return '.pdf';
+    return '.bin';
   }
 
   private sleep(ms: number, abortSignal: AbortSignal): Promise<void> {

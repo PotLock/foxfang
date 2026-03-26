@@ -244,6 +244,44 @@ export class AutoReplyHandler {
     return true;
   }
 
+  private buildMediaContextBlock(message: IncomingMessage): string {
+    const media = message.media || [];
+    if (media.length === 0) return '';
+
+    const lines: string[] = [];
+    lines.push('[Inbound Media Context]');
+
+    media.forEach((item, index) => {
+      lines.push(`Attachment ${index + 1}:`);
+      lines.push(`- type: ${item.type}`);
+      if (item.filename) lines.push(`- filename: ${item.filename}`);
+      if (item.mimeType) lines.push(`- mimeType: ${item.mimeType}`);
+      if (typeof item.size === 'number') lines.push(`- size: ${item.size} bytes`);
+      if (item.caption) lines.push(`- caption: ${item.caption}`);
+      if (item.extractedText) {
+        lines.push('- extracted_text:');
+        lines.push(item.extractedText);
+      } else if (item.extractionError) {
+        lines.push(`- extraction_error: ${item.extractionError}`);
+      }
+    });
+
+    return lines.join('\n');
+  }
+
+  private buildInboundPrompt(message: IncomingMessage): string {
+    const userText = (message.text || '').trim();
+    const mediaContext = this.buildMediaContextBlock(message);
+
+    if (userText && mediaContext) {
+      return `${userText}\n\n${mediaContext}`;
+    }
+    if (mediaContext) {
+      return mediaContext;
+    }
+    return userText || '[Media message]';
+  }
+
   /**
    * Handle incoming message and generate reply
    */
@@ -308,10 +346,11 @@ export class AutoReplyHandler {
       await typingController.startTypingLoop();
 
       // Run agent
+      const inboundPrompt = this.buildInboundPrompt(message);
       const result = await this.orchestrator.run({
         sessionId,
         agentId: route.agentId,
-        message: message.text || '[Media message]',
+        message: inboundPrompt,
         stream: false,
       });
 
