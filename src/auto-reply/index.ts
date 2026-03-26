@@ -204,7 +204,7 @@ export class AutoReplyHandler {
         onCleanup: () => {
           this.typingControllers.delete(sessionKey);
         },
-        typingIntervalSeconds: this.config.typingIntervalSeconds ?? 6,
+        typingIntervalSeconds: this.config.typingIntervalSeconds ?? 3,
         typingTtlMs: 2 * 60 * 1000, // 2 min TTL
       });
       this.typingControllers.set(sessionKey, controller);
@@ -362,16 +362,20 @@ export class AutoReplyHandler {
       });
 
       // Send final reply with runtime-governance control parsing
-      if (result.content) {
+      {
         const parsed = parsedReply;
-        if (parsed.suppress) {
+        const mediaUrl = Array.isArray(result.mediaUrls) && result.mediaUrls.length > 0
+          ? String(result.mediaUrls[0] || '').trim()
+          : undefined;
+        if (parsed.suppress && !mediaUrl) {
           console.log(`[AutoReply] Suppressed outbound message (${parsed.reason || 'policy'}) for session=${sessionId}`);
         } else {
           const replyToMessageId = parsed.replyToMessageId
             ?? (this.config.replyToMessage ? message.id : undefined);
 
           const payload: ReplyPayload = {
-            text: parsed.content,
+            text: parsed.content || undefined,
+            mediaUrl: mediaUrl || undefined,
             replyToMessageId,
             threadId: message.threadId,
           };

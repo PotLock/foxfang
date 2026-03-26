@@ -91,8 +91,20 @@ export class KimiCodingProvider implements Provider {
       usage?: { input_tokens?: number; output_tokens?: number };
     };
     
-    // Debug: log request and response
-    console.log(`[KimiCoding] Tool uses found:`, data.content?.filter(c => c.type === 'tool_use').length || 0);
+    // Debug: log tool-use count + names for easier gateway tracing
+    const debugToolUses = data.content?.filter(c => c.type === 'tool_use') || [];
+    const debugToolNames = Array.from(
+      new Set(
+        debugToolUses
+          .map((item) => String(item.name || '').trim())
+          .filter((name) => name.length > 0)
+      )
+    );
+    const debugToolNamePreview = debugToolNames.slice(0, 8).join(', ');
+    console.log(
+      `[KimiCoding] Tool uses found: ${debugToolUses.length}` +
+      `${debugToolNamePreview ? ` [${debugToolNamePreview}${debugToolNames.length > 8 ? ', ...' : ''}]` : ''}`
+    );
     
     const result: ChatResponse = {
       content: data.content?.find(c => c.type === 'text')?.text || 

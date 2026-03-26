@@ -177,95 +177,20 @@ function normalizeStep(value: any): AgentBrowserCommandStep | null {
   };
 }
 
-const GOAL_STOP_WORDS = new Set<string>([
-  'a', 'an', 'and', 'at', 'by', 'for', 'from', 'get', 'go', 'in', 'into', 'is', 'it', 'of', 'on', 'or',
-  'page', 'part', 'please', 'read', 'section', 'see', 'show', 'site', 'that', 'the', 'this', 'to', 'url',
-  'view', 'what', 'where', 'with',
-  'de', 'den', 'di', 'đi', 'đến', 'hãy', 'lay', 'lấy', 'nay', 'này', 'noi', 'nơi', 'o', 'ở', 'phan', 'phần',
-  'trang', 'trong', 'tu', 'từ', 'va', 'và', 'xem',
-]);
-
-function escapeCssAttrValue(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-}
-
-function uniqueNonEmpty(values: string[]): string[] {
-  const seen = new Set<string>();
-  const result: string[] = [];
-  for (const value of values) {
-    const item = String(value || '').trim();
-    if (!item || seen.has(item)) continue;
-    seen.add(item);
-    result.push(item);
-  }
-  return result;
-}
-
-function extractGoalKeywords(goal: string): string[] {
-  const words = (goal.toLowerCase().match(/[\p{L}\p{N}_-]+/gu) || [])
-    .map((item) => item.trim())
-    .filter((item) => item.length >= 3)
-    .filter((item) => !GOAL_STOP_WORDS.has(item));
-
-  return uniqueNonEmpty(words).slice(0, 4);
-}
-
-function inferSelectorFromGoal(goal: string): string | undefined {
-  const raw = String(goal || '').trim();
-  if (!raw) return undefined;
-
-  const explicitSelector = raw.match(/(?:css\s+selector|selector)\s*[:=]\s*["'`]?([^"'`\n]+)["'`]?/i)?.[1];
-  if (explicitSelector) {
-    return explicitSelector.trim();
-  }
-
-  const inlineSelector = raw.match(/[#.][a-zA-Z0-9_-][a-zA-Z0-9_\-:.#\[\]="']*/)?.[0];
-  if (inlineSelector) return inlineSelector.trim();
-
-  const keywords = extractGoalKeywords(raw);
-  if (keywords.length === 0) return undefined;
-
-  const selectors: string[] = [];
-  for (const keyword of keywords) {
-    const escapedKeyword = escapeCssAttrValue(keyword);
-    selectors.push(`[id*="${escapedKeyword}" i]`);
-    selectors.push(`[class*="${escapedKeyword}" i]`);
-    selectors.push(`[data-testid*="${escapedKeyword}" i]`);
-    selectors.push(`[aria-label*="${escapedKeyword}" i]`);
-    selectors.push(`[role*="${escapedKeyword}" i]`);
-
-    const slug = keyword
-      .normalize('NFKD')
-      .replace(/\p{M}/gu, '')
-      .replace(/[^a-z0-9_-]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-    if (/^[a-z][a-z0-9_-]{1,40}$/.test(slug)) {
-      selectors.push(`#${slug}`);
-      selectors.push(`.${slug}`);
-      selectors.push(slug);
-    }
-  }
-
-  return uniqueNonEmpty(selectors)[0];
-}
-
 function buildReadSteps(args: {
   url: string;
-  goal?: string;
   selector?: string;
   interactiveOnly?: boolean;
   compact?: boolean;
   depth?: number;
+  includeScreenshot?: boolean;
   waitForNetworkIdle?: boolean;
   close?: boolean;
 }): AgentBrowserCommandStep[] {
   const steps: AgentBrowserCommandStep[] = [];
   const depth = Math.max(1, Math.min(Math.floor(Number(args.depth || 8)), 20));
   const explicitSelector = String(args.selector || '').trim();
-  const goal = String(args.goal || '').trim();
-  const inferredSelector = explicitSelector ? '' : String(inferSelectorFromGoal(goal) || '').trim();
-  const selector = explicitSelector || inferredSelector;
-  const selectorIsInferred = !explicitSelector && !!inferredSelector;
+  const selector = explicitSelector || '';
 
   steps.push({ command: 'open', args: [args.url], json: true });
 
@@ -287,37 +212,22 @@ function buildReadSteps(args: {
     command: 'snapshot',
     args: snapshotArgs,
     json: true,
-    allowFailure: selectorIsInferred,
+    allowFailure: false,
   });
-
-  if (goal) {
-    steps.push({
-      command: 'find',
-      args: ['text', goal, 'text'],
-      json: true,
-      allowFailure: true,
-    });
-  }
-
-  if (goal && !explicitSelector) {
-    steps.push({
-      command: 'scroll',
-      args: ['down', '1200'],
-      json: true,
-      allowFailure: true,
-    });
-    steps.push({
-      command: 'find',
-      args: ['text', goal, 'text'],
-      json: true,
-      allowFailure: true,
-    });
-  }
 
   if (selector) {
     steps.push({
       command: 'get',
       args: ['text', selector],
+      json: true,
+      allowFailure: true,
+    });
+  }
+
+  if (args.includeScreenshot !== false) {
+    steps.push({
+      command: 'screenshot',
+      args: [],
       json: true,
       allowFailure: true,
     });
@@ -365,9 +275,40 @@ function formatStepOutput(index: number, result: AgentBrowserStepResult): string
   return `${header}\nstatus: ${status}\n${stdout}\n${stderr}`;
 }
 
+function summarizeStepForLog(step: AgentBrowserCommandStep): string {
+  const args = Array.isArray(step.args) ? step.args : [];
+  const preview = [step.command, ...args].join(' ').replace(/\s+/g, ' ').trim();
+  if (preview.length <= 160) return preview;
+  return `${preview.slice(0, 160)}...`;
+}
+
+function extractScreenshotPath(result?: AgentBrowserStepResult): string | undefined {
+  if (!result) return undefined;
+  const parsed = result.parsed;
+
+  if (parsed && typeof parsed === 'object') {
+    const obj = parsed as Record<string, unknown>;
+    const candidates = [
+      obj.path,
+      obj.filePath,
+      obj.screenshotPath,
+      (obj.screenshot && typeof obj.screenshot === 'object') ? (obj.screenshot as Record<string, unknown>).path : undefined,
+      (obj.data && typeof obj.data === 'object') ? (obj.data as Record<string, unknown>).path : undefined,
+    ];
+    for (const candidate of candidates) {
+      const value = String(candidate || '').trim();
+      if (value) return value;
+    }
+  }
+
+  const output = `${result.stdout || ''}\n${result.stderr || ''}`;
+  const match = output.match(/(\/[^\s"'`]+?\.(?:png|jpe?g|webp))/i);
+  return match?.[1]?.trim();
+}
+
 export class AgentBrowserTool implements Tool {
   name = 'agent_browser';
-  description = 'Control a real browser via vercel-labs/agent-browser (Chromium/Playwright). Use when fetch_url/firecrawl miss JS-rendered or interaction-required content. Supports read mode (open + snapshot + optional find/get) and script mode (custom command steps).';
+  description = 'Control a real browser via vercel-labs/agent-browser (Chromium/Playwright). Use when fetch_url/firecrawl miss JS-rendered or interaction-required content. Supports read mode (open + snapshot + optional selector text + screenshot) and script mode (custom command steps decided by the agent).';
   category = ToolCategory.EXTERNAL;
   parameters = {
     type: 'object' as const,
@@ -382,11 +323,11 @@ export class AgentBrowserTool implements Tool {
       },
       goal: {
         type: 'string',
-        description: 'Optional text objective to locate on page (used with find text).',
+        description: 'Optional human objective for the run (context for the model; not interpreted by the tool wrapper).',
       },
       selector: {
         type: 'string',
-        description: 'Optional CSS selector to scope snapshot and extract text. If omitted, read mode infers a selector candidate from the goal text.',
+        description: 'Optional CSS selector to scope snapshot and extract text.',
       },
       interactiveOnly: {
         type: 'boolean',
@@ -399,6 +340,10 @@ export class AgentBrowserTool implements Tool {
       depth: {
         type: 'number',
         description: 'Read mode: snapshot depth (1-20, default 8).',
+      },
+      includeScreenshot: {
+        type: 'boolean',
+        description: 'Read mode: capture a screenshot and return its path (default true).',
       },
       waitForNetworkIdle: {
         type: 'boolean',
@@ -461,11 +406,11 @@ export class AgentBrowserTool implements Tool {
       }
       steps = buildReadSteps({
         url,
-        goal: args?.goal,
         selector: args?.selector,
         interactiveOnly: args?.interactiveOnly,
         compact: args?.compact,
         depth: args?.depth,
+        includeScreenshot: args?.includeScreenshot,
         waitForNetworkIdle: args?.waitForNetworkIdle,
         close: args?.close,
       });
@@ -473,7 +418,19 @@ export class AgentBrowserTool implements Tool {
 
     const results: AgentBrowserStepResult[] = [];
     for (const step of steps) {
+      const startedAt = Date.now();
+      console.log(`[AgentBrowserTool] ▶ ${summarizeStepForLog(step)}`);
       const result = await runStep(runner, session, timeoutMs, step);
+      const elapsedMs = Date.now() - startedAt;
+      if (result.ok) {
+        console.log(`[AgentBrowserTool] ✅ ${step.command} ${elapsedMs}ms`);
+      } else {
+        const reason = result.timedOut
+          ? 'timeout'
+          : `exit=${String(result.exitCode)} ${String(result.stderr || '').replace(/\s+/g, ' ').trim() || 'failed'}`;
+        const preview = reason.length > 200 ? `${reason.slice(0, 200)}...` : reason;
+        console.log(`[AgentBrowserTool] ❌ ${step.command} ${elapsedMs}ms ${preview}`);
+      }
       results.push(result);
       if (!result.ok && !step.allowFailure) {
         return {
@@ -498,13 +455,17 @@ export class AgentBrowserTool implements Tool {
     }
 
     const snapshot = results.find((item) => item.step.command === 'snapshot');
+    const screenshotResult = results.find((item) => item.step.command === 'screenshot');
     const focusResults = results.filter((item) => item.step.command === 'find');
     const selectorResults = results.filter((item) => item.step.command === 'get');
     const focusResult = focusResults.length > 0 ? focusResults[focusResults.length - 1] : undefined;
     const selectorResult = selectorResults.length > 0 ? selectorResults[selectorResults.length - 1] : undefined;
+    const screenshotPath = extractScreenshotPath(screenshotResult);
+    const mediaUrls = screenshotPath ? [screenshotPath] : [];
 
     const outputParts = [
       `agent-browser run completed via ${runner.label} (session: ${session}).`,
+      ...(screenshotPath ? [`MEDIA:${screenshotPath}`] : []),
       ...results.map((result, idx) => formatStepOutput(idx, result)),
     ];
 
@@ -516,6 +477,9 @@ export class AgentBrowserTool implements Tool {
         session,
         mode,
         snapshot: snapshot?.parsed || snapshot?.stdout || '',
+        screenshot: screenshotResult?.parsed || screenshotResult?.stdout || '',
+        screenshotPath: screenshotPath || '',
+        mediaUrls,
         focus: focusResult?.parsed || focusResult?.stdout || '',
         selectorText: selectorResult?.parsed || selectorResult?.stdout || '',
         selectorTextAll: selectorResults.map((item) => item.parsed || item.stdout || ''),

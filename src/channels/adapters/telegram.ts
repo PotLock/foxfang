@@ -312,15 +312,25 @@ export class TelegramAdapter implements ChannelAdapter {
     if (!this.connected) return;
 
     const chatId = this.parseChatId(to);
+    const parsedThreadId = threadId ? parseInt(threadId, 10) : NaN;
+    const hasThreadId = Number.isFinite(parsedThreadId);
 
     try {
       const params: Record<string, any> = { chat_id: chatId };
-      if (threadId) {
-        params.message_thread_id = parseInt(threadId, 10);
+      if (hasThreadId) {
+        params.message_thread_id = parsedThreadId;
       }
       await this.apiCall('sendChatAction', { ...params, action: 'typing' });
     } catch {
-      // Ignore typing indicator errors
+      if (!hasThreadId) {
+        return;
+      }
+      try {
+        // Fallback for chats where message_thread_id is not accepted.
+        await this.apiCall('sendChatAction', { chat_id: chatId, action: 'typing' });
+      } catch {
+        // Ignore typing indicator errors
+      }
     }
   }
 

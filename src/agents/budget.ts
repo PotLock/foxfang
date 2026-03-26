@@ -18,7 +18,7 @@ export function resolveTokenBudget(params: {
   const base = {
     requestMaxInputTokens: 12000,
     requestMaxOutputTokens: 2048,
-    maxToolIterations: 5,
+    maxToolIterations: 8,
     maxDelegations: 0,
     maxReviewPasses: 0,
   };

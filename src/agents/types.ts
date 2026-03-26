@@ -180,12 +180,14 @@ export interface RunResponse {
   content: string;
   messages?: AgentMessage[];
   toolCalls?: ToolCall[];
+  mediaUrls?: string[];
   stream?: AsyncIterable<StreamChunk>;
 }
 
 export interface AgentRunResult {
   content: string;
   toolCalls?: ToolCall[];
+  mediaUrls?: string[];
   usage?: {
     promptTokens: number;
     completionTokens: number;

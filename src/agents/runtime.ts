@@ -62,15 +62,17 @@ If \`fetch_url\`/crawl tools miss content on JS-heavy, interaction-driven, or cl
 Narrate only when it adds value (multi-step work, sensitive actions, or user asks).
 Keep narration brief and value-dense.`;
 
-const AGENT_BROWSER_PLAYBOOK_MINIMAL = `## Agent Browser Playbook
-Use this playbook when tool \`agent_browser\` is available:
-- Start with \`mode: "read"\` for extraction requests.
-- Default sequence: \`open\` -> \`wait --load networkidle\` -> \`snapshot -i\`.
-- Prefer refs from snapshot (\`@e1\`, \`@e2\`) or explicit selectors from user.
-- If content is below the fold, run \`scroll down\` then retry \`find text\`.
-- Use \`get text <selector>\` for precise extraction and return concise output.
-- For custom flows, switch to \`mode: "script"\` with explicit command steps.
-- Linux install hint if missing deps: \`agent-browser install --with-deps\`.`;
+const AGENT_BROWSER_SKILL_GUIDANCE = `## Browser Skill Routing
+When the task needs web navigation/UI inspection and \`agent_browser\` is available:
+- Prefer the \`agent-browser\` skill instructions before ad-hoc tool loops.
+- First step for browser tasks: read the skill file and command guide before calling \`agent_browser\`.
+- Read in order:
+  1) \`~/.foxfang/skills/agent-browser/SKILL.md\`
+  2) \`~/.foxfang/skills/agent-browser/AGENT_BROWSER_COMMANDS.md\`
+  3) fallback: \`docs/AGENT_BROWSER_COMMANDS.md\`
+- Use \`bash_exec\` with \`cat "<path>"\` to load only needed sections.
+- Let the agent decide command sequences explicitly in \`mode: "script"\`.
+- Use \`mode: "read"\` only for initial quick capture (open + snapshot + screenshot), not full navigation logic.`;
 
 /**
  * Safety guidance
@@ -245,11 +247,160 @@ function extractKeyPoints(data: unknown): string[] {
   return points;
 }
 
+function normalizeMediaPathCandidate(value: unknown): string | undefined {
+  const text = String(value || '').trim();
+  if (!text) return undefined;
+  if (/^https?:\/\//i.test(text)) return text;
+  if (/^file:\/\//i.test(text)) return text;
+  if (text.startsWith('/')) return text;
+  return undefined;
+}
+
+function collectMediaUrlsFromToolData(toolName: string, data: unknown): string[] {
+  if (toolName !== 'agent_browser' || !data || typeof data !== 'object') return [];
+
+  const obj = data as Record<string, unknown>;
+  const urls: string[] = [];
+  const add = (candidate: unknown) => {
+    const normalized = normalizeMediaPathCandidate(candidate);
+    if (normalized) urls.push(normalized);
+  };
+
+  add(obj.screenshotPath);
+  add(obj.screenshotUrl);
+
+  const screenshot = obj.screenshot;
+  if (screenshot && typeof screenshot === 'object') {
+    const shot = screenshot as Record<string, unknown>;
+    add(shot.path);
+    add(shot.url);
+    add(shot.filePath);
+  }
+
+  if (Array.isArray(obj.mediaUrls)) {
+    for (const entry of obj.mediaUrls) add(entry);
+  }
+
+  return Array.from(new Set(urls));
+}
+
+function readNestedString(value: unknown, maxChars: number): string | undefined {
+  if (typeof value === 'string' && value.trim()) {
+    return compactText(value, maxChars);
+  }
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  const obj = value as Record<string, unknown>;
+  const candidates: unknown[] = [
+    obj.snapshot,
+    obj.text,
+    obj.output,
+  ];
+  if (obj.data && typeof obj.data === 'object') {
+    const dataObj = obj.data as Record<string, unknown>;
+    candidates.push(dataObj.snapshot, dataObj.text, dataObj.output);
+  }
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return compactText(candidate, maxChars);
+    }
+  }
+
+  return undefined;
+}
+
+function compactAgentBrowserPayload(rawData: unknown): {
+  compact: CompactToolResult;
+  rawSize: number;
+  compactSize: number;
+} {
+  const rawText = safeJson(rawData);
+  const rawSize = rawText.length;
+  const obj = rawData && typeof rawData === 'object' ? (rawData as Record<string, unknown>) : {};
+
+  const stepsRaw = Array.isArray(obj.steps) ? obj.steps : [];
+  const steps = stepsRaw
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+    .map((item) => ({
+      command: String(item.command || '').trim() || '(unknown)',
+      ok: item.ok === true,
+      timedOut: item.timedOut === true,
+      exitCode: typeof item.exitCode === 'number' ? item.exitCode : null,
+    }));
+
+  const failed = steps.filter((step) => !step.ok);
+  const mediaUrls = collectMediaUrlsFromToolData('agent_browser', rawData);
+  const snapshotExcerpt = readNestedString(obj.snapshot, 1600);
+  const selectorExcerpt = readNestedString(obj.selectorText, 900) || readNestedString(obj.focus, 900);
+
+  const keyPoints: string[] = [];
+  if (steps.length > 0) {
+    keyPoints.push(`steps: ${steps.length} total (${steps.length - failed.length} ok, ${failed.length} failed)`);
+  }
+  if (failed.length > 0) {
+    keyPoints.push(
+      `failed steps: ${failed
+        .slice(0, 4)
+        .map((step) => `${step.command}${step.timedOut ? ' (timeout)' : ''}${step.exitCode !== null ? ` (exit=${step.exitCode})` : ''}`)
+        .join(', ')}`,
+    );
+  }
+  if (snapshotExcerpt) {
+    keyPoints.push(`snapshot excerpt: ${snapshotExcerpt}`);
+  }
+  if (selectorExcerpt) {
+    keyPoints.push(`selector/focus excerpt: ${selectorExcerpt}`);
+  }
+  if (mediaUrls.length > 0) {
+    keyPoints.push(`media: ${mediaUrls.slice(0, 3).join(', ')}`);
+  }
+  if (keyPoints.length === 0) {
+    keyPoints.push('Browser run completed. Use returned step list and rerun targeted commands as needed.');
+  }
+
+  const summaryParts: string[] = [];
+  summaryParts.push(
+    steps.length > 0
+      ? `agent-browser steps=${steps.length} ok=${steps.length - failed.length} failed=${failed.length}`
+      : 'agent-browser completed',
+  );
+  if (failed.length > 0) {
+    summaryParts.push(`last failure=${failed[failed.length - 1]?.command || '(unknown)'}`);
+  }
+  if (mediaUrls.length > 0) {
+    summaryParts.push(`screenshot=${mediaUrls[0]}`);
+  }
+
+  let rawRef: string | undefined;
+  if (rawSize > TOOL_COMPRESSION_THRESHOLD_CHARS) {
+    rawRef = cacheToolResult('agent_browser', rawData).rawRef;
+  }
+
+  const compact: CompactToolResult = {
+    source: 'agent_browser',
+    title: 'agent-browser run',
+    summary: compactText(summaryParts.join(' | '), TOOL_SUMMARY_MAX_CHARS),
+    keyPoints: keyPoints.slice(0, 6),
+    relevanceToTask:
+      'Use snapshot/selector excerpts and failed-step info to decide the next explicit browser commands.',
+    ...(rawRef ? { rawRef } : {}),
+  };
+
+  const compactSize = safeJson(compact).length;
+  return { compact, rawSize, compactSize };
+}
+
 function compactToolPayload(toolName: string, rawData: unknown): {
   compact: CompactToolResult;
   rawSize: number;
   compactSize: number;
 } {
+  if (toolName === 'agent_browser') {
+    return compactAgentBrowserPayload(rawData);
+  }
+
   const rawText = safeJson(rawData);
   const rawSize = rawText.length;
   const title = extractTitle(rawData);
@@ -348,11 +499,26 @@ function hasLikelyBrowserIntent(context: AgentContext): boolean {
   return hasUrl || hasToolHint || hasPageIntent;
 }
 
-function buildAgentBrowserPlaybookSection(agent: Agent, context: AgentContext, promptMode: PromptMode): string {
-  if (promptMode !== 'full') return '';
+function resolveAgentBrowserSkillLocation(context: AgentContext): string {
+  const workspaceInfo = context.workspace?.getWorkspaceInfo?.();
+  const skills = loadAvailableSkills({
+    homeDir: workspaceInfo?.homeDir,
+    workspacePath: workspaceInfo?.workspacePath,
+    maxSkills: 200,
+  });
+  const match = skills.find((skill) => {
+    const name = String(skill.name || '').toLowerCase();
+    const id = String(skill.id || '').toLowerCase();
+    return id === 'agent-browser' || name === 'agent-browser' || name.includes('agent-browser');
+  });
+  return match?.filePath || '~/.foxfang/skills/agent-browser/SKILL.md';
+}
+
+function buildAgentBrowserSkillSection(agent: Agent, context: AgentContext, _promptMode: PromptMode): string {
   if (!Array.isArray(agent.tools) || !agent.tools.includes('agent_browser')) return '';
   if (!hasLikelyBrowserIntent(context)) return '';
-  return AGENT_BROWSER_PLAYBOOK_MINIMAL;
+  const skillPath = resolveAgentBrowserSkillLocation(context);
+  return `${AGENT_BROWSER_SKILL_GUIDANCE}\n- Preferred skill path: \`${skillPath}\``;
 }
 
 /**
@@ -526,12 +692,13 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   if (!isMinimal) {
     lines.push(TOOL_CALL_STYLE_GUIDANCE);
     lines.push('');
+  }
 
-    const playbookSection = buildAgentBrowserPlaybookSection(agent, context, promptMode);
-    if (playbookSection) {
-      lines.push(playbookSection);
-      lines.push('');
-    }
+  const browserSkillSection = buildAgentBrowserSkillSection(agent, context, promptMode);
+  if (browserSkillSection) {
+    console.log('[SystemPrompt] Browser skill guidance injected (agent-browser)');
+    lines.push(browserSkillSection);
+    lines.push('');
   }
 
   // 4. Safety (shortened in minimal)
@@ -650,7 +817,10 @@ export async function runAgent(
   let iteration = 0;
   const maxIterations = budget.maxToolIterations;
   let toolErrorStreak = 0;
+  let progressContinuationStreak = 0;
+  const maxProgressContinuation = 2;
   const toolTelemetry: Array<{ tool: string; rawSize: number; compactSize: number }> = [];
+  const mediaUrls = new Set<string>();
   const isToolIntentOnlyText = (content: string): boolean => {
     const text = String(content || '').trim();
     if (!text) return false;
@@ -658,6 +828,18 @@ export async function runAgent(
       /^i(?:'| wi)ll use the [a-z0-9_\- ]+ tool(?: to help you)?\.?$/i.test(text) ||
       /^let me use the [a-z0-9_\- ]+ tool(?: to help)?\.?$/i.test(text)
     );
+  };
+  const isLikelyProgressOnlyText = (content: string): boolean => {
+    const text = String(content || '').trim();
+    if (!text || text.length > 320) return false;
+    const hasProgressLead =
+      /(?:^|\b)(let me|i(?:'| )ll|i will|working on|continuing|next,?\s*i(?:'| )ll)\b/i.test(text) ||
+      /(?:^|\b)(để tôi|mình sẽ|đang|tiếp tục|chờ mình)\b/u.test(text);
+    if (!hasProgressLead) return false;
+    const hasActionVerb =
+      /\b(scroll|check|inspect|open|fetch|read|get|click|analyze)\b/i.test(text) ||
+      /\b(cuộn|kiểm tra|mở|đọc|lấy|bấm|phân tích|xem)\b/u.test(text);
+    return hasActionVerb;
   };
   const finalizeWithoutTools = async (reason: string): Promise<{ content?: string; usage?: { promptTokens: number; completionTokens: number; totalTokens: number } }> => {
     const finalizeInstruction = [
@@ -715,6 +897,7 @@ export async function runAgent(
             return {
               content: finalized.content,
               toolCalls: allToolCalls.length > 0 ? allToolCalls : undefined,
+              mediaUrls: mediaUrls.size > 0 ? Array.from(mediaUrls) : undefined,
               usage: finalized.usage || response.usage,
               toolTelemetry: toolTelemetry.length > 0 ? toolTelemetry : undefined,
             };
@@ -726,15 +909,38 @@ export async function runAgent(
         return {
           content: 'I gathered context but could not finalize the answer in time. Please retry.',
           toolCalls: allToolCalls.length > 0 ? allToolCalls : undefined,
+          mediaUrls: mediaUrls.size > 0 ? Array.from(mediaUrls) : undefined,
           usage: response.usage,
           toolTelemetry: toolTelemetry.length > 0 ? toolTelemetry : undefined,
         };
+      }
+
+      if (
+        allToolCalls.length > 0 &&
+        isLikelyProgressOnlyText(normalizedContent) &&
+        progressContinuationStreak < maxProgressContinuation
+      ) {
+        progressContinuationStreak += 1;
+        messages = trimMessagesToBudget(
+          [
+            ...messages,
+            { role: 'assistant' as const, content: normalizedContent || '[status update]' },
+            {
+              role: 'user' as const,
+              content:
+                'Continue executing the same task now. The previous message was only a progress update. Use tools again if needed and only stop when you can provide the final answer with concrete findings.',
+            },
+          ],
+          budget.requestMaxInputTokens,
+        ).messages;
+        continue;
       }
 
       debugLog(`[AgentRuntime] No tool calls, returning final response`);
       return {
         content: response.content,
         toolCalls: allToolCalls.length > 0 ? allToolCalls : undefined,
+        mediaUrls: mediaUrls.size > 0 ? Array.from(mediaUrls) : undefined,
         usage: response.usage,
         toolTelemetry: toolTelemetry.length > 0 ? toolTelemetry : undefined,
       };
@@ -773,6 +979,7 @@ export async function runAgent(
       return {
         content: `Tool execution failed repeatedly:\n${errorSummary}`,
         toolCalls: allToolCalls,
+        mediaUrls: mediaUrls.size > 0 ? Array.from(mediaUrls) : undefined,
         usage: response.usage,
         toolTelemetry: toolTelemetry.length > 0 ? toolTelemetry : undefined,
       };
@@ -789,6 +996,11 @@ export async function runAgent(
           rawSize: r.rawSize,
           compactSize: r.compactSize,
         });
+      }
+      if (toolName && r.data) {
+        for (const mediaUrl of collectMediaUrlsFromToolData(toolName, r.data)) {
+          mediaUrls.add(mediaUrl);
+        }
       }
       const data = r.compact || r.data || r.output;
       return `${toolName}: ${typeof data === 'object' ? JSON.stringify(data) : data}`;
@@ -813,6 +1025,7 @@ export async function runAgent(
       return {
         content: finalizedContent,
         toolCalls: allToolCalls,
+        mediaUrls: mediaUrls.size > 0 ? Array.from(mediaUrls) : undefined,
         usage: finalized.usage,
         toolTelemetry: toolTelemetry.length > 0 ? toolTelemetry : undefined,
       };
@@ -832,6 +1045,7 @@ export async function runAgent(
   return {
     content: safeFallback,
     toolCalls: allToolCalls,
+    mediaUrls: mediaUrls.size > 0 ? Array.from(mediaUrls) : undefined,
     toolTelemetry: toolTelemetry.length > 0 ? toolTelemetry : undefined,
   };
 }
@@ -993,10 +1207,64 @@ export async function* runAgentStream(
 async function executeToolCalls(toolCalls: ToolCall[]): Promise<ToolResult[]> {
   const results: ToolResult[] = [];
 
+  const compactForLog = (value: unknown, maxChars = 240): string => {
+    const raw = typeof value === 'string' ? value : safeJson(value);
+    const clean = String(raw || '').replace(/\s+/g, ' ').trim();
+    if (clean.length <= maxChars) return clean;
+    return `${clean.slice(0, maxChars)}...`;
+  };
+
+  const summarizeToolExecution = (toolName: string, args: any): string => {
+    if (toolName === 'bash_exec' || toolName === 'bash') {
+      const command = compactForLog(args?.command || '', 320);
+      const mode = String(args?.mode || 'safe').trim() || 'safe';
+      const workdir = typeof args?.workdir === 'string' && args.workdir.trim()
+        ? ` workdir=${args.workdir.trim()}`
+        : '';
+      const background = args?.background === true ? ' background=true' : '';
+      return `command="${command}" mode=${mode}${workdir}${background}`;
+    }
+
+    if (toolName === 'agent_browser') {
+      const mode = String(args?.mode || 'read').trim().toLowerCase() || 'read';
+      if (mode === 'script') {
+        const commands = Array.isArray(args?.commands) ? args.commands : [];
+        const preview = commands
+          .slice(0, 4)
+          .map((item: any) => {
+            const command = String(item?.command || '').trim() || '(unknown)';
+            const cmdArgs = Array.isArray(item?.args)
+              ? item.args.slice(0, 4).map((v: unknown) => String(v))
+              : [];
+            return compactForLog([command, ...cmdArgs].join(' '), 90);
+          })
+          .join(' -> ');
+        const tail = commands.length > 4 ? ' -> ...' : '';
+        return `mode=script steps=${commands.length}${preview ? ` flow="${preview}${tail}"` : ''}`;
+      }
+
+      const url = compactForLog(args?.url || '', 180);
+      const goal = typeof args?.goal === 'string' && args.goal.trim()
+        ? ` goal="${compactForLog(args.goal, 140)}"`
+        : '';
+      const selector = typeof args?.selector === 'string' && args.selector.trim()
+        ? ` selector="${compactForLog(args.selector, 120)}"`
+        : '';
+      return `mode=read${url ? ` url="${url}"` : ''}${goal}${selector}`;
+    }
+
+    return `args=${compactForLog(args, 220)}`;
+  };
+
   for (const toolCall of toolCalls) {
+    const startedAt = Date.now();
+    const summary = summarizeToolExecution(toolCall.name, toolCall.arguments);
+    console.log(`[ToolRunner] ▶ ${toolCall.name}${summary ? ` ${summary}` : ''}`);
+
     try {
       const tool = toolRegistry.get(toolCall.name);
       if (!tool) {
+        console.log(`[ToolRunner] ❌ ${toolCall.name} ${Date.now() - startedAt}ms error=Tool not found`);
         results.push({
           toolCallId: toolCall.id,
           output: '',
@@ -1006,10 +1274,29 @@ async function executeToolCalls(toolCalls: ToolCall[]): Promise<ToolResult[]> {
       }
 
       const result = await tool.execute(toolCall.arguments);
+      const elapsedMs = Date.now() - startedAt;
+      if (
+        toolCall.name === 'bash_exec' &&
+        typeof toolCall.arguments?.command === 'string'
+      ) {
+        const commandText = toolCall.arguments.command;
+        if (/skills\/agent-browser\/SKILL\.md/i.test(commandText)) {
+          console.log('[SkillUsage] agent-browser skill file read via bash_exec');
+        }
+        if (/AGENT_BROWSER_COMMANDS\.md/i.test(commandText)) {
+          console.log('[SkillUsage] agent-browser commands guide read via bash_exec');
+        }
+      }
       const toolData = result.success ? (result.data ?? result.output ?? '') : '';
       const compacted = result.success
         ? compactToolPayload(toolCall.name, toolData)
         : undefined;
+      if (result.success) {
+        console.log(`[ToolRunner] ✅ ${toolCall.name} ${elapsedMs}ms`);
+      } else {
+        const errText = compactForLog(result.error || 'Unknown error', 220);
+        console.log(`[ToolRunner] ❌ ${toolCall.name} ${elapsedMs}ms error=${errText}`);
+      }
       results.push({
         toolCallId: toolCall.id,
         output: result.success ? (compacted?.compact.summary || String(result.output ?? '')) : '',
@@ -1021,10 +1308,12 @@ async function executeToolCalls(toolCalls: ToolCall[]): Promise<ToolResult[]> {
         rawRef: compacted?.compact.rawRef,
       });
     } catch (error) {
+      const errText = error instanceof Error ? error.message : String(error);
+      console.log(`[ToolRunner] ❌ ${toolCall.name} ${Date.now() - startedAt}ms error=${compactForLog(errText, 220)}`);
       results.push({
         toolCallId: toolCall.id,
         output: '',
-        error: error instanceof Error ? error.message : String(error),
+        error: errText,
       });
     }
   }

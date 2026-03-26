@@ -61,7 +61,7 @@ export class ChannelManager {
         replyToMessage: true,
         ...config?.autoReply,
       },
-      typingIntervalSeconds: 6,
+      typingIntervalSeconds: 3,
       humanDelayMs: 800,
       ...config,
     };
@@ -510,21 +510,38 @@ export class ChannelManager {
       replyToMessageId: payload.replyToMessageId ?? (this.config.autoReply.replyToMessage ? incomingMessageId : undefined),
       threadId: payload.threadId ?? fallbackThreadId,
     };
+    const captionLimit = this.resolveCaptionLimit(adapter.name);
+    const safeCaption =
+      payload.text &&
+      (captionLimit === undefined || payload.text.length <= captionLimit)
+        ? payload.text
+        : undefined;
 
     const mediaItems: ChannelMediaPayload[] = [];
     if (payload.mediaUrl) {
       mediaItems.push({
         url: payload.mediaUrl,
         type: 'photo',
-        caption: payload.text,
+        caption: safeCaption,
       });
     }
     if (payload.audioUrl) {
       mediaItems.push({
         url: payload.audioUrl,
         type: payload.audioAsVoice ? 'voice' : 'audio',
-        caption: payload.mediaUrl ? undefined : payload.text,
+        caption: payload.mediaUrl ? undefined : safeCaption,
       });
+    }
+
+    if (
+      mediaItems.length > 0 &&
+      payload.text &&
+      captionLimit !== undefined &&
+      !safeCaption
+    ) {
+      console.log(
+        `[ChannelManager] media caption split for ${adapter.name} (len=${payload.text.length}, limit=${captionLimit})`
+      );
     }
 
     let textConsumedByMedia = false;
@@ -548,5 +565,12 @@ export class ChannelManager {
         await adapter.send(replyTarget, fallbackParts.join('\n'), replyOptions);
       }
     }
+  }
+
+  private resolveCaptionLimit(adapterName: string): number | undefined {
+    if (adapterName === 'telegram' || adapterName === 'signal') {
+      return 900;
+    }
+    return undefined;
   }
 }

@@ -159,6 +159,7 @@ export class AgentOrchestrator {
           { role: 'assistant', content, timestamp: new Date() },
         ],
         toolCalls: result.toolCalls,
+        mediaUrls: result.mediaUrls,
       };
     }
 

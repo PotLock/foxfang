@@ -21,7 +21,7 @@ export function createTypingController(options: TypingControllerOptions): Typing
   const {
     onReplyStart,
     onCleanup,
-    typingIntervalSeconds = 6,
+    typingIntervalSeconds = 3,
     typingTtlMs = 2 * 60_000, // 2 minutes max
     log,
   } = options;
@@ -90,6 +90,7 @@ export function createTypingController(options: TypingControllerOptions): Typing
 
   const triggerTyping = async (): Promise<void> => {
     if (sealed || runComplete) return;
+    refreshTypingTtl();
     await onReplyStart?.();
   };
 
@@ -125,7 +126,11 @@ export function createTypingController(options: TypingControllerOptions): Typing
     // Start keepalive loop
     typingLoopInterval = setInterval(async () => {
       if (!sealed && !runComplete) {
-        await triggerTyping();
+        try {
+          await triggerTyping();
+        } catch {
+          // Ignore intermittent typing indicator errors.
+        }
       }
     }, typingIntervalMs);
   };
