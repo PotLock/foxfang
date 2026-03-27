@@ -9,11 +9,12 @@ import { getProfileConfig, getUserDataDir } from './config';
 import { launchChrome, stopChrome, type LaunchedChrome } from './chrome';
 
 export class ProfileManager {
-  private runtimes: Map<string, BrowserRuntime> = new Map();
+  private runtimes: Map<string, BrowserRuntime>;
   private config: BrowserConfig;
 
-  constructor(config: BrowserConfig) {
+  constructor(config: BrowserConfig, runtimes?: Map<string, BrowserRuntime>) {
     this.config = config;
+    this.runtimes = runtimes || new Map();
   }
 
   getConfig(): BrowserConfig {

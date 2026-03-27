@@ -41,7 +41,7 @@ export function createRouteHandler(state: BrowserServerState) {
 
       // Route: POST /start - Start browser
       if (pathname === '/start' && method === 'POST') {
-        const manager = new ProfileManager(state.config);
+        const manager = new ProfileManager(state.config, state.profiles);
         await manager.startProfile(profileName);
         const status = getStatus(state, profileName);
         sendJson(res, status);
@@ -50,7 +50,7 @@ export function createRouteHandler(state: BrowserServerState) {
 
       // Route: POST /stop - Stop browser
       if (pathname === '/stop' && method === 'POST') {
-        const manager = new ProfileManager(state.config);
+        const manager = new ProfileManager(state.config, state.profiles);
         await manager.stopProfile(profileName);
         const status = getStatus(state, profileName);
         sendJson(res, status);
@@ -59,7 +59,7 @@ export function createRouteHandler(state: BrowserServerState) {
 
       // Route: GET /profiles - List profiles
       if (pathname === '/profiles' && method === 'GET') {
-        const manager = new ProfileManager(state.config);
+        const manager = new ProfileManager(state.config, state.profiles);
         const profiles = manager.listProfiles();
         sendJson(res, { profiles });
         return;
@@ -67,7 +67,7 @@ export function createRouteHandler(state: BrowserServerState) {
 
       // Route: GET /tabs - List tabs
       if (pathname === '/tabs' && method === 'GET') {
-        const manager = new ProfileManager(state.config);
+        const manager = new ProfileManager(state.config, state.profiles);
         const runtime = manager.getRuntime(profileName);
         
         if (!runtime) {
@@ -91,7 +91,7 @@ export function createRouteHandler(state: BrowserServerState) {
         const body = await parseBody(req);
         const targetUrl = body.url || 'about:blank';
 
-        const manager = new ProfileManager(state.config);
+        const manager = new ProfileManager(state.config, state.profiles);
         const runtime = await manager.getOrCreateRuntime(profileName);
 
         // Create new page
@@ -123,7 +123,7 @@ export function createRouteHandler(state: BrowserServerState) {
         const body = await parseBody(req);
         const { targetId } = body;
 
-        const manager = new ProfileManager(state.config);
+        const manager = new ProfileManager(state.config, state.profiles);
         const runtime = manager.getRuntime(profileName);
 
         if (!runtime) {
@@ -146,7 +146,7 @@ export function createRouteHandler(state: BrowserServerState) {
       if (pathname.startsWith('/tabs/') && method === 'DELETE') {
         const targetId = pathname.replace('/tabs/', '');
 
-        const manager = new ProfileManager(state.config);
+        const manager = new ProfileManager(state.config, state.profiles);
         const runtime = manager.getRuntime(profileName);
 
         if (!runtime) {
@@ -169,7 +169,7 @@ export function createRouteHandler(state: BrowserServerState) {
         const body = await parseBody(req);
         const { targetId, format, limit, maxChars, interactive, refs } = body;
 
-        const manager = new ProfileManager(state.config);
+        const manager = new ProfileManager(state.config, state.profiles);
         const runtime = manager.getRuntime(profileName);
 
         if (!runtime) {
@@ -212,7 +212,7 @@ export function createRouteHandler(state: BrowserServerState) {
         const body = await parseBody(req);
         const { targetId, fullPage, ref, element, type = 'png' } = body;
 
-        const manager = new ProfileManager(state.config);
+        const manager = new ProfileManager(state.config, state.profiles);
         const runtime = manager.getRuntime(profileName);
 
         if (!runtime) {
@@ -258,7 +258,7 @@ export function createRouteHandler(state: BrowserServerState) {
         const body = await parseBody(req);
         const { targetId, ...actionRequest } = body;
 
-        const manager = new ProfileManager(state.config);
+        const manager = new ProfileManager(state.config, state.profiles);
         const runtime = manager.getRuntime(profileName);
 
         if (!runtime) {
@@ -299,7 +299,7 @@ export function createRouteHandler(state: BrowserServerState) {
           return;
         }
 
-        const manager = new ProfileManager(state.config);
+        const manager = new ProfileManager(state.config, state.profiles);
         const runtime = manager.getRuntime(profileName);
 
         if (!runtime) {

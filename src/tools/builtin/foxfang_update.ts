@@ -1,150 +1,35 @@
 /**
- * FoxFang Update Tool
- * 
- * Allows agents to trigger FoxFang updates from git and restart the daemon.
- * This tool can be called via messaging channels (Signal, Telegram, Discord, etc.).
+ * FoxFang Update Tools
+ *
+ * foxfang_update_status — read-only git check (behind/ahead).
+ * foxfang_update        — runs git pull main, rebuilds, then gracefully
+ *                         restarts the daemon via sentinel + process-respawn.
  */
 
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import { Tool, ToolCategory, ToolResult } from '../traits';
+import { UPDATE_BRANCH, UPDATE_REMOTE, UPSTREAM_REPO } from '../../infra/update-channels';
 import { runUpdate } from '../../infra/update-runner';
-import { normalizeUpdateChannel } from '../../infra/update-channels';
-import { restartGateway } from '../../daemon/services';
+import { writeRestartSentinel } from '../../infra/restart-sentinel';
+import { scheduleRespawnAndExit } from '../../infra/process-respawn';
 
-export class FoxFangUpdateTool implements Tool {
-  name = 'foxfang_update';
-  description = 'Update FoxFang from git and optionally restart the daemon. Use this to pull latest changes, rebuild, and restart the service.';
-  category = ToolCategory.UTILITY;
-  
-  parameters = {
-    type: 'object' as const,
-    properties: {
-      channel: {
-        type: 'string',
-        description: 'Update channel: dev (main branch), beta (latest beta tag), or stable (latest stable tag)',
-      },
-      no_restart: {
-        type: 'boolean',
-        description: 'Skip restarting the daemon after update. Set to true if you want to restart manually.',
-      },
-      timeout: {
-        type: 'number',
-        description: 'Timeout for each step in seconds (default: 1200)',
-      },
-    },
-    required: [],
-  };
+const execAsync = promisify(exec);
+const TIMEOUT_MS = 30_000;
 
-  async execute(args: {
-    channel?: string;
-    no_restart?: boolean;
-    timeout?: number;
-  }): Promise<ToolResult> {
-    try {
-      const channel = normalizeUpdateChannel(args.channel || 'stable');
-      const timeoutMs = (args.timeout || 1200) * 1000;
-      const noRestart = args.no_restart || false;
-      
-      // Run the update
-      const result = await runUpdate({
-        channel,
-        timeoutMs,
-        noRestart,
-      });
-      
-      // Format the result for the user
-      let output = '';
-      
-      if (result.status === 'ok') {
-        output = `Update successful!\n\n`;
-        output += `Mode: ${result.mode}\n`;
-        output += `Duration: ${(result.durationMs / 1000).toFixed(1)}s\n`;
-        
-        if (result.before && result.after) {
-          if (result.before.version !== result.after.version) {
-            output += `Version: ${result.before.version} -> ${result.after.version}\n`;
-          }
-          if (result.before.sha && result.after.sha && result.before.sha !== result.after.sha) {
-            output += `Commit: ${result.before.sha.slice(0, 8)} -> ${result.after.sha.slice(0, 8)}\n`;
-          }
-        }
-        
-        // Restart daemon if requested
-        if (!noRestart) {
-          try {
-            await restartGateway();
-            output += `\nDaemon restarted successfully`;
-          } catch (error) {
-            output += `\nFailed to restart daemon: ${error instanceof Error ? error.message : String(error)}`;
-            output += `\nRun manually: foxfang daemon restart`;
-          }
-        }
-      } else if (result.status === 'skipped') {
-        output = `Update skipped\n\n`;
-        output += `Reason: ${result.reason}\n`;
-        
-        if (result.reason === 'uncommitted-changes') {
-          output += `\nPlease commit or stash your changes first:\n`;
-          output += `- git commit -am "Save changes"\n`;
-          output += `- or git stash\n`;
-        }
-      } else {
-        output = `Update failed\n\n`;
-        output += `Reason: ${result.reason}\n\n`;
-        
-        const failedSteps = result.steps.filter(s => s.exitCode !== 0);
-        if (failedSteps.length > 0) {
-          output += `Failed steps:\n`;
-          for (const step of failedSteps) {
-            output += `- ${step.name}\n`;
-            if (step.stderrTail) {
-              const lines = step.stderrTail.split('\n').slice(0, 3);
-              output += `  ${lines.join('\n  ')}\n`;
-            }
-          }
-        }
-      }
-      
-      // Add step summary
-      if (result.steps.length > 0) {
-        output += `\nSteps executed:\n`;
-        for (const step of result.steps) {
-          const icon = step.exitCode === 0 ? '[OK]' : '[FAIL]';
-          output += `${icon} ${step.name} (${(step.durationMs / 1000).toFixed(1)}s)\n`;
-        }
-      }
-      
-      return {
-        success: result.status === 'ok',
-        output,
-        data: {
-          status: result.status,
-          mode: result.mode,
-          reason: result.reason,
-          before: result.before,
-          after: result.after,
-          durationMs: result.durationMs,
-          steps: result.steps.map(s => ({
-            name: s.name,
-            exitCode: s.exitCode,
-            durationMs: s.durationMs,
-          })),
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        output: `Update error: ${error instanceof Error ? error.message : String(error)}`,
-      };
-    }
-  }
+async function git(cmd: string, cwd: string): Promise<string> {
+  const { stdout } = await execAsync(cmd, { cwd, timeout: TIMEOUT_MS });
+  return stdout.trim();
 }
 
 export class FoxFangUpdateStatusTool implements Tool {
   name = 'foxfang_update_status';
-  description = 'Check the current update status of FoxFang, including git status and daemon status.';
+  description =
+    'Check whether FoxFang has updates available on the main branch. ' +
+    'Returns current commit SHA, remote commit SHA, and how many commits are behind. ' +
+    'Use this to inform the user before suggesting they run /update.';
   category = ToolCategory.UTILITY;
-  
+
   parameters = {
     type: 'object' as const,
     properties: {},
@@ -152,76 +37,136 @@ export class FoxFangUpdateStatusTool implements Tool {
   };
 
   async execute(): Promise<ToolResult> {
+    const cwd = process.cwd();
+
     try {
-      const { exec } = await import('child_process');
-      const { promisify } = await import('util');
-      const execAsync = promisify(exec);
-      
-      let output = 'FoxFang Update Status\n\n';
-      
-      // Check git status
-      try {
-        const { stdout: branch } = await execAsync('git rev-parse --abbrev-ref HEAD');
-        const { stdout: sha } = await execAsync('git rev-parse HEAD');
-        const { stdout: remote } = await execAsync('git rev-parse --abbrev-ref --symbolic-full-name @{u}').catch(() => ({ stdout: 'none' }));
-        const { stdout: behind } = await execAsync('git rev-list --count HEAD..@{u}').catch(() => ({ stdout: '0' }));
-        const { stdout: ahead } = await execAsync('git rev-list --count @{u}..HEAD').catch(() => ({ stdout: '0' }));
-        
-        output += 'Git Status:\n';
-        output += `- Branch: ${branch.trim()}\n`;
-        output += `- Commit: ${sha.trim().slice(0, 8)}\n`;
-        output += `- Remote: ${remote.trim()}\n`;
-        
-        const behindCount = parseInt(behind.trim(), 10);
-        const aheadCount = parseInt(ahead.trim(), 10);
-        
-        if (behindCount > 0) {
-          output += `- Behind: ${behindCount} commits\n`;
-        }
-        if (aheadCount > 0) {
-          output += `- Ahead: ${aheadCount} commits\n`;
-        }
-        
-        if (behindCount === 0 && aheadCount === 0) {
-          output += `- Status: Up to date\n`;
-        } else if (behindCount > 0) {
-          output += `- Status: Updates available\n`;
-        } else {
-          output += `- Status: Unpushed changes\n`;
-        }
-      } catch {
-        output += 'Git Status:\n';
-        output += `- Not a git repository\n`;
+      // Fetch silently so we have up-to-date remote refs
+      await execAsync(`git fetch ${UPDATE_REMOTE} ${UPDATE_BRANCH}`, {
+        cwd,
+        timeout: TIMEOUT_MS,
+      }).catch(() => null); // non-fatal — we still report local state
+
+      const [localSha, remoteSha, branch, behindRaw, aheadRaw] = await Promise.all([
+        git('git rev-parse HEAD', cwd).catch(() => null),
+        git(`git rev-parse ${UPDATE_REMOTE}/${UPDATE_BRANCH}`, cwd).catch(() => null),
+        git('git rev-parse --abbrev-ref HEAD', cwd).catch(() => null),
+        git(`git rev-list --count HEAD..${UPDATE_REMOTE}/${UPDATE_BRANCH}`, cwd).catch(() => '0'),
+        git(`git rev-list --count ${UPDATE_REMOTE}/${UPDATE_BRANCH}..HEAD`, cwd).catch(() => '0'),
+      ]);
+
+      const behind = parseInt(behindRaw ?? '0', 10);
+      const ahead = parseInt(aheadRaw ?? '0', 10);
+      const upToDate = behind === 0;
+
+      let status: string;
+      if (upToDate && ahead === 0) {
+        status = 'up-to-date';
+      } else if (behind > 0) {
+        status = `${behind} commit${behind === 1 ? '' : 's'} behind — update available`;
+      } else {
+        status = `${ahead} local commit${ahead === 1 ? '' : 's'} ahead of remote`;
       }
-      
-      // Check daemon status
-      output += '\nDaemon Status:\n';
-      try {
-        const { getGatewayStatus } = await import('../../daemon/services');
-        const { running, platform } = await getGatewayStatus();
-        if (running) {
-          output += `- Status: Running\n`;
-        } else {
-          output += `- Status: Stopped\n`;
-        }
-        output += `- Platform: ${platform}\n`;
-      } catch {
-        output += `- Status: Not installed\n`;
-      }
-      
+
+      const output = [
+        `Repository: ${UPSTREAM_REPO}`,
+        `Branch: ${branch ?? 'unknown'} → ${UPDATE_REMOTE}/${UPDATE_BRANCH}`,
+        `Local:  ${localSha ? localSha.slice(0, 8) : 'unknown'}`,
+        `Remote: ${remoteSha ? remoteSha.slice(0, 8) : 'unknown'}`,
+        `Status: ${status}`,
+        '',
+        upToDate
+          ? 'FoxFang is up to date.'
+          : `FoxFang has ${behind} update${behind === 1 ? '' : 's'} available. Ask the user if they want to update with /update.`,
+      ].join('\n');
+
       return {
         success: true,
         output,
         data: {
-          timestamp: new Date().toISOString(),
+          localSha,
+          remoteSha,
+          branch,
+          behind,
+          ahead,
+          upToDate,
         },
       };
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
-        output: `Status check error: ${error instanceof Error ? error.message : String(error)}`,
+        output: 'Could not check update status — not a git repository or no network.',
       };
     }
+  }
+}
+
+export class FoxFangUpdateTool implements Tool {
+  name = 'foxfang_update';
+  description =
+    'Update FoxFang to the latest version from the main branch. ' +
+    'Runs git pull, rebuilds, then restarts the daemon. ' +
+    'IMPORTANT: pass channel and chat_id from the current conversation so the user ' +
+    'receives a confirmation message after the daemon restarts. ' +
+    'Call foxfang_update_status first if you are unsure whether an update is needed.';
+  category = ToolCategory.UTILITY;
+
+  parameters = {
+    type: 'object' as const,
+    properties: {
+      channel: {
+        type: 'string',
+        description: 'The channel the user is messaging on (e.g. telegram, discord, slack, signal). Pass the current channel.',
+      },
+      chat_id: {
+        type: 'string',
+        description: 'The chat or user ID to notify after restart. Pass the current chat id.',
+      },
+      thread_id: {
+        type: 'string',
+        description: 'Optional thread or topic ID for threaded channels.',
+      },
+    },
+    required: ['channel', 'chat_id'],
+  };
+
+  async execute(args: {
+    channel: string;
+    chat_id: string;
+    thread_id?: string;
+  }): Promise<ToolResult> {
+    const result = await runUpdate();
+
+    if (result.status === 'skipped') {
+      return {
+        success: false,
+        output: `Update skipped: ${result.reason}. ${result.reason === 'uncommitted-changes' ? 'There are uncommitted local changes.' : ''}`,
+        data: result,
+      };
+    }
+
+    if (result.status !== 'ok') {
+      const failedStep = result.steps.find(s => s.exitCode !== 0);
+      const detail = failedStep?.stderrTail
+        ? `\n${failedStep.stderrTail.split('\n').slice(0, 3).join('\n')}`
+        : '';
+      return {
+        success: false,
+        output: `Update failed at step "${result.reason}".${detail}`,
+        data: result,
+      };
+    }
+
+    // Write sentinel so the restarted daemon notifies the user
+    await writeRestartSentinel({
+      channel: args.channel,
+      chatId: args.chat_id,
+      threadId: args.thread_id,
+      message: '✅ FoxFang updated successfully. I\'m back online!',
+      triggeredAt: Date.now(),
+    });
+
+    // Spawn detached restart script and exit — this never returns
+    return await scheduleRespawnAndExit();
   }
 }

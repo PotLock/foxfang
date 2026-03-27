@@ -42,12 +42,11 @@ export function clearBrowserServerState(): void {
 
 export function getProfileManager(config?: BrowserConfig): ProfileManager {
   const state = getOrCreateState(config);
-  // ProfileManager is created on demand in route handlers
-  return new ProfileManager(state.config);
+  return new ProfileManager(state.config, state.profiles);
 }
 
 export function getStatus(state: BrowserServerState, profileName?: string): BrowserStatus {
-  const manager = new ProfileManager(state.config);
+  const manager = new ProfileManager(state.config, state.profiles);
   const runtime = manager.getRuntime(profileName);
   const isRunning = runtime?.process && runtime.process.exitCode === null;
 

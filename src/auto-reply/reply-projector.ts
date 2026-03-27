@@ -27,8 +27,11 @@ interface ReplyProjectorOptions {
 }
 
 const MAX_PARTIAL_REPLIES = 2;
-const MIN_PARTIAL_REPLY_CHARS = 140;
+const MIN_PARTIAL_REPLY_CHARS = 80;
 const MAX_PARTIAL_REPLY_CHARS = 520;
+const MAX_TOOL_STATUS_REPLIES = 4;
+const TOOL_STATUS_COOLDOWN_MS = 1_200;
+const MAX_TOOL_DETAIL_CHARS = 140;
 
 function normalizeComparableText(value: string): string {
   return String(value || '')
@@ -84,16 +87,84 @@ function selectProjectableVisibleText(raw: string, currentMessageId: string): st
   return truncateAtNaturalBoundary(candidate, MAX_PARTIAL_REPLY_CHARS);
 }
 
+function compactInlineText(value: string, maxChars: number): string {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (text.length <= maxChars) return text;
+  return `${text.slice(0, Math.max(0, maxChars - 3)).trim()}...`;
+}
+
+function toToolLabel(tool?: string): string {
+  const normalized = String(tool || '').trim();
+  if (!normalized) return 'tool';
+  return normalized;
+}
+
+function extractToolHint(args: unknown): string | undefined {
+  if (!args || typeof args !== 'object') return undefined;
+  const source = args as Record<string, unknown>;
+  const preferredKeys = ['url', 'path', 'query', 'q', 'action', 'location', 'ticker'];
+  for (const key of preferredKeys) {
+    const raw = source[key];
+    if (typeof raw !== 'string') continue;
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
+    return compactInlineText(trimmed, 48);
+  }
+  return undefined;
+}
+
+function extractToolResultSummary(result: unknown): string | undefined {
+  const isLowValueSummary = (value: string): boolean => {
+    const normalized = value.trim().toLowerCase();
+    return ['ok', 'success', 'completed', 'done', 'true'].includes(normalized);
+  };
+
+  if (!result) return undefined;
+  if (typeof result === 'string') {
+    const trimmed = result.trim();
+    if (!trimmed || isLowValueSummary(trimmed)) return undefined;
+    return compactInlineText(trimmed, MAX_TOOL_DETAIL_CHARS);
+  }
+  if (typeof result !== 'object') {
+    return undefined;
+  }
+
+  const source = result as Record<string, unknown>;
+  const preferredKeys = ['summary', 'message', 'title', 'status'];
+  for (const key of preferredKeys) {
+    const raw = source[key];
+    if (typeof raw !== 'string') continue;
+    const trimmed = raw.trim();
+    if (!trimmed || isLowValueSummary(trimmed)) continue;
+    return compactInlineText(trimmed, MAX_TOOL_DETAIL_CHARS);
+  }
+
+  if (source.data && typeof source.data === 'object') {
+    const nested = extractToolResultSummary(source.data);
+    if (nested) return nested;
+  }
+  if (typeof source.data === 'string') {
+    const trimmed = source.data.trim();
+    if (trimmed && !isLowValueSummary(trimmed)) {
+      return compactInlineText(trimmed, MAX_TOOL_DETAIL_CHARS);
+    }
+  }
+  return undefined;
+}
+
 export function createReplyProjector(options: ReplyProjectorOptions): ReplyProjector {
   let finalized = false;
   let quoteConsumed = false;
   let lastProjectedVisibleText = '';
   let partialRepliesSent = 0;
+  let toolStatusRepliesSent = 0;
+  let lastToolStatusAt = 0;
   let finalContent = '';
   let finalToolCalls: ToolCall[] | undefined;
   const seenProjectionSignatures = new Set<string>();
   const allMediaUrls: string[] = [];
   const sentMediaUrls = new Set<string>();
+  const seenToolStatusSignatures = new Set<string>();
 
   const rememberMediaUrls = (urls?: string[]): void => {
     for (const mediaUrl of urls || []) {
@@ -170,6 +241,51 @@ export function createReplyProjector(options: ReplyProjectorOptions): ReplyProje
     return sent;
   };
 
+  const enqueueToolStatus = (text: string, force = false): boolean => {
+    const visible = sanitizeVisibleText(text, options.currentMessageId);
+    if (!visible) return false;
+    if (!force && toolStatusRepliesSent >= MAX_TOOL_STATUS_REPLIES) return false;
+
+    const signature = normalizeComparableText(visible);
+    if (!signature || seenToolStatusSignatures.has(signature)) return false;
+
+    const now = Date.now();
+    if (!force && now - lastToolStatusAt < TOOL_STATUS_COOLDOWN_MS) {
+      return false;
+    }
+
+    const sent = options.dispatcher.sendToolResult(buildPayload({
+      text: visible,
+      allowDefaultReplyQuote: true,
+    }));
+    if (!sent) return false;
+
+    seenToolStatusSignatures.add(signature);
+    toolStatusRepliesSent += 1;
+    lastToolStatusAt = now;
+    return true;
+  };
+
+  const formatToolCallStatus = (chunk: StreamChunk): string => {
+    const label = toToolLabel(chunk.tool);
+    const hint = extractToolHint(chunk.args);
+    if (hint) {
+      return `🔧 Running ${label}: ${hint}`;
+    }
+    return `🔧 Running ${label}...`;
+  };
+
+  const formatToolResultStatus = (chunk: StreamChunk): string | undefined => {
+    const label = toToolLabel(chunk.tool);
+    if (chunk.error) {
+      const detail = compactInlineText(String(chunk.error || ''), MAX_TOOL_DETAIL_CHARS);
+      return detail ? `⚠️ ${label} failed: ${detail}` : `⚠️ ${label} failed.`;
+    }
+    const summary = extractToolResultSummary(chunk.result);
+    if (!summary) return undefined;
+    return `✅ ${label}: ${summary}`;
+  };
+
   const consume = async (chunk: StreamChunk): Promise<void> => {
     if (finalized) return;
 
@@ -179,11 +295,16 @@ export function createReplyProjector(options: ReplyProjectorOptions): ReplyProje
     }
 
     if (chunk.type === 'tool_call') {
+      enqueueToolStatus(formatToolCallStatus(chunk));
       return;
     }
 
     if (chunk.type === 'tool_result') {
       rememberMediaUrls(chunk.mediaUrls);
+      const resultStatus = formatToolResultStatus(chunk);
+      if (resultStatus) {
+        enqueueToolStatus(resultStatus, Boolean(chunk.error));
+      }
       return;
     }
 

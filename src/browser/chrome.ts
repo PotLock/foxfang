@@ -5,7 +5,8 @@
  */
 
 import { spawn, type ChildProcess } from 'child_process';
-import { mkdirSync } from 'fs';
+import { mkdirSync, existsSync } from 'fs';
+import path from 'path';
 import type { BrowserRuntime } from './types';
 
 export interface LaunchChromeOptions {
@@ -27,7 +28,7 @@ const DEFAULT_CDP_PORT = 9222;
 
 export async function launchChrome(options: LaunchChromeOptions): Promise<LaunchedChrome> {
   const {
-    executablePath = 'chromium',
+    executablePath,
     userDataDir,
     headless = true,
     port = DEFAULT_CDP_PORT,
@@ -60,17 +61,41 @@ export async function launchChrome(options: LaunchChromeOptions): Promise<Launch
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 
+  // Handle spawn failures (e.g., ENOENT) to avoid crashing on unhandled error events.
+  let spawnError: Error | null = null;
+  const onSpawnError = (error: Error) => {
+    spawnError = error;
+  };
+  const getSpawnError = () => spawnError;
+  chromeProcess.on('error', onSpawnError);
+
+  // Give spawn a brief moment to surface immediate launch errors.
+  await new Promise((resolve) => setTimeout(resolve, 100));
+
+  const earlySpawnError = getSpawnError();
+  if (earlySpawnError) {
+    throw new Error(`Failed to launch browser "${chromeExecutable}": ${earlySpawnError.message}`);
+  }
+
   if (!chromeProcess.pid) {
-    throw new Error('Failed to launch Chrome: no PID');
+    throw new Error(`Failed to launch browser "${chromeExecutable}": no PID`);
   }
 
   // Wait a bit for Chrome to start
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  await new Promise((resolve) => setTimeout(resolve, 1900));
+
+  const startupSpawnError = getSpawnError();
+  if (startupSpawnError) {
+    throw new Error(`Failed to launch browser "${chromeExecutable}": ${startupSpawnError.message}`);
+  }
 
   // Check if process is still running
   if (chromeProcess.exitCode !== null) {
     throw new Error(`Chrome exited immediately with code ${chromeProcess.exitCode}`);
   }
+
+  // Clean up bootstrap error listener after successful start.
+  chromeProcess.off('error', onSpawnError);
 
   return {
     process: chromeProcess,
@@ -101,7 +126,10 @@ export async function stopChrome(launched: LaunchedChrome | BrowserRuntime): Pro
 
 async function findChromeExecutable(preferred?: string): Promise<string> {
   if (preferred) {
-    return preferred;
+    if (await isExecutableAvailable(preferred)) {
+      return preferred;
+    }
+    throw new Error(`Configured browser executable not found: ${preferred}`);
   }
 
   // Platform-specific defaults
@@ -111,6 +139,7 @@ async function findChromeExecutable(preferred?: string): Promise<string> {
   if (platform === 'darwin') {
     candidates.push(
       '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
       '/Applications/Chromium.app/Contents/MacOS/Chromium',
       '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
       '/usr/bin/chromium',
@@ -123,34 +152,75 @@ async function findChromeExecutable(preferred?: string): Promise<string> {
       '/usr/bin/chromium-browser',
       '/usr/bin/google-chrome',
       '/usr/bin/google-chrome-stable',
+      '/usr/bin/brave-browser',
+      '/usr/bin/brave-browser-stable',
       '/usr/bin/microsoft-edge',
+      '/usr/bin/microsoft-edge-stable',
       '/snap/bin/chromium',
+      '/snap/bin/brave',
     );
   } else if (platform === 'win32') {
     candidates.push(
       'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
       'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe',
+      'C:\\Program Files (x86)\\BraveSoftware\\Brave-Browser\\Application\\brave.exe',
       'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
     );
   }
 
   // Add generic names to try
-  candidates.push('chromium', 'chromium-browser', 'google-chrome', 'chrome', 'msedge');
+  candidates.push(
+    'google-chrome',
+    'google-chrome-stable',
+    'brave-browser',
+    'microsoft-edge',
+    'chromium',
+    'chromium-browser',
+    'chrome',
+    'msedge'
+  );
 
-  // Try to find the first available executable
-  const { execSync } = await import('child_process');
-  
   for (const candidate of candidates) {
-    try {
-      execSync(`which "${candidate}"`, { stdio: 'ignore' });
+    if (await isExecutableAvailable(candidate)) {
       return candidate;
-    } catch {
-      continue;
     }
   }
 
-  // Fallback to 'chromium' and hope it's in PATH
-  return 'chromium';
+  // Fall back to Playwright-managed Chromium if available.
+  try {
+    const { chromium } = await import('playwright');
+    const playwrightChromium = chromium.executablePath();
+    if (playwrightChromium && existsSync(playwrightChromium)) {
+      return playwrightChromium;
+    }
+  } catch {
+    // Ignore; will throw the explicit error below.
+  }
+
+  throw new Error(
+    'No supported browser executable found. Install Chrome/Chromium/Brave/Edge or set browser.executablePath in config.'
+  );
+}
+
+async function isExecutableAvailable(candidate: string): Promise<boolean> {
+  if (!candidate.trim()) {
+    return false;
+  }
+
+  // Treat absolute/relative paths as file paths, otherwise as command names.
+  if (path.isAbsolute(candidate) || candidate.includes('/') || candidate.includes('\\')) {
+    return existsSync(candidate);
+  }
+
+  const { execSync } = await import('child_process');
+  const lookupCmd = process.platform === 'win32' ? 'where' : 'which';
+  try {
+    execSync(`${lookupCmd} "${candidate}"`, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function isChromeRunning(runtime: BrowserRuntime): boolean {
