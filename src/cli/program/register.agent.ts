@@ -219,7 +219,7 @@ ${theme.muted("Docs:")} ${formatDocsLink("/cli/agent", "docs.foxfang.ai/cli/agen
         `
 ${theme.heading("Examples:")}
 ${formatHelpExamples([
-  ['foxfang agents set-identity --agent main --name "FoxFang" --emoji "🦞"', "Set name + emoji."],
+  ['foxfang agents set-identity --agent main --name "FoxFang" --emoji "🦊"', "Set name + emoji."],
   ["foxfang agents set-identity --agent main --avatar avatars/foxfang.png", "Set avatar path."],
   [
     "foxfang agents set-identity --workspace ~/.foxfang/workspace --from-identity",

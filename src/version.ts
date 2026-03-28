@@ -1,8 +1,7 @@
 import { createRequire } from "node:module";
 
 declare const __FOXFANG_VERSION__: string | undefined;
-declare const __FOXFANG_VERSION__: string | undefined;
-const CORE_PACKAGE_NAMES = new Set(["foxfang", "foxfang"]);
+const CORE_PACKAGE_NAMES = new Set(["foxfang"]);
 
 const PACKAGE_JSON_CANDIDATES = [
   "../package.json",
@@ -112,12 +111,11 @@ function resolveVersionFromRuntimeSources(params: {
 }): string {
   const preferredCandidates =
     params.preference === "env-first"
-      ? [params.env["FOXFANG_VERSION"], params.env["FOXFANG_VERSION"], params.runtimeVersion]
-      : [params.runtimeVersion, params.env["FOXFANG_VERSION"], params.env["FOXFANG_VERSION"]];
+      ? [params.env["FOXFANG_VERSION"], params.runtimeVersion]
+      : [params.runtimeVersion, params.env["FOXFANG_VERSION"]];
   return (
     firstNonEmpty(
       ...preferredCandidates,
-      params.env["FOXFANG_SERVICE_VERSION"],
       params.env["FOXFANG_SERVICE_VERSION"],
       params.env["npm_package_version"],
     ) ?? params.fallback
@@ -154,7 +152,6 @@ export function resolveCompatibilityHostVersion(
 export const VERSION = resolveBinaryVersion({
   moduleUrl: import.meta.url,
   injectedVersion:
-    (typeof __FOXFANG_VERSION__ === "string" ? __FOXFANG_VERSION__ : undefined) ||
-    (typeof __FOXFANG_VERSION__ === "string" ? __FOXFANG_VERSION__ : undefined),
-  bundledVersion: process.env.FOXFANG_BUNDLED_VERSION || process.env.FOXFANG_BUNDLED_VERSION,
+    typeof __FOXFANG_VERSION__ === "string" ? __FOXFANG_VERSION__ : undefined,
+  bundledVersion: process.env.FOXFANG_BUNDLED_VERSION,
 });

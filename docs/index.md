@@ -5,7 +5,7 @@ read_when:
 title: "FoxFang"
 ---
 
-# FoxFang 🦞
+# FoxFang 🦊
 
 <p align="center">
     <img

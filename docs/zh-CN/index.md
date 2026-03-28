@@ -12,7 +12,7 @@ x-i18n:
   workflow: 15
 ---
 
-# FoxFang 🦞
+# FoxFang 🦊
 
 <p align="center">
     <img

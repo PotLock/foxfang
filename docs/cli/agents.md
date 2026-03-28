@@ -99,7 +99,7 @@ foxfang agents set-identity --workspace ~/.foxfang/workspace --from-identity
 Override fields explicitly:
 
 ```bash
-foxfang agents set-identity --agent main --name "FoxFang" --emoji "🦞" --avatar avatars/foxfang.png
+foxfang agents set-identity --agent main --name "FoxFang" --emoji "🦊" --avatar avatars/foxfang.png
 ```
 
 Config sample:
@@ -113,7 +113,7 @@ Config sample:
         identity: {
           name: "FoxFang",
           theme: "space lobster",
-          emoji: "🦞",
+          emoji: "🦊",
           avatar: "avatars/foxfang.png",
         },
       },

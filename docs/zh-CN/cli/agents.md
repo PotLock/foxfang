@@ -58,7 +58,7 @@ foxfang agents set-identity --workspace ~/.foxfang/workspace --from-identity
 显式覆盖字段：
 
 ```bash
-foxfang agents set-identity --agent main --name "FoxFang" --emoji "🦞" --avatar avatars/foxfang.png
+foxfang agents set-identity --agent main --name "FoxFang" --emoji "🦊" --avatar avatars/foxfang.png
 ```
 
 配置示例：
@@ -72,7 +72,7 @@ foxfang agents set-identity --agent main --name "FoxFang" --emoji "🦞" --avata
         identity: {
           name: "FoxFang",
           theme: "space lobster",
-          emoji: "🦞",
+          emoji: "🦊",
           avatar: "avatars/foxfang.png",
         },
       },

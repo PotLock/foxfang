@@ -1,4 +1,4 @@
-import SHARED_TOOL_DISPLAY_JSON from "../../apps/shared/FoxFangKit/Sources/FoxFangKit/Resources/tool-display.json" with { type: "json" };
+const SHARED_TOOL_DISPLAY_JSON: { version?: number; fallback?: unknown; tools?: Record<string, unknown> } = {};
 import { redactToolDetail } from "../logging/redact.js";
 import { shortenHomeInString } from "../utils.js";
 import {
