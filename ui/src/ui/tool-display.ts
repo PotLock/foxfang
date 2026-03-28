@@ -1,4 +1,4 @@
-import SHARED_TOOL_DISPLAY_JSON from "../../../apps/shared/FoxFangKit/Sources/FoxFangKit/Resources/tool-display.json" with { type: "json" };
+// iOS app asset removed; no shared tool-display config.
 import {
   defaultTitle,
   formatToolDetailText,
@@ -83,7 +83,8 @@ function convertSpec(spec?: SharedToolDisplaySpec): ToolDisplaySpec {
   };
 }
 
-const SHARED_TOOL_DISPLAY_CONFIG = SHARED_TOOL_DISPLAY_JSON as SharedToolDisplayConfig;
+const SHARED_TOOL_DISPLAY_JSON: SharedToolDisplayConfig = {};
+const SHARED_TOOL_DISPLAY_CONFIG = SHARED_TOOL_DISPLAY_JSON;
 const FALLBACK = convertSpec(SHARED_TOOL_DISPLAY_CONFIG.fallback ?? { emoji: "🧩" });
 const TOOL_MAP: Record<string, ToolDisplaySpec> = Object.fromEntries(
   Object.entries(SHARED_TOOL_DISPLAY_CONFIG.tools ?? {}).map(([key, spec]) => [

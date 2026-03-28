@@ -32,6 +32,38 @@ metadata:
 
 Use the `gh` CLI to interact with GitHub repositories, issues, PRs, and CI.
 
+## Auth Priority (check this first)
+
+**Before any GitHub operation, always resolve which auth method to use:**
+
+```bash
+node scripts/github-auth-status.mjs
+```
+
+This outputs JSON with `activeMethod` — use it as follows:
+
+| `activeMethod` | What to do |
+|---|---|
+| `"github-app"` | Run `export GH_TOKEN=$(node scripts/github-app-token.mjs)` then use `gh` normally |
+| `"env-token"` | `GH_TOKEN`/`GITHUB_TOKEN` already set — use `gh` normally |
+| `"gh-cli"` | Already logged in via `gh auth login` — use `gh` normally |
+| `null` | Not connected — tell user to set up auth (see Setup below) |
+
+**GitHub App is preferred** over `gh` CLI when both are configured. Always use GitHub App if `methods.githubApp.configured` is `true`.
+
+### Quick check for agent
+
+```bash
+# Am I connected to GitHub?
+node scripts/github-auth-status.mjs
+
+# If githubApp.configured = true → activate it:
+export GH_TOKEN=$(node scripts/github-app-token.mjs)
+
+# Verify the token works:
+gh api user --jq '.login'
+```
+
 ## When to Use
 
 ✅ **USE this skill when:**
@@ -55,6 +87,8 @@ Use the `gh` CLI to interact with GitHub repositories, issues, PRs, and CI.
 
 ## Setup
 
+### Option A — Personal account (gh CLI device flow)
+
 ```bash
 # Authenticate (one-time)
 gh auth login
@@ -62,6 +96,35 @@ gh auth login
 # Verify
 gh auth status
 ```
+
+### Option B — GitHub App (App ID + Installation ID + Private Key)
+
+Store credentials in files — nothing passes through chat:
+
+```bash
+mkdir -p ~/.config/github-app
+echo "YOUR_APP_ID"           > ~/.config/github-app/app_id
+echo "YOUR_INSTALLATION_ID"  > ~/.config/github-app/installation_id
+cp /path/to/private-key.pem    ~/.config/github-app/private_key.pem
+chmod 600 ~/.config/github-app/private_key.pem
+```
+
+Then generate a token and use it with `gh`:
+
+```bash
+# One-off command
+GH_TOKEN=$(node scripts/github-app-token.mjs) gh pr list --repo owner/repo
+
+# Export for the whole session
+export GH_TOKEN=$(node scripts/github-app-token.mjs)
+gh issue list --repo owner/repo
+```
+
+The token expires in ~10 minutes. Re-run `scripts/github-app-token.mjs` when it expires.
+
+**Where to find your credentials:**
+- `app_id` + `private_key.pem`: GitHub → Settings → Developer settings → GitHub Apps → your app
+- `installation_id`: GitHub → your org/repo → Settings → Integrations → GitHub Apps → Configure → the numeric ID in the URL (`/installations/XXXXXXX`)
 
 ## Common Commands
 
