@@ -1,2 +1,2 @@
-export { definePluginEntry } from "openclaw/plugin-sdk/plugin-entry";
-export type { OpenClawPluginApi } from "openclaw/plugin-sdk/core";
+export { definePluginEntry } from "foxfang/plugin-sdk/plugin-entry";
+export type { FoxFangPluginApi } from "foxfang/plugin-sdk/core";

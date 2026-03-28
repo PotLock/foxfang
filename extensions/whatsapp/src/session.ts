@@ -7,11 +7,11 @@ import {
   makeWASocket,
   useMultiFileAuthState,
 } from "@whiskeysockets/baileys";
-import { formatCliCommand } from "openclaw/plugin-sdk/cli-runtime";
-import { VERSION } from "openclaw/plugin-sdk/cli-runtime";
-import { danger, success } from "openclaw/plugin-sdk/runtime-env";
-import { getChildLogger, toPinoLikeLogger } from "openclaw/plugin-sdk/runtime-env";
-import { ensureDir, resolveUserPath } from "openclaw/plugin-sdk/text-runtime";
+import { formatCliCommand } from "foxfang/plugin-sdk/cli-runtime";
+import { VERSION } from "foxfang/plugin-sdk/cli-runtime";
+import { danger, success } from "foxfang/plugin-sdk/runtime-env";
+import { getChildLogger, toPinoLikeLogger } from "foxfang/plugin-sdk/runtime-env";
+import { ensureDir, resolveUserPath } from "foxfang/plugin-sdk/text-runtime";
 import qrcode from "qrcode-terminal";
 import {
   maybeRestoreCredsFromBackup,
@@ -124,7 +124,7 @@ export async function createWaSocket(
     version,
     logger,
     printQRInTerminal: false,
-    browser: ["openclaw", "cli", VERSION],
+    browser: ["foxfang", "cli", VERSION],
     syncFullHistory: false,
     markOnlineOnConnect: false,
   });
@@ -147,7 +147,7 @@ export async function createWaSocket(
           if (status === LOGGED_OUT_STATUS) {
             console.error(
               danger(
-                `WhatsApp session logged out. Run: ${formatCliCommand("openclaw channels login")}`,
+                `WhatsApp session logged out. Run: ${formatCliCommand("foxfang channels login")}`,
               ),
             );
           }

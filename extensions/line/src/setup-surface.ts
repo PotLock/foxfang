@@ -2,7 +2,7 @@ import {
   createAllowFromSection,
   createStandardChannelSetupStatus,
   createTopLevelChannelDmPolicy,
-} from "openclaw/plugin-sdk/setup";
+} from "foxfang/plugin-sdk/setup";
 import {
   isLineConfigured,
   listLineAccountIds,

@@ -2,12 +2,12 @@
 // Keep this list additive and scoped to symbols used under extensions/diffs.
 
 export { definePluginEntry } from "./plugin-entry.js";
-export type { OpenClawConfig } from "../config/config.js";
-export { resolvePreferredOpenClawTmpDir } from "../infra/tmp-openclaw-dir.js";
+export type { FoxFangConfig } from "../config/config.js";
+export { resolvePreferredFoxFangTmpDir } from "../infra/tmp-foxfang-dir.js";
 export type {
   AnyAgentTool,
-  OpenClawPluginApi,
-  OpenClawPluginConfigSchema,
-  OpenClawPluginToolContext,
+  FoxFangPluginApi,
+  FoxFangPluginConfigSchema,
+  FoxFangPluginToolContext,
   PluginLogger,
 } from "../plugins/types.js";

@@ -1,14 +1,14 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import { resolveUserPath } from "../utils.js";
 import { resolveCompatibilityHostVersion } from "../version.js";
 import { loadBundleManifest } from "./bundle-manifest.js";
 import { normalizePluginsConfig, type NormalizedPluginsConfig } from "./config-state.js";
-import { discoverOpenClawPlugins, type PluginCandidate } from "./discovery.js";
+import { discoverFoxFangPlugins, type PluginCandidate } from "./discovery.js";
 import {
   loadPluginManifest,
-  type OpenClawPackageManifest,
+  type FoxFangPackageManifest,
   type PluginManifest,
   type PluginManifestChannelConfig,
   type PluginManifestContracts,
@@ -93,7 +93,7 @@ export function clearPluginManifestRegistryCache(): void {
 }
 
 function resolveManifestCacheMs(env: NodeJS.ProcessEnv): number {
-  const raw = env.OPENCLAW_PLUGIN_MANIFEST_CACHE_MS?.trim();
+  const raw = env.FOXFANG_PLUGIN_MANIFEST_CACHE_MS?.trim();
   if (raw === "" || raw === "0") {
     return 0;
   }
@@ -108,7 +108,7 @@ function resolveManifestCacheMs(env: NodeJS.ProcessEnv): number {
 }
 
 function shouldUseManifestCache(env: NodeJS.ProcessEnv): boolean {
-  const disabled = env.OPENCLAW_DISABLE_PLUGIN_MANIFEST_CACHE?.trim();
+  const disabled = env.FOXFANG_DISABLE_PLUGIN_MANIFEST_CACHE?.trim();
   if (disabled) {
     return false;
   }
@@ -159,7 +159,7 @@ function normalizePreferredPluginIds(raw: unknown): string[] | undefined {
 
 function mergePackageChannelMetaIntoChannelConfigs(params: {
   channelConfigs?: Record<string, PluginManifestChannelConfig>;
-  packageChannel?: OpenClawPackageManifest["channel"];
+  packageChannel?: FoxFangPackageManifest["channel"];
 }): Record<string, PluginManifestChannelConfig> | undefined {
   const channelId = params.packageChannel?.id?.trim();
   if (!channelId || !params.channelConfigs?.[channelId]) {
@@ -222,7 +222,7 @@ function buildRecord(params: {
     version: normalizeManifestLabel(params.manifest.version) ?? params.candidate.packageVersion,
     enabledByDefault: params.manifest.enabledByDefault === true ? true : undefined,
     autoEnableWhenConfiguredProviders: params.manifest.autoEnableWhenConfiguredProviders,
-    format: params.candidate.format ?? "openclaw",
+    format: params.candidate.format ?? "foxfang",
     bundleFormat: params.candidate.bundleFormat,
     kind: params.manifest.kind,
     channels: params.manifest.channels ?? [],
@@ -309,7 +309,7 @@ function buildBundleRecord(params: {
 function matchesInstalledPluginRecord(params: {
   pluginId: string;
   candidate: PluginCandidate;
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   env: NodeJS.ProcessEnv;
 }): boolean {
   if (params.candidate.origin !== "global") {
@@ -334,7 +334,7 @@ function matchesInstalledPluginRecord(params: {
 function resolveDuplicatePrecedenceRank(params: {
   pluginId: string;
   candidate: PluginCandidate;
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   env: NodeJS.ProcessEnv;
 }): number {
   if (params.candidate.origin === "config") {
@@ -363,7 +363,7 @@ function resolveDuplicatePrecedenceRank(params: {
 
 export function loadPluginManifestRegistry(
   params: {
-    config?: OpenClawConfig;
+    config?: FoxFangConfig;
     workspaceDir?: string;
     cache?: boolean;
     env?: NodeJS.ProcessEnv;
@@ -388,7 +388,7 @@ export function loadPluginManifestRegistry(
         candidates: params.candidates,
         diagnostics: params.diagnostics ?? [],
       }
-    : discoverOpenClawPlugins({
+    : discoverFoxFangPlugins({
         workspaceDir: params.workspaceDir,
         extraPaths: normalized.loadPaths,
         cache: params.cache,
@@ -403,7 +403,7 @@ export function loadPluginManifestRegistry(
 
   for (const candidate of candidates) {
     const rejectHardlinks = candidate.origin !== "bundled";
-    const isBundleRecord = (candidate.format ?? "openclaw") === "bundle";
+    const isBundleRecord = (candidate.format ?? "foxfang") === "bundle";
     const manifestRes:
       | ReturnType<typeof loadPluginManifest>
       | ReturnType<typeof loadBundleManifest>
@@ -447,8 +447,8 @@ export function loadPluginManifestRegistry(
           minHostVersionCheck.kind === "invalid"
             ? `plugin manifest invalid | ${minHostVersionCheck.error}`
             : minHostVersionCheck.kind === "unknown_host_version"
-              ? `plugin requires OpenClaw >=${minHostVersionCheck.requirement.minimumLabel}, but this host version could not be determined; skipping load`
-              : `plugin requires OpenClaw >=${minHostVersionCheck.requirement.minimumLabel}, but this host is ${minHostVersionCheck.currentVersion}; skipping load`,
+              ? `plugin requires FoxFang >=${minHostVersionCheck.requirement.minimumLabel}, but this host version could not be determined; skipping load`
+              : `plugin requires FoxFang >=${minHostVersionCheck.requirement.minimumLabel}, but this host is ${minHostVersionCheck.currentVersion}; skipping load`,
       });
       continue;
     }

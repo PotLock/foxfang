@@ -1,11 +1,11 @@
 import path from "node:path";
 
-const LEGACY_CLI_NAME = "openclaw";
+const LEGACY_CLI_NAME = "foxfang";
 
 export const DEFAULT_CLI_NAME = "foxfang";
 
 const KNOWN_CLI_NAMES = new Set([DEFAULT_CLI_NAME, LEGACY_CLI_NAME]);
-const CLI_PREFIX_RE = /^(?:((?:pnpm|npm|bunx|npx)\s+))?(?:foxfang|openclaw)\b/;
+const CLI_PREFIX_RE = /^(?:((?:pnpm|npm|bunx|npx)\s+))?(?:foxfang|foxfang)\b/;
 
 export function resolveCliName(argv: string[] = process.argv): string {
   const argv1 = argv[1];

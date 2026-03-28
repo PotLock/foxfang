@@ -1,9 +1,9 @@
 import type { WebClient as SlackWebClient } from "@slack/web-api";
-import { normalizeHostname } from "openclaw/plugin-sdk/host-runtime";
-import type { FetchLike } from "openclaw/plugin-sdk/media-runtime";
-import { fetchRemoteMedia } from "openclaw/plugin-sdk/media-runtime";
-import { saveMediaBuffer } from "openclaw/plugin-sdk/media-runtime";
-import { resolveRequestUrl } from "openclaw/plugin-sdk/request-url";
+import { normalizeHostname } from "foxfang/plugin-sdk/host-runtime";
+import type { FetchLike } from "foxfang/plugin-sdk/media-runtime";
+import { fetchRemoteMedia } from "foxfang/plugin-sdk/media-runtime";
+import { saveMediaBuffer } from "foxfang/plugin-sdk/media-runtime";
+import { resolveRequestUrl } from "foxfang/plugin-sdk/request-url";
 import type { SlackAttachment, SlackFile } from "../types.js";
 
 function isSlackHostname(hostname: string): boolean {

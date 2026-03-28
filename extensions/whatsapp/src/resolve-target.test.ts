@@ -1,4 +1,4 @@
-import { installCommonResolveTargetErrorCases } from "openclaw/plugin-sdk/testing";
+import { installCommonResolveTargetErrorCases } from "foxfang/plugin-sdk/testing";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   isWhatsAppGroupJid,

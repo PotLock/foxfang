@@ -11,8 +11,8 @@ const mocks = vi.hoisted(() => ({
   resolveStorePathMock: vi.fn(),
 }));
 
-vi.mock("openclaw/plugin-sdk/reply-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/reply-runtime")>();
+vi.mock("foxfang/plugin-sdk/reply-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/reply-runtime")>();
   return {
     ...actual,
     dispatchReplyWithDispatcher: (...args: unknown[]) => mocks.dispatchMock(...args),
@@ -20,16 +20,16 @@ vi.mock("openclaw/plugin-sdk/reply-runtime", async (importOriginal) => {
   };
 });
 
-vi.mock("openclaw/plugin-sdk/routing", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/routing")>();
+vi.mock("foxfang/plugin-sdk/routing", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/routing")>();
   return {
     ...actual,
     resolveAgentRoute: (...args: unknown[]) => mocks.resolveAgentRouteMock(...args),
   };
 });
 
-vi.mock("openclaw/plugin-sdk/conversation-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/conversation-runtime")>();
+vi.mock("foxfang/plugin-sdk/conversation-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/conversation-runtime")>();
   return {
     ...actual,
     resolveConversationLabel: (...args: unknown[]) => mocks.resolveConversationLabelMock(...args),
@@ -38,8 +38,8 @@ vi.mock("openclaw/plugin-sdk/conversation-runtime", async (importOriginal) => {
   };
 });
 
-vi.mock("openclaw/plugin-sdk/config-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/config-runtime")>();
+vi.mock("foxfang/plugin-sdk/config-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/config-runtime")>();
   return {
     ...actual,
     resolveStorePath: (...args: unknown[]) => mocks.resolveStorePathMock(...args),
@@ -73,5 +73,5 @@ export function resetSlackSlashMocks() {
   mocks.finalizeInboundContextMock.mockReset().mockImplementation((ctx: unknown) => ctx);
   mocks.resolveConversationLabelMock.mockReset().mockReturnValue(undefined);
   mocks.recordSessionMetaFromInboundMock.mockReset().mockResolvedValue(undefined);
-  mocks.resolveStorePathMock.mockReset().mockReturnValue("/tmp/openclaw-sessions.json");
+  mocks.resolveStorePathMock.mockReset().mockReturnValue("/tmp/foxfang-sessions.json");
 }

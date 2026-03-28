@@ -17,18 +17,18 @@ import { loadTestCatalog } from "../../scripts/test-planner/catalog.mjs";
 
 const clearPlannerShardEnv = (env) => {
   const nextEnv = { ...env };
-  delete nextEnv.OPENCLAW_TEST_SHARDS;
-  delete nextEnv.OPENCLAW_TEST_SHARD_INDEX;
-  delete nextEnv.OPENCLAW_TEST_FORCE_THREADS;
-  delete nextEnv.OPENCLAW_TEST_FORCE_FORKS;
-  delete nextEnv.OPENCLAW_TEST_DISABLE_THREAD_EXPANSION;
-  delete nextEnv.OPENCLAW_TEST_SHOW_POOL_DECISION;
-  delete nextEnv.OPENCLAW_TEST_PROFILE;
-  delete nextEnv.OPENCLAW_TEST_WORKERS;
-  delete nextEnv.OPENCLAW_TEST_SKIP_DEFAULT;
-  delete nextEnv.OPENCLAW_TEST_INCLUDE_EXTENSIONS;
-  delete nextEnv.OPENCLAW_TEST_INCLUDE_CHANNELS;
-  delete nextEnv.OPENCLAW_TEST_INCLUDE_GATEWAY;
+  delete nextEnv.FOXFANG_TEST_SHARDS;
+  delete nextEnv.FOXFANG_TEST_SHARD_INDEX;
+  delete nextEnv.FOXFANG_TEST_FORCE_THREADS;
+  delete nextEnv.FOXFANG_TEST_FORCE_FORKS;
+  delete nextEnv.FOXFANG_TEST_DISABLE_THREAD_EXPANSION;
+  delete nextEnv.FOXFANG_TEST_SHOW_POOL_DECISION;
+  delete nextEnv.FOXFANG_TEST_PROFILE;
+  delete nextEnv.FOXFANG_TEST_WORKERS;
+  delete nextEnv.FOXFANG_TEST_SKIP_DEFAULT;
+  delete nextEnv.FOXFANG_TEST_INCLUDE_EXTENSIONS;
+  delete nextEnv.FOXFANG_TEST_INCLUDE_CHANNELS;
+  delete nextEnv.FOXFANG_TEST_INCLUDE_GATEWAY;
   return nextEnv;
 };
 
@@ -78,7 +78,7 @@ function createLocalPlannerEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.Proces
   return createPlannerEnv({
     CI: "",
     GITHUB_ACTIONS: "",
-    OPENCLAW_TEST_LOAD_AWARE: "0",
+    FOXFANG_TEST_LOAD_AWARE: "0",
     ...overrides,
   });
 }
@@ -96,8 +96,8 @@ function runHighMemoryLocalMultiSurfacePlan(): string {
     ["--plan", "--surface", "unit", "--surface", "extensions", "--surface", "channels"],
     createLocalPlannerEnv({
       RUNNER_OS: "macOS",
-      OPENCLAW_TEST_HOST_CPU_COUNT: "12",
-      OPENCLAW_TEST_HOST_MEMORY_GIB: "128",
+      FOXFANG_TEST_HOST_CPU_COUNT: "12",
+      FOXFANG_TEST_HOST_MEMORY_GIB: "128",
     }),
   );
 }
@@ -118,7 +118,7 @@ function parseNumericPlanField(line: string, key: string): number {
 }
 
 function runManifestOutputWriter(workflow: string, envOverrides: NodeJS.ProcessEnv = {}): string {
-  const outputPath = path.join(os.tmpdir(), `openclaw-${workflow}-output-${Date.now()}.txt`);
+  const outputPath = path.join(os.tmpdir(), `foxfang-${workflow}-output-${Date.now()}.txt`);
   try {
     execFileSync("node", ["scripts/ci-write-manifest-outputs.mjs", "--workflow", workflow], {
       cwd: REPO_ROOT,
@@ -235,7 +235,7 @@ describe("scripts/test-parallel memory trace parsing", () => {
 describe("scripts/test-parallel lane planning", () => {
   it("keeps serial profile on split unit lanes instead of one giant unit worker", () => {
     const output = runPlannerPlan(["--plan"], {
-      OPENCLAW_TEST_PROFILE: "serial",
+      FOXFANG_TEST_PROFILE: "serial",
     });
 
     expect(output).toContain("unit-fast");
@@ -245,8 +245,8 @@ describe("scripts/test-parallel lane planning", () => {
   it("recycles default local unit-fast runs into bounded batches", () => {
     const output = runPlannerPlan(["--plan"], {
       CI: "",
-      OPENCLAW_TEST_UNIT_FAST_LANES: "1",
-      OPENCLAW_TEST_UNIT_FAST_BATCH_TARGET_MS: "1",
+      FOXFANG_TEST_UNIT_FAST_LANES: "1",
+      FOXFANG_TEST_UNIT_FAST_BATCH_TARGET_MS: "1",
     });
 
     expect(output).toContain("unit-fast-batch-");
@@ -269,8 +269,8 @@ describe("scripts/test-parallel lane planning", () => {
       ["--plan", "--surface", "unit", "--surface", "extensions"],
       createLocalPlannerEnv({
         RUNNER_OS: "macOS",
-        OPENCLAW_TEST_HOST_CPU_COUNT: "10",
-        OPENCLAW_TEST_HOST_MEMORY_GIB: "64",
+        FOXFANG_TEST_HOST_CPU_COUNT: "10",
+        FOXFANG_TEST_HOST_MEMORY_GIB: "64",
       }),
     );
 
@@ -284,16 +284,16 @@ describe("scripts/test-parallel lane planning", () => {
       ["--plan", "--surface", "extensions"],
       createLocalPlannerEnv({
         RUNNER_OS: "macOS",
-        OPENCLAW_TEST_HOST_CPU_COUNT: "12",
-        OPENCLAW_TEST_HOST_MEMORY_GIB: "128",
+        FOXFANG_TEST_HOST_CPU_COUNT: "12",
+        FOXFANG_TEST_HOST_MEMORY_GIB: "128",
       }),
     );
     const midMemoryOutput = runPlannerPlan(
       ["--plan", "--surface", "extensions"],
       createLocalPlannerEnv({
         RUNNER_OS: "macOS",
-        OPENCLAW_TEST_HOST_CPU_COUNT: "10",
-        OPENCLAW_TEST_HOST_MEMORY_GIB: "64",
+        FOXFANG_TEST_HOST_CPU_COUNT: "10",
+        FOXFANG_TEST_HOST_MEMORY_GIB: "64",
       }),
     );
 
@@ -338,8 +338,8 @@ describe("scripts/test-parallel lane planning", () => {
       ],
       createLocalPlannerEnv({
         RUNNER_OS: "macOS",
-        OPENCLAW_TEST_HOST_CPU_COUNT: "12",
-        OPENCLAW_TEST_HOST_MEMORY_GIB: "128",
+        FOXFANG_TEST_HOST_CPU_COUNT: "12",
+        FOXFANG_TEST_HOST_MEMORY_GIB: "128",
       }),
     );
 
@@ -366,8 +366,8 @@ describe("scripts/test-parallel lane planning", () => {
       ],
       createLocalPlannerEnv({
         RUNNER_OS: "macOS",
-        OPENCLAW_TEST_HOST_CPU_COUNT: "12",
-        OPENCLAW_TEST_HOST_MEMORY_GIB: "128",
+        FOXFANG_TEST_HOST_CPU_COUNT: "12",
+        FOXFANG_TEST_HOST_MEMORY_GIB: "128",
       }),
     );
 
@@ -402,15 +402,15 @@ describe("scripts/test-parallel lane planning", () => {
   it("prints the planner-backed CI manifest as JSON", () => {
     const output = runPlannerPlan(["--ci-manifest"], {
       GITHUB_EVENT_NAME: "pull_request",
-      OPENCLAW_CI_DOCS_ONLY: "false",
-      OPENCLAW_CI_DOCS_CHANGED: "false",
-      OPENCLAW_CI_RUN_NODE: "true",
-      OPENCLAW_CI_RUN_MACOS: "true",
-      OPENCLAW_CI_RUN_ANDROID: "false",
-      OPENCLAW_CI_RUN_WINDOWS: "true",
-      OPENCLAW_CI_RUN_SKILLS_PYTHON: "false",
-      OPENCLAW_CI_HAS_CHANGED_EXTENSIONS: "false",
-      OPENCLAW_CI_CHANGED_EXTENSIONS_MATRIX: '{"include":[]}',
+      FOXFANG_CI_DOCS_ONLY: "false",
+      FOXFANG_CI_DOCS_CHANGED: "false",
+      FOXFANG_CI_RUN_NODE: "true",
+      FOXFANG_CI_RUN_MACOS: "true",
+      FOXFANG_CI_RUN_ANDROID: "false",
+      FOXFANG_CI_RUN_WINDOWS: "true",
+      FOXFANG_CI_RUN_SKILLS_PYTHON: "false",
+      FOXFANG_CI_HAS_CHANGED_EXTENSIONS: "false",
+      FOXFANG_CI_CHANGED_EXTENSIONS_MATRIX: '{"include":[]}',
     });
 
     const manifest = JSON.parse(output);
@@ -422,15 +422,15 @@ describe("scripts/test-parallel lane planning", () => {
   it("writes CI workflow outputs in ci mode", () => {
     const outputs = runManifestOutputWriter("ci", {
       GITHUB_EVENT_NAME: "pull_request",
-      OPENCLAW_CI_DOCS_ONLY: "false",
-      OPENCLAW_CI_DOCS_CHANGED: "false",
-      OPENCLAW_CI_RUN_NODE: "true",
-      OPENCLAW_CI_RUN_MACOS: "true",
-      OPENCLAW_CI_RUN_ANDROID: "true",
-      OPENCLAW_CI_RUN_WINDOWS: "true",
-      OPENCLAW_CI_RUN_SKILLS_PYTHON: "false",
-      OPENCLAW_CI_HAS_CHANGED_EXTENSIONS: "false",
-      OPENCLAW_CI_CHANGED_EXTENSIONS_MATRIX: '{"include":[]}',
+      FOXFANG_CI_DOCS_ONLY: "false",
+      FOXFANG_CI_DOCS_CHANGED: "false",
+      FOXFANG_CI_RUN_NODE: "true",
+      FOXFANG_CI_RUN_MACOS: "true",
+      FOXFANG_CI_RUN_ANDROID: "true",
+      FOXFANG_CI_RUN_WINDOWS: "true",
+      FOXFANG_CI_RUN_SKILLS_PYTHON: "false",
+      FOXFANG_CI_HAS_CHANGED_EXTENSIONS: "false",
+      FOXFANG_CI_CHANGED_EXTENSIONS_MATRIX: '{"include":[]}',
     });
     expect(outputs).toContain("run_build_artifacts=true");
     expect(outputs).toContain("run_checks_windows=true");
@@ -440,8 +440,8 @@ describe("scripts/test-parallel lane planning", () => {
 
   it("writes install-smoke outputs in install-smoke mode", () => {
     const outputs = runManifestOutputWriter("install-smoke", {
-      OPENCLAW_CI_DOCS_ONLY: "false",
-      OPENCLAW_CI_RUN_CHANGED_SMOKE: "true",
+      FOXFANG_CI_DOCS_ONLY: "false",
+      FOXFANG_CI_RUN_CHANGED_SMOKE: "true",
     });
     expect(outputs).toContain("run_install_smoke=true");
     expect(outputs).not.toContain("run_checks=");
@@ -449,8 +449,8 @@ describe("scripts/test-parallel lane planning", () => {
 
   it("writes bun outputs in ci-bun mode", () => {
     const outputs = runManifestOutputWriter("ci-bun", {
-      OPENCLAW_CI_DOCS_ONLY: "false",
-      OPENCLAW_CI_RUN_NODE: "true",
+      FOXFANG_CI_DOCS_ONLY: "false",
+      FOXFANG_CI_RUN_NODE: "true",
     });
     expect(outputs).toContain("run_bun_checks=true");
     expect(outputs).toContain("bun_checks_matrix=");
@@ -462,8 +462,8 @@ describe("scripts/test-parallel lane planning", () => {
       ["--plan", "--mode", "development", "src/infra/outbound/deliver.test.ts"],
       createLocalPlannerEnv({
         RUNNER_OS: "Linux",
-        OPENCLAW_TEST_HOST_CPU_COUNT: "16",
-        OPENCLAW_TEST_HOST_MEMORY_GIB: "128",
+        FOXFANG_TEST_HOST_CPU_COUNT: "16",
+        FOXFANG_TEST_HOST_MEMORY_GIB: "128",
       }),
     );
 
@@ -527,7 +527,7 @@ describe("scripts/test-parallel lane planning", () => {
   });
 
   it("rejects explicit existing files that are not known test files", () => {
-    const tempFilePath = path.join(os.tmpdir(), `openclaw-non-test-${Date.now()}.ts`);
+    const tempFilePath = path.join(os.tmpdir(), `foxfang-non-test-${Date.now()}.ts`);
     fs.writeFileSync(tempFilePath, "export const notATest = true;\n", "utf8");
 
     try {

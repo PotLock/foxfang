@@ -1,7 +1,7 @@
 import type {
   ChannelAccountSnapshot,
   ChatType,
-  OpenClawConfig,
+  FoxFangConfig,
   ReplyPayload,
   RuntimeEnv,
 } from "../runtime-api.js";
@@ -99,7 +99,7 @@ export type MonitorMattermostOpts = {
   botToken?: string;
   baseUrl?: string;
   accountId?: string;
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   runtime?: RuntimeEnv;
   abortSignal?: AbortSignal;
   statusSink?: (patch: Partial<ChannelAccountSnapshot>) => void;
@@ -374,7 +374,7 @@ export async function monitorMattermostProvider(opts: MonitorMattermostOpts = {}
               message: post.message ?? "",
               props: post.props ?? undefined,
             },
-            ephemeral_text: `OpenClaw ignored this action for ${decision.roomLabel}.`,
+            ephemeral_text: `FoxFang ignored this action for ${decision.roomLabel}.`,
           },
         };
       },

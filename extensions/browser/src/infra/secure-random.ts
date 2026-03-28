@@ -1,1 +1,1 @@
-export { generateSecureToken } from "openclaw/plugin-sdk/browser-support";
+export { generateSecureToken } from "foxfang/plugin-sdk/browser-support";

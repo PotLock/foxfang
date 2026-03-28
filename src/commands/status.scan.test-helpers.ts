@@ -1,9 +1,9 @@
 import { vi } from "vitest";
-import type { OpenClawConfig } from "../config/types.js";
+import type { FoxFangConfig } from "../config/types.js";
 
 export function createStatusScanSharedMocks(configPathLabel: string) {
   return {
-    resolveConfigPath: vi.fn(() => `/tmp/openclaw-${configPathLabel}-missing-${process.pid}.json`),
+    resolveConfigPath: vi.fn(() => `/tmp/foxfang-${configPathLabel}-missing-${process.pid}.json`),
     hasPotentialConfiguredChannels: vi.fn(),
     readBestEffortConfig: vi.fn(),
     resolveCommandSecretRefsViaGateway: vi.fn(),
@@ -196,14 +196,14 @@ export async function loadStatusScanModuleForTest(
   return await import("./status.scan.js");
 }
 
-export function createStatusScanConfig<T extends object = OpenClawConfig>(
+export function createStatusScanConfig<T extends object = FoxFangConfig>(
   overrides: T = {} as T,
-): OpenClawConfig & T {
+): FoxFangConfig & T {
   return {
     session: {},
     gateway: {},
     ...overrides,
-  } as OpenClawConfig & T;
+  } as FoxFangConfig & T;
 }
 
 export function createStatusSummary(
@@ -262,7 +262,7 @@ export function createStatusGatewayProbeFailure() {
   };
 }
 
-export function createStatusMemorySearchConfig(): OpenClawConfig {
+export function createStatusMemorySearchConfig(): FoxFangConfig {
   return createStatusScanConfig({
     agents: {
       defaults: {
@@ -290,8 +290,8 @@ export function applyStatusScanDefaults(
   mocks: StatusScanSharedMocks,
   options: {
     hasConfiguredChannels?: boolean;
-    sourceConfig?: OpenClawConfig;
-    resolvedConfig?: OpenClawConfig;
+    sourceConfig?: FoxFangConfig;
+    resolvedConfig?: FoxFangConfig;
     summary?: ReturnType<typeof createStatusSummary>;
     update?: ReturnType<typeof createStatusUpdateResult> | false;
     gatewayProbe?: ReturnType<typeof createStatusGatewayProbeFailure> | false;

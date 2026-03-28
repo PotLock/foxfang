@@ -9,7 +9,7 @@ title: "Gemini Search"
 
 # Gemini Search
 
-OpenClaw supports Gemini models with built-in
+FoxFang supports Gemini models with built-in
 [Google Search grounding](https://ai.google.dev/gemini-api/docs/grounding),
 which returns AI-synthesized answers backed by live Google Search results with
 citations.
@@ -25,7 +25,7 @@ citations.
     Set `GEMINI_API_KEY` in the Gateway environment, or configure via:
 
     ```bash
-    openclaw configure --section web
+    foxfang configure --section web
     ```
 
   </Step>

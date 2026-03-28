@@ -1,6 +1,6 @@
-import { buildPluginConfigSchema } from "openclaw/plugin-sdk/core";
-import { z } from "openclaw/plugin-sdk/zod";
-import type { OpenClawPluginConfigSchema } from "../api.js";
+import { buildPluginConfigSchema } from "foxfang/plugin-sdk/core";
+import { z } from "foxfang/plugin-sdk/zod";
+import type { FoxFangPluginConfigSchema } from "../api.js";
 import {
   DIFF_IMAGE_QUALITY_PRESETS,
   DIFF_INDICATORS,
@@ -146,7 +146,7 @@ const DiffsPluginJsonSchemaSource = z.strictObject({
     .optional(),
 });
 
-export const diffsPluginConfigSchema: OpenClawPluginConfigSchema = buildPluginConfigSchema(
+export const diffsPluginConfigSchema: FoxFangPluginConfigSchema = buildPluginConfigSchema(
   DiffsPluginJsonSchemaSource,
   {
     safeParse(value: unknown) {

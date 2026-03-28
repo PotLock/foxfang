@@ -8,10 +8,10 @@ import {
   splitSetupEntries,
   setSetupChannelEnabled,
   type DmPolicy,
-  type OpenClawConfig,
-} from "openclaw/plugin-sdk/setup";
-import type { ChannelSetupWizard } from "openclaw/plugin-sdk/setup";
-import { formatCliCommand, formatDocsLink } from "openclaw/plugin-sdk/setup-tools";
+  type FoxFangConfig,
+} from "foxfang/plugin-sdk/setup";
+import type { ChannelSetupWizard } from "foxfang/plugin-sdk/setup";
+import { formatCliCommand, formatDocsLink } from "foxfang/plugin-sdk/setup-tools";
 import { listWhatsAppAccountIds, resolveWhatsAppAuthDir } from "./accounts.js";
 import { loginWeb } from "./login.js";
 import { whatsappSetupAdapter } from "./setup-core.js";
@@ -19,10 +19,10 @@ import { whatsappSetupAdapter } from "./setup-core.js";
 const channel = "whatsapp" as const;
 
 function mergeWhatsAppConfig(
-  cfg: OpenClawConfig,
-  patch: Partial<NonNullable<NonNullable<OpenClawConfig["channels"]>["whatsapp"]>>,
+  cfg: FoxFangConfig,
+  patch: Partial<NonNullable<NonNullable<FoxFangConfig["channels"]>["whatsapp"]>>,
   options?: { unsetOnUndefined?: string[] },
-): OpenClawConfig {
+): FoxFangConfig {
   const base = { ...(cfg.channels?.whatsapp ?? {}) } as Record<string, unknown>;
   for (const [key, value] of Object.entries(patch)) {
     if (value === undefined) {
@@ -42,19 +42,19 @@ function mergeWhatsAppConfig(
   };
 }
 
-function setWhatsAppDmPolicy(cfg: OpenClawConfig, dmPolicy: DmPolicy): OpenClawConfig {
+function setWhatsAppDmPolicy(cfg: FoxFangConfig, dmPolicy: DmPolicy): FoxFangConfig {
   return mergeWhatsAppConfig(cfg, { dmPolicy });
 }
 
-function setWhatsAppAllowFrom(cfg: OpenClawConfig, allowFrom?: string[]): OpenClawConfig {
+function setWhatsAppAllowFrom(cfg: FoxFangConfig, allowFrom?: string[]): FoxFangConfig {
   return mergeWhatsAppConfig(cfg, { allowFrom }, { unsetOnUndefined: ["allowFrom"] });
 }
 
-function setWhatsAppSelfChatMode(cfg: OpenClawConfig, selfChatMode: boolean): OpenClawConfig {
+function setWhatsAppSelfChatMode(cfg: FoxFangConfig, selfChatMode: boolean): FoxFangConfig {
   return mergeWhatsAppConfig(cfg, { selfChatMode });
 }
 
-async function detectWhatsAppLinked(cfg: OpenClawConfig, accountId: string): Promise<boolean> {
+async function detectWhatsAppLinked(cfg: FoxFangConfig, accountId: string): Promise<boolean> {
   const { authDir } = resolveWhatsAppAuthDir({ cfg, accountId });
   const credsPath = path.join(authDir, "creds.json");
   return await pathExists(credsPath);
@@ -67,7 +67,7 @@ async function promptWhatsAppOwnerAllowFrom(params: {
   const { prompter, existingAllowFrom } = params;
 
   await prompter.note(
-    "We need the sender/owner number so OpenClaw can allowlist you.",
+    "We need the sender/owner number so FoxFang can allowlist you.",
     "WhatsApp number",
   );
   const entry = await prompter.text({
@@ -99,12 +99,12 @@ async function promptWhatsAppOwnerAllowFrom(params: {
 }
 
 async function applyWhatsAppOwnerAllowlist(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   existingAllowFrom: string[];
   messageLines: string[];
   prompter: Parameters<NonNullable<ChannelSetupWizard["finalize"]>>[0]["prompter"];
   title: string;
-}): Promise<OpenClawConfig> {
+}): Promise<FoxFangConfig> {
   const { normalized, allowFrom } = await promptWhatsAppOwnerAllowFrom({
     prompter: params.prompter,
     existingAllowFrom: params.existingAllowFrom,
@@ -140,10 +140,10 @@ function parseWhatsAppAllowFromEntries(raw: string): { entries: string[]; invali
 }
 
 async function promptWhatsAppDmAccess(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   forceAllowFrom: boolean;
   prompter: Parameters<NonNullable<ChannelSetupWizard["finalize"]>>[0]["prompter"];
-}): Promise<OpenClawConfig> {
+}): Promise<FoxFangConfig> {
   const existingPolicy = params.cfg.channels?.whatsapp?.dmPolicy ?? "pairing";
   const existingAllowFrom = params.cfg.channels?.whatsapp?.allowFrom ?? [];
   const existingLabel = existingAllowFrom.length > 0 ? existingAllowFrom.join(", ") : "unset";
@@ -176,7 +176,7 @@ async function promptWhatsAppDmAccess(params: {
     message: "WhatsApp phone setup",
     options: [
       { value: "personal", label: "This is my personal phone number" },
-      { value: "separate", label: "Separate phone just for OpenClaw" },
+      { value: "separate", label: "Separate phone just for FoxFang" },
     ],
   });
 
@@ -342,7 +342,7 @@ export const whatsappSetupWizard: ChannelSetupWizard = {
       }
     } else if (!linked) {
       await prompter.note(
-        `Run \`${formatCliCommand("openclaw channels login")}\` later to link WhatsApp.`,
+        `Run \`${formatCliCommand("foxfang channels login")}\` later to link WhatsApp.`,
         "WhatsApp",
       );
     }

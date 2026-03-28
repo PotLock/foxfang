@@ -1,6 +1,6 @@
 import { resolveCommandSecretRefsViaGateway } from "../../../cli/command-secret-gateway.js";
 import { getChannelsCommandSecretTargetIds } from "../../../cli/command-secret-targets.js";
-import type { OpenClawConfig } from "../../../config/config.js";
+import type { FoxFangConfig } from "../../../config/config.js";
 import type { TelegramNetworkConfig } from "../../../config/types.telegram.js";
 import { resolveTelegramAccount } from "../../../plugin-sdk/account-resolution.js";
 import {
@@ -31,7 +31,7 @@ type ResolvedTelegramLookupAccount = {
 };
 
 export function collectTelegramAccountScopes(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
 ): Array<{ prefix: string; account: Record<string, unknown> }> {
   const scopes: Array<{ prefix: string; account: Record<string, unknown> }> = [];
   const telegram = asObjectRecord(cfg.channels?.telegram);
@@ -98,7 +98,7 @@ export function collectTelegramAllowFromLists(
 }
 
 export function scanTelegramAllowFromUsernameEntries(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
 ): TelegramAllowFromUsernameHit[] {
   const hits: TelegramAllowFromUsernameHit[] = [];
 
@@ -141,8 +141,8 @@ export function collectTelegramAllowFromUsernameWarnings(params: {
   ];
 }
 
-export async function maybeRepairTelegramAllowFromUsernames(cfg: OpenClawConfig): Promise<{
-  config: OpenClawConfig;
+export async function maybeRepairTelegramAllowFromUsernames(cfg: FoxFangConfig): Promise<{
+  config: FoxFangConfig;
   changes: string[];
 }> {
   const hits = scanTelegramAllowFromUsernameEntries(cfg);

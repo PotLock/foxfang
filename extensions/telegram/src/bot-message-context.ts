@@ -1,18 +1,18 @@
 import type { ReactionTypeEmoji } from "@grammyjs/types";
-import { resolveAckReaction } from "openclaw/plugin-sdk/agent-runtime";
+import { resolveAckReaction } from "foxfang/plugin-sdk/agent-runtime";
 import {
   createStatusReactionController,
   shouldAckReaction as shouldAckReactionGate,
   type StatusReactionController,
-} from "openclaw/plugin-sdk/channel-feedback";
-import { logInboundDrop } from "openclaw/plugin-sdk/channel-inbound";
-import { recordChannelActivity } from "openclaw/plugin-sdk/channel-runtime";
-import { loadConfig } from "openclaw/plugin-sdk/config-runtime";
-import type { TelegramDirectConfig, TelegramGroupConfig } from "openclaw/plugin-sdk/config-runtime";
-import { ensureConfiguredBindingRouteReady } from "openclaw/plugin-sdk/conversation-runtime";
-import { deriveLastRoutePolicy } from "openclaw/plugin-sdk/routing";
-import { DEFAULT_ACCOUNT_ID, resolveThreadSessionKeys } from "openclaw/plugin-sdk/routing";
-import { logVerbose } from "openclaw/plugin-sdk/runtime-env";
+} from "foxfang/plugin-sdk/channel-feedback";
+import { logInboundDrop } from "foxfang/plugin-sdk/channel-inbound";
+import { recordChannelActivity } from "foxfang/plugin-sdk/channel-runtime";
+import { loadConfig } from "foxfang/plugin-sdk/config-runtime";
+import type { TelegramDirectConfig, TelegramGroupConfig } from "foxfang/plugin-sdk/config-runtime";
+import { ensureConfiguredBindingRouteReady } from "foxfang/plugin-sdk/conversation-runtime";
+import { deriveLastRoutePolicy } from "foxfang/plugin-sdk/routing";
+import { DEFAULT_ACCOUNT_ID, resolveThreadSessionKeys } from "foxfang/plugin-sdk/routing";
+import { logVerbose } from "foxfang/plugin-sdk/runtime-env";
 import { withTelegramApiErrorLogging } from "./api-logging.js";
 import { firstDefined, normalizeAllowFrom, normalizeDmAllowFromWithStore } from "./bot-access.js";
 import { resolveTelegramInboundBody } from "./bot-message-context.body.js";

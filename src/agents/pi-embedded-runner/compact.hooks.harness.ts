@@ -80,7 +80,7 @@ export const sessionMessages: unknown[] = [
   },
 ];
 export const sessionAbortCompactionMock: Mock<(reason?: unknown) => void> = vi.fn();
-export const createOpenClawCodingToolsMock = vi.fn(() => []);
+export const createFoxFangCodingToolsMock = vi.fn(() => []);
 
 export function resetCompactSessionStateMocks(): void {
   sanitizeSessionHistoryMock.mockReset();
@@ -165,8 +165,8 @@ export function resetCompactHooksHarnessMocks(): void {
 
   triggerInternalHook.mockReset();
   resetCompactSessionStateMocks();
-  createOpenClawCodingToolsMock.mockReset();
-  createOpenClawCodingToolsMock.mockReturnValue([]);
+  createFoxFangCodingToolsMock.mockReset();
+  createFoxFangCodingToolsMock.mockReturnValue([]);
 }
 
 export async function loadCompactHooksHarness(): Promise<{
@@ -255,7 +255,7 @@ export async function loadCompactHooksHarness(): Promise<{
   }));
 
   vi.doMock("../models-config.js", () => ({
-    ensureOpenClawModelsJson: vi.fn(async () => {}),
+    ensureFoxFangModelsJson: vi.fn(async () => {}),
   }));
 
   vi.doMock("../model-auth.js", () => ({
@@ -317,7 +317,7 @@ export async function loadCompactHooksHarness(): Promise<{
   }));
 
   vi.doMock("../docs-path.js", () => ({
-    resolveOpenClawDocsPath: vi.fn(async () => undefined),
+    resolveFoxFangDocsPath: vi.fn(async () => undefined),
   }));
 
   vi.doMock("../channel-tools.js", () => ({
@@ -326,7 +326,7 @@ export async function loadCompactHooksHarness(): Promise<{
   }));
 
   vi.doMock("../pi-tools.js", () => ({
-    createOpenClawCodingTools: createOpenClawCodingToolsMock,
+    createFoxFangCodingTools: createFoxFangCodingToolsMock,
   }));
 
   vi.doMock("./google.js", () => ({
@@ -409,7 +409,7 @@ export async function loadCompactHooksHarness(): Promise<{
   }));
 
   vi.doMock("../agent-paths.js", () => ({
-    resolveOpenClawAgentDir: vi.fn(() => "/tmp"),
+    resolveFoxFangAgentDir: vi.fn(() => "/tmp"),
   }));
 
   vi.doMock("../agent-scope.js", () => ({

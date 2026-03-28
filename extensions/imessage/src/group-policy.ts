@@ -2,11 +2,11 @@ import {
   resolveChannelGroupRequireMention,
   resolveChannelGroupToolsPolicy,
   type GroupToolPolicyConfig,
-} from "openclaw/plugin-sdk/channel-policy";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/core";
+} from "foxfang/plugin-sdk/channel-policy";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/core";
 
 type IMessageGroupContext = {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId?: string | null;
   groupId?: string | null;
   senderId?: string | null;

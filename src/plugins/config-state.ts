@@ -1,5 +1,5 @@
 import { normalizeChatChannelId } from "../channels/registry.js";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import {
   BUNDLED_LEGACY_PLUGIN_ID_ALIASES,
   BUNDLED_PROVIDER_PLUGIN_ID_ALIASES,
@@ -137,7 +137,7 @@ const normalizePluginEntries = (entries: unknown): NormalizedPluginsConfig["entr
 };
 
 export const normalizePluginsConfig = (
-  config?: OpenClawConfig["plugins"],
+  config?: FoxFangConfig["plugins"],
 ): NormalizedPluginsConfig => {
   const memorySlot = normalizeSlotValue(config?.slots?.memory);
   return {
@@ -152,13 +152,13 @@ export const normalizePluginsConfig = (
   };
 };
 
-const hasExplicitMemorySlot = (plugins?: OpenClawConfig["plugins"]) =>
+const hasExplicitMemorySlot = (plugins?: FoxFangConfig["plugins"]) =>
   Boolean(plugins?.slots && Object.prototype.hasOwnProperty.call(plugins.slots, "memory"));
 
-const hasExplicitMemoryEntry = (plugins?: OpenClawConfig["plugins"]) =>
+const hasExplicitMemoryEntry = (plugins?: FoxFangConfig["plugins"]) =>
   Boolean(plugins?.entries && Object.prototype.hasOwnProperty.call(plugins.entries, "memory-core"));
 
-export const hasExplicitPluginConfig = (plugins?: OpenClawConfig["plugins"]) => {
+export const hasExplicitPluginConfig = (plugins?: FoxFangConfig["plugins"]) => {
   if (!plugins) {
     return false;
   }
@@ -184,9 +184,9 @@ export const hasExplicitPluginConfig = (plugins?: OpenClawConfig["plugins"]) => 
 };
 
 export function applyTestPluginDefaults(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   env: NodeJS.ProcessEnv = process.env,
-): OpenClawConfig {
+): FoxFangConfig {
   if (!env.VITEST) {
     return cfg;
   }
@@ -222,7 +222,7 @@ export function applyTestPluginDefaults(
 }
 
 export function isTestDefaultMemorySlotDisabled(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   env: NodeJS.ProcessEnv = process.env,
 ): boolean {
   if (!env.VITEST) {
@@ -274,7 +274,7 @@ export function resolveEnableState(
 }
 
 export function isBundledChannelEnabledByChannelConfig(
-  cfg: OpenClawConfig | undefined,
+  cfg: FoxFangConfig | undefined,
   pluginId: string,
 ): boolean {
   if (!cfg) {
@@ -296,7 +296,7 @@ export function resolveEffectiveEnableState(params: {
   id: string;
   origin: PluginRecord["origin"];
   config: NormalizedPluginsConfig;
-  rootConfig?: OpenClawConfig;
+  rootConfig?: FoxFangConfig;
   enabledByDefault?: boolean;
 }): { enabled: boolean; reason?: string } {
   const base = resolveEnableState(params.id, params.origin, params.config, params.enabledByDefault);

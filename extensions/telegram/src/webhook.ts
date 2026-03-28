@@ -3,24 +3,24 @@ import { createServer } from "node:http";
 import type { IncomingMessage } from "node:http";
 import net from "node:net";
 import * as grammy from "grammy";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import { isDiagnosticsEnabled } from "openclaw/plugin-sdk/diagnostic-runtime";
-import type { RuntimeEnv } from "openclaw/plugin-sdk/runtime-env";
-import { defaultRuntime } from "openclaw/plugin-sdk/runtime-env";
-import { formatErrorMessage } from "openclaw/plugin-sdk/ssrf-runtime";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import { isDiagnosticsEnabled } from "foxfang/plugin-sdk/diagnostic-runtime";
+import type { RuntimeEnv } from "foxfang/plugin-sdk/runtime-env";
+import { defaultRuntime } from "foxfang/plugin-sdk/runtime-env";
+import { formatErrorMessage } from "foxfang/plugin-sdk/ssrf-runtime";
 import {
   logWebhookError,
   logWebhookProcessed,
   logWebhookReceived,
   startDiagnosticHeartbeat,
   stopDiagnosticHeartbeat,
-} from "openclaw/plugin-sdk/text-runtime";
+} from "foxfang/plugin-sdk/text-runtime";
 import {
   applyBasicWebhookRequestGuards,
   createFixedWindowRateLimiter,
   WEBHOOK_RATE_LIMIT_DEFAULTS,
-} from "openclaw/plugin-sdk/webhook-ingress";
-import { readJsonBodyWithLimit } from "openclaw/plugin-sdk/webhook-request-guards";
+} from "foxfang/plugin-sdk/webhook-ingress";
+import { readJsonBodyWithLimit } from "foxfang/plugin-sdk/webhook-request-guards";
 import { resolveTelegramAllowedUpdates } from "./allowed-updates.js";
 import { withTelegramApiErrorLogging } from "./api-logging.js";
 import { createTelegramBot } from "./bot.js";
@@ -203,7 +203,7 @@ function resolveForwardedClientIp(
   return undefined;
 }
 
-function resolveTelegramWebhookClientIp(req: IncomingMessage, config?: OpenClawConfig): string {
+function resolveTelegramWebhookClientIp(req: IncomingMessage, config?: FoxFangConfig): string {
   const remoteAddress = parseIpLiteral(req.socket.remoteAddress);
   const trustedProxies = config?.gateway?.trustedProxies;
   if (!remoteAddress) {
@@ -231,7 +231,7 @@ function resolveTelegramWebhookClientIp(req: IncomingMessage, config?: OpenClawC
 function resolveTelegramWebhookRateLimitKey(
   req: IncomingMessage,
   path: string,
-  config?: OpenClawConfig,
+  config?: FoxFangConfig,
 ): string {
   return `${path}:${resolveTelegramWebhookClientIp(req, config)}`;
 }
@@ -239,7 +239,7 @@ function resolveTelegramWebhookRateLimitKey(
 export async function startTelegramWebhook(opts: {
   token: string;
   accountId?: string;
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   path?: string;
   port?: number;
   host?: string;

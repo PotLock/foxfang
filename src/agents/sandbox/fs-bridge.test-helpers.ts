@@ -188,7 +188,7 @@ export async function createHostEscapeFixture(stateDir: string) {
 export async function expectMkdirpAllowsExistingDirectory(params?: {
   forceBoundaryIoFallback?: boolean;
 }) {
-  await withTempDir("openclaw-fs-bridge-mkdirp-", async (stateDir) => {
+  await withTempDir("foxfang-fs-bridge-mkdirp-", async (stateDir) => {
     const workspaceDir = path.join(stateDir, "workspace");
     const nestedDir = path.join(workspaceDir, "memory", "kemik");
     await fs.mkdir(nestedDir, { recursive: true });

@@ -3,8 +3,8 @@ import {
   readNumberParam,
   readStringParam,
   type AnyAgentTool,
-  type OpenClawConfig,
-} from "openclaw/plugin-sdk/memory-core-host-runtime-core";
+  type FoxFangConfig,
+} from "foxfang/plugin-sdk/memory-core-host-runtime-core";
 import {
   clampResultsByInjectedChars,
   decorateCitations,
@@ -22,7 +22,7 @@ import {
 } from "./tools.shared.js";
 
 export function createMemorySearchTool(options: {
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   agentSessionKey?: string;
 }): AnyAgentTool | null {
   return createMemoryTool({
@@ -79,7 +79,7 @@ export function createMemorySearchTool(options: {
 }
 
 export function createMemoryGetTool(options: {
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   agentSessionKey?: string;
 }): AnyAgentTool | null {
   return createMemoryTool({

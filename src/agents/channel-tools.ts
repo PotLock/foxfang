@@ -7,7 +7,7 @@ import {
 } from "../channels/plugins/message-action-discovery.js";
 import type { ChannelAgentTool, ChannelMessageActionName } from "../channels/plugins/types.js";
 import { normalizeAnyChannelId } from "../channels/registry.js";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 
 type ChannelAgentToolMeta = {
   channelId: string;
@@ -31,7 +31,7 @@ export function copyChannelAgentToolMeta(source: ChannelAgentTool, target: Chann
  * Returns an empty array if channel is not found or has no actions configured.
  */
 export function listChannelSupportedActions(params: {
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   channel?: string;
   currentChannelId?: string | null;
   currentThreadTs?: string | null;
@@ -62,7 +62,7 @@ export function listChannelSupportedActions(params: {
  * Get the list of all supported message actions across all configured channels.
  */
 export function listAllChannelSupportedActions(params: {
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   currentChannelId?: string | null;
   currentThreadTs?: string | null;
   currentMessageId?: string | number | null;
@@ -90,7 +90,7 @@ export function listAllChannelSupportedActions(params: {
   return Array.from(actions);
 }
 
-export function listChannelAgentTools(params: { cfg?: OpenClawConfig }): ChannelAgentTool[] {
+export function listChannelAgentTools(params: { cfg?: FoxFangConfig }): ChannelAgentTool[] {
   // Channel docking: aggregate channel-owned tools (login, etc.).
   const tools: ChannelAgentTool[] = [];
   for (const plugin of listChannelPlugins()) {
@@ -110,7 +110,7 @@ export function listChannelAgentTools(params: { cfg?: OpenClawConfig }): Channel
 }
 
 export function resolveChannelMessageToolHints(params: {
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   channel?: string | null;
   accountId?: string | null;
 }): string[] {
@@ -122,7 +122,7 @@ export function resolveChannelMessageToolHints(params: {
   if (!resolve) {
     return [];
   }
-  const cfg = params.cfg ?? ({} as OpenClawConfig);
+  const cfg = params.cfg ?? ({} as FoxFangConfig);
   return (resolve({ cfg, accountId: params.accountId }) ?? [])
     .map((entry) => entry.trim())
     .filter(Boolean);

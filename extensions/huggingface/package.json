@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/huggingface-provider",
+  "name": "@foxfang/huggingface-provider",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw Hugging Face provider plugin",
+  "description": "FoxFang Hugging Face provider plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

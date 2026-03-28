@@ -1,23 +1,23 @@
 ---
-summary: "Use Mistral models and Voxtral transcription with OpenClaw"
+summary: "Use Mistral models and Voxtral transcription with FoxFang"
 read_when:
-  - You want to use Mistral models in OpenClaw
+  - You want to use Mistral models in FoxFang
   - You need Mistral API key onboarding and model refs
 title: "Mistral"
 ---
 
 # Mistral
 
-OpenClaw supports Mistral for both text/image model routing (`mistral/...`) and
+FoxFang supports Mistral for both text/image model routing (`mistral/...`) and
 audio transcription via Voxtral in media understanding.
 Mistral can also be used for memory embeddings (`memorySearch.provider = "mistral"`).
 
 ## CLI setup
 
 ```bash
-openclaw onboard --auth-choice mistral-api-key
+foxfang onboard --auth-choice mistral-api-key
 # or non-interactive
-openclaw onboard --mistral-api-key "$MISTRAL_API_KEY"
+foxfang onboard --mistral-api-key "$MISTRAL_API_KEY"
 ```
 
 ## Config snippet (LLM provider)

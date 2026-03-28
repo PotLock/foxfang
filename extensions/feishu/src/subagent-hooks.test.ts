@@ -3,7 +3,7 @@ import {
   getRequiredHookHandler,
   registerHookHandlersForTest,
 } from "../../../test/helpers/extensions/subagent-hooks.js";
-import type { ClawdbotConfig, OpenClawPluginApi } from "../runtime-api.js";
+import type { ClawdbotConfig, FoxFangPluginApi } from "../runtime-api.js";
 import { registerFeishuSubagentHooks } from "./subagent-hooks.js";
 import {
   __testing as threadBindingTesting,
@@ -16,7 +16,7 @@ const baseConfig: ClawdbotConfig = {
 };
 
 function registerHandlersForTest(config: Record<string, unknown> = baseConfig) {
-  return registerHookHandlersForTest<OpenClawPluginApi>({
+  return registerHookHandlersForTest<FoxFangPluginApi>({
     config,
     register: registerFeishuSubagentHooks,
   });

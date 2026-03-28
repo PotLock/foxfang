@@ -6,7 +6,7 @@ import { parseMinHostVersionRequirement } from "../../../src/plugins/min-host-ve
 
 type PackageManifest = {
   dependencies?: Record<string, string>;
-  openclaw?: {
+  foxfang?: {
     install?: {
       minHostVersion?: string;
     };
@@ -53,12 +53,12 @@ export function describePackageManifestContract(params: PackageManifestContractP
 
         const manifest = readJson<PackageManifest>(packagePath);
         const requirement = parseMinHostVersionRequirement(
-          manifest.openclaw?.install?.minHostVersion ?? null,
+          manifest.foxfang?.install?.minHostVersion ?? null,
         );
 
         expect(
           requirement,
-          `${packagePath} should declare openclaw.install.minHostVersion`,
+          `${packagePath} should declare foxfang.install.minHostVersion`,
         ).not.toBeNull();
         if (!requirement) {
           return;
@@ -72,7 +72,7 @@ export function describePackageManifestContract(params: PackageManifestContractP
 
         expect(
           isAtLeast(minimum, baseline),
-          `${packagePath} should require at least OpenClaw ${minHostVersionBaseline}`,
+          `${packagePath} should require at least FoxFang ${minHostVersionBaseline}`,
         ).toBe(true);
       });
     }

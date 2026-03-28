@@ -1,14 +1,14 @@
-import type { loadConfig } from "openclaw/plugin-sdk/config-runtime";
+import type { loadConfig } from "foxfang/plugin-sdk/config-runtime";
 import {
   resolveChannelGroupPolicy,
   resolveChannelGroupRequireMention,
-} from "openclaw/plugin-sdk/config-runtime";
+} from "foxfang/plugin-sdk/config-runtime";
 import {
   loadSessionStore,
   resolveGroupSessionKey,
   resolveStorePath,
-} from "openclaw/plugin-sdk/config-runtime";
-import { normalizeGroupActivation } from "openclaw/plugin-sdk/reply-runtime";
+} from "foxfang/plugin-sdk/config-runtime";
+import { normalizeGroupActivation } from "foxfang/plugin-sdk/reply-runtime";
 
 export function resolveGroupPolicyFor(cfg: ReturnType<typeof loadConfig>, conversationId: string) {
   const groupId = resolveGroupSessionKey({

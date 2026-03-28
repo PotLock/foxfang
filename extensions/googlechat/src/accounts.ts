@@ -4,9 +4,9 @@ import {
   normalizeAccountId,
   resolveAccountEntry,
   resolveMergedAccountConfig,
-} from "openclaw/plugin-sdk/account-resolution";
-import { isSecretRef, type OpenClawConfig } from "openclaw/plugin-sdk/core";
-import { safeParseJsonWithSchema, safeParseWithSchema } from "openclaw/plugin-sdk/extension-shared";
+} from "foxfang/plugin-sdk/account-resolution";
+import { isSecretRef, type FoxFangConfig } from "foxfang/plugin-sdk/core";
+import { safeParseJsonWithSchema, safeParseWithSchema } from "foxfang/plugin-sdk/extension-shared";
 import { z } from "zod";
 import type { GoogleChatAccountConfig } from "./types.config.js";
 
@@ -33,7 +33,7 @@ const {
 export { listGoogleChatAccountIds, resolveDefaultGoogleChatAccountId };
 
 function mergeGoogleChatAccountConfig(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   accountId: string,
 ): GoogleChatAccountConfig {
   const raw = cfg.channels?.["googlechat"] ?? {};
@@ -127,7 +127,7 @@ function resolveCredentialsFromConfig(params: {
 }
 
 export function resolveGoogleChatAccount(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId?: string | null;
 }): ResolvedGoogleChatAccount {
   const accountId = normalizeAccountId(params.accountId);
@@ -148,7 +148,7 @@ export function resolveGoogleChatAccount(params: {
   };
 }
 
-export function listEnabledGoogleChatAccounts(cfg: OpenClawConfig): ResolvedGoogleChatAccount[] {
+export function listEnabledGoogleChatAccounts(cfg: FoxFangConfig): ResolvedGoogleChatAccount[] {
   return listGoogleChatAccountIds(cfg)
     .map((accountId) => resolveGoogleChatAccount({ cfg, accountId }))
     .filter((account) => account.enabled);

@@ -1,4 +1,4 @@
 export {
   coerceStatusIssueAccountId,
   readStatusIssueFields,
-} from "openclaw/plugin-sdk/extension-shared";
+} from "foxfang/plugin-sdk/extension-shared";

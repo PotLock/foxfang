@@ -1,10 +1,10 @@
-import type { MarkdownTableMode } from "openclaw/plugin-sdk/config-runtime";
+import type { MarkdownTableMode } from "foxfang/plugin-sdk/config-runtime";
 import {
   chunkMarkdownIR,
   markdownToIR,
   type MarkdownIR,
   type MarkdownStyle,
-} from "openclaw/plugin-sdk/text-runtime";
+} from "foxfang/plugin-sdk/text-runtime";
 
 type SignalTextStyle = "BOLD" | "ITALIC" | "STRIKETHROUGH" | "MONOSPACE" | "SPOILER";
 

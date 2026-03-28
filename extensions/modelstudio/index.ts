@@ -1,4 +1,4 @@
-import { defineSingleProviderPluginEntry } from "openclaw/plugin-sdk/provider-entry";
+import { defineSingleProviderPluginEntry } from "foxfang/plugin-sdk/provider-entry";
 import { applyModelStudioNativeStreamingUsageCompat } from "./api.js";
 import {
   applyModelStudioConfig,

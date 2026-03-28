@@ -1,10 +1,10 @@
 import path from "node:path";
 import { GrammyError } from "grammy";
-import { fetchRemoteMedia } from "openclaw/plugin-sdk/media-runtime";
-import { saveMediaBuffer } from "openclaw/plugin-sdk/media-runtime";
-import { logVerbose, warn } from "openclaw/plugin-sdk/runtime-env";
-import { retryAsync } from "openclaw/plugin-sdk/runtime-env";
-import { formatErrorMessage } from "openclaw/plugin-sdk/ssrf-runtime";
+import { fetchRemoteMedia } from "foxfang/plugin-sdk/media-runtime";
+import { saveMediaBuffer } from "foxfang/plugin-sdk/media-runtime";
+import { logVerbose, warn } from "foxfang/plugin-sdk/runtime-env";
+import { retryAsync } from "foxfang/plugin-sdk/runtime-env";
+import { formatErrorMessage } from "foxfang/plugin-sdk/ssrf-runtime";
 import {
   resolveTelegramApiBase,
   shouldRetryTelegramTransportFallback,

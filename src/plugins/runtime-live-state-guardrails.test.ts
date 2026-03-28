@@ -13,7 +13,7 @@ const LIVE_RUNTIME_STATE_GUARDS: Record<
   }
 > = {
   "extensions/whatsapp/src/active-listener.ts": {
-    required: ["globalThis", 'Symbol.for("openclaw.whatsapp.activeListenerState")'],
+    required: ["globalThis", 'Symbol.for("foxfang.whatsapp.activeListenerState")'],
     forbidden: ["resolveGlobalSingleton"],
   },
 };

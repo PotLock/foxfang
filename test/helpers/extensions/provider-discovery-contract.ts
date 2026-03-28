@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthProfileStore } from "../../../src/agents/auth-profiles/types.js";
-import type { OpenClawConfig } from "../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../src/config/config.js";
 import type { ModelDefinitionConfig } from "../../../src/config/types.models.js";
 import { registerProviders, requireProvider } from "../../../src/plugins/contracts/testkit.js";
 
@@ -73,7 +73,7 @@ function runCatalog(
   state: DiscoveryState,
   params: {
     provider: ProviderHandle;
-    config?: OpenClawConfig;
+    config?: FoxFangConfig;
     env?: NodeJS.ProcessEnv;
     resolveProviderApiKey?: () => { apiKey: string | undefined };
     resolveProviderAuth?: (
@@ -107,7 +107,7 @@ function runCatalog(
 function installDiscoveryHooks(state: DiscoveryState) {
   beforeEach(async () => {
     vi.resetModules();
-    vi.doMock("openclaw/plugin-sdk/agent-runtime", async () => {
+    vi.doMock("foxfang/plugin-sdk/agent-runtime", async () => {
       const actual = await import("../../../src/plugin-sdk/agent-runtime.ts");
       return {
         ...actual,
@@ -115,8 +115,8 @@ function installDiscoveryHooks(state: DiscoveryState) {
         listProfilesForProvider: listProfilesForProviderMock,
       };
     });
-    vi.doMock("openclaw/plugin-sdk/provider-auth", async () => {
-      const actual = await vi.importActual<object>("openclaw/plugin-sdk/provider-auth");
+    vi.doMock("foxfang/plugin-sdk/provider-auth", async () => {
+      const actual = await vi.importActual<object>("foxfang/plugin-sdk/provider-auth");
       return {
         ...actual,
         ensureAuthProfileStore: ensureAuthProfileStoreMock,
@@ -130,8 +130,8 @@ function installDiscoveryHooks(state: DiscoveryState) {
         resolveCopilotApiToken: resolveCopilotApiTokenMock,
       };
     });
-    vi.doMock("openclaw/plugin-sdk/provider-setup", async () => {
-      const actual = await vi.importActual<object>("openclaw/plugin-sdk/provider-setup");
+    vi.doMock("foxfang/plugin-sdk/provider-setup", async () => {
+      const actual = await vi.importActual<object>("foxfang/plugin-sdk/provider-setup");
       return {
         ...actual,
         buildOllamaProvider: (...args: unknown[]) => buildOllamaProviderMock(...args),
@@ -139,9 +139,9 @@ function installDiscoveryHooks(state: DiscoveryState) {
         buildSglangProvider: (...args: unknown[]) => buildSglangProviderMock(...args),
       };
     });
-    vi.doMock("openclaw/plugin-sdk/self-hosted-provider-setup", async () => {
+    vi.doMock("foxfang/plugin-sdk/self-hosted-provider-setup", async () => {
       const actual = await vi.importActual<object>(
-        "openclaw/plugin-sdk/self-hosted-provider-setup",
+        "foxfang/plugin-sdk/self-hosted-provider-setup",
       );
       return {
         ...actual,

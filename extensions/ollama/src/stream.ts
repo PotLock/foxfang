@@ -10,21 +10,21 @@ import type {
 } from "@mariozechner/pi-ai";
 import { createAssistantMessageEventStream, streamSimple } from "@mariozechner/pi-ai";
 import type {
-  OpenClawConfig,
+  FoxFangConfig,
   ProviderRuntimeModel,
   ProviderWrapStreamFnContext,
-} from "openclaw/plugin-sdk/plugin-entry";
-import { isNonSecretApiKeyMarker } from "openclaw/plugin-sdk/provider-auth";
+} from "foxfang/plugin-sdk/plugin-entry";
+import { isNonSecretApiKeyMarker } from "foxfang/plugin-sdk/provider-auth";
 import {
   DEFAULT_CONTEXT_TOKENS,
   normalizeProviderId,
-} from "openclaw/plugin-sdk/provider-model-shared";
+} from "foxfang/plugin-sdk/provider-model-shared";
 import {
   createMoonshotThinkingWrapper,
   resolveMoonshotThinkingType,
   streamWithPayloadPatch,
-} from "openclaw/plugin-sdk/provider-stream";
-import { createSubsystemLogger } from "openclaw/plugin-sdk/runtime";
+} from "foxfang/plugin-sdk/provider-stream";
+import { createSubsystemLogger } from "foxfang/plugin-sdk/runtime";
 import { OLLAMA_DEFAULT_BASE_URL } from "./defaults.js";
 
 const log = createSubsystemLogger("ollama-stream");
@@ -47,7 +47,7 @@ export function resolveOllamaBaseUrlForRun(params: {
 }
 
 function resolveConfiguredOllamaProviderConfig(params: {
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   providerId?: string;
 }) {
   const providerId = params.providerId?.trim();
@@ -107,7 +107,7 @@ export function isOllamaCompatProvider(model: {
 }
 
 export function resolveOllamaCompatNumCtxEnabled(params: {
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   providerId?: string;
 }): boolean {
   return resolveConfiguredOllamaProviderConfig(params)?.injectNumCtxForOpenAICompat ?? true;
@@ -115,7 +115,7 @@ export function resolveOllamaCompatNumCtxEnabled(params: {
 
 export function shouldInjectOllamaCompatNumCtx(params: {
   model: { api?: string; provider?: string; baseUrl?: string };
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   providerId?: string;
 }): boolean {
   if (params.model.api !== "openai-completions") {

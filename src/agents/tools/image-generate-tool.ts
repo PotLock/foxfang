@@ -1,5 +1,5 @@
 import { Type } from "@sinclair/typebox";
-import type { OpenClawConfig } from "../../config/config.js";
+import type { FoxFangConfig } from "../../config/config.js";
 import { loadConfig } from "../../config/config.js";
 import { parseImageGenerationModelRef } from "../../image-generation/model-ref.js";
 import {
@@ -79,7 +79,7 @@ const ImageGenerateToolSchema = Type.Object({
   filename: Type.Optional(
     Type.String({
       description:
-        "Optional output filename hint. OpenClaw preserves the basename and saves under its managed media directory.",
+        "Optional output filename hint. FoxFang preserves the basename and saves under its managed media directory.",
     }),
   ),
   size: Type.Optional(
@@ -114,7 +114,7 @@ function getImageGenerationProviderAuthEnvVars(providerId: string): string[] {
 }
 
 function resolveImageGenerationModelCandidates(
-  cfg: OpenClawConfig | undefined,
+  cfg: FoxFangConfig | undefined,
 ): Array<string | undefined> {
   const providerDefaults = new Map<string, string>();
   for (const provider of listRuntimeImageGenerationProviders({ config: cfg })) {
@@ -146,7 +146,7 @@ function resolveImageGenerationModelCandidates(
 }
 
 export function resolveImageGenerationModelConfigForTool(params: {
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   agentDir?: string;
 }): ToolModelConfig | null {
   const explicit = coerceToolModelConfig(params.cfg?.agents?.defaults?.imageGenerationModel);
@@ -238,7 +238,7 @@ function normalizeReferenceImages(args: Record<string, unknown>): string[] {
 }
 
 function resolveSelectedImageGenerationProvider(params: {
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   imageGenerationModelConfig: ToolModelConfig;
   modelOverride?: string;
 }): ImageGenerationProvider | undefined {
@@ -465,7 +465,7 @@ async function inferResolutionFromInputImages(
 }
 
 export function createImageGenerateTool(options?: {
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   agentDir?: string;
   workspaceDir?: string;
   sandbox?: ImageGenerateSandboxConfig;

@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/mistral-provider",
+  "name": "@foxfang/mistral-provider",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw Mistral provider plugin",
+  "description": "FoxFang Mistral provider plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

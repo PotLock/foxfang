@@ -16,23 +16,23 @@ import type {
   ChannelThreadingAdapter,
 } from "../channels/plugins/types.core.js";
 import type { ChannelPlugin } from "../channels/plugins/types.plugin.js";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import type { ReplyToMode } from "../config/types.base.js";
 import { buildOutboundBaseSessionKey } from "../infra/outbound/base-session-key.js";
 import type { OutboundDeliveryResult } from "../infra/outbound/deliver.js";
 import { emptyPluginConfigSchema } from "../plugins/config-schema.js";
 import type { PluginRuntime } from "../plugins/runtime/types.js";
-import type { OpenClawPluginApi, OpenClawPluginConfigSchema } from "../plugins/types.js";
+import type { FoxFangPluginApi, FoxFangPluginConfigSchema } from "../plugins/types.js";
 
 export type {
   AnyAgentTool,
   MediaUnderstandingProviderPlugin,
-  OpenClawPluginApi,
-  OpenClawPluginCommandDefinition,
-  OpenClawPluginConfigSchema,
-  OpenClawPluginDefinition,
-  OpenClawPluginService,
-  OpenClawPluginServiceContext,
+  FoxFangPluginApi,
+  FoxFangPluginCommandDefinition,
+  FoxFangPluginConfigSchema,
+  FoxFangPluginDefinition,
+  FoxFangPluginService,
+  FoxFangPluginServiceContext,
   PluginCommandContext,
   PluginInteractiveTelegramHandlerContext,
   PluginLogger,
@@ -66,8 +66,8 @@ export type {
   ProviderWrapStreamFnContext,
   SpeechProviderPlugin,
 } from "./plugin-entry.js";
-export type { OpenClawPluginToolContext, OpenClawPluginToolFactory } from "../plugins/types.js";
-export type { OpenClawConfig } from "../config/config.js";
+export type { FoxFangPluginToolContext, FoxFangPluginToolFactory } from "../plugins/types.js";
+export type { FoxFangConfig } from "../config/config.js";
 export { isSecretRef } from "../config/types.secrets.js";
 export type { GatewayRequestHandlerOptions } from "../gateway/server-methods/types.js";
 export type {
@@ -182,7 +182,7 @@ export function stripTargetKindPrefix(raw: string): string {
  * message adapters.
  */
 export function buildChannelOutboundSessionRoute(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   agentId: string;
   channel: string;
   accountId?: string | null;
@@ -216,17 +216,17 @@ type DefineChannelPluginEntryOptions<TPlugin = ChannelPlugin> = {
   name: string;
   description: string;
   plugin: TPlugin;
-  configSchema?: OpenClawPluginConfigSchema | (() => OpenClawPluginConfigSchema);
+  configSchema?: FoxFangPluginConfigSchema | (() => FoxFangPluginConfigSchema);
   setRuntime?: (runtime: PluginRuntime) => void;
-  registerFull?: (api: OpenClawPluginApi) => void;
+  registerFull?: (api: FoxFangPluginApi) => void;
 };
 
 type DefinedChannelPluginEntry<TPlugin> = {
   id: string;
   name: string;
   description: string;
-  configSchema: OpenClawPluginConfigSchema;
-  register: (api: OpenClawPluginApi) => void;
+  configSchema: FoxFangPluginConfigSchema;
+  register: (api: FoxFangPluginApi) => void;
   channelPlugin: TPlugin;
   setChannelRuntime?: (runtime: PluginRuntime) => void;
 };
@@ -289,7 +289,7 @@ export function defineChannelPluginEntry<TPlugin>({
     name,
     description,
     configSchema: resolvedConfigSchema,
-    register(api: OpenClawPluginApi) {
+    register(api: FoxFangPluginApi) {
       setRuntime?.(api.runtime);
       api.registerChannel({ plugin: plugin as ChannelPlugin });
       if (api.registrationMode !== "full") {
@@ -359,7 +359,7 @@ type ChatChannelThreadingReplyModeOptions<TResolvedAccount> =
   | { topLevelReplyToMode: string }
   | {
       scopedAccountReplyToMode: {
-        resolveAccount: (cfg: OpenClawConfig, accountId?: string | null) => TResolvedAccount;
+        resolveAccount: (cfg: FoxFangConfig, accountId?: string | null) => TResolvedAccount;
         resolveReplyToMode: (
           account: TResolvedAccount,
           chatType?: string | null,

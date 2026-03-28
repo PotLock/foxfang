@@ -14,8 +14,8 @@ export {
   ToolAuthorizationError,
   WhatsAppConfigSchema,
   type ChannelPlugin,
-  type OpenClawConfig,
-} from "openclaw/plugin-sdk/whatsapp-core";
+  type FoxFangConfig,
+} from "foxfang/plugin-sdk/whatsapp-core";
 
 export {
   createWhatsAppOutboundBase,
@@ -28,7 +28,7 @@ export {
   type DmPolicy,
   type GroupPolicy,
   type WhatsAppAccountConfig,
-} from "openclaw/plugin-sdk/whatsapp-shared";
+} from "foxfang/plugin-sdk/whatsapp-shared";
 export {
   isWhatsAppGroupJid,
   isWhatsAppUserTarget,

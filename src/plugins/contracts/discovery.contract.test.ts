@@ -137,7 +137,7 @@ function runCatalog(params: {
 describe("provider discovery contract", () => {
   beforeEach(async () => {
     vi.resetModules();
-    vi.doMock("openclaw/plugin-sdk/agent-runtime", async () => {
+    vi.doMock("foxfang/plugin-sdk/agent-runtime", async () => {
       // Import the direct source module, not the mocked subpath, so bundled
       // provider helpers still see the full agent-runtime surface.
       const actual = await import("../../plugin-sdk/agent-runtime.ts");
@@ -147,8 +147,8 @@ describe("provider discovery contract", () => {
         listProfilesForProvider: listProfilesForProviderMock,
       };
     });
-    vi.doMock("openclaw/plugin-sdk/provider-auth", async () => {
-      const actual = await vi.importActual<object>("openclaw/plugin-sdk/provider-auth");
+    vi.doMock("foxfang/plugin-sdk/provider-auth", async () => {
+      const actual = await vi.importActual<object>("foxfang/plugin-sdk/provider-auth");
       return {
         ...actual,
         ensureAuthProfileStore: ensureAuthProfileStoreMock,
@@ -162,8 +162,8 @@ describe("provider discovery contract", () => {
         resolveCopilotApiToken: resolveCopilotApiTokenMock,
       };
     });
-    vi.doMock("openclaw/plugin-sdk/provider-setup", async () => {
-      const actual = await vi.importActual<object>("openclaw/plugin-sdk/provider-setup");
+    vi.doMock("foxfang/plugin-sdk/provider-setup", async () => {
+      const actual = await vi.importActual<object>("foxfang/plugin-sdk/provider-setup");
       return {
         ...actual,
         buildOllamaProvider: (...args: unknown[]) => buildOllamaProviderMock(...args),
@@ -171,9 +171,9 @@ describe("provider discovery contract", () => {
         buildSglangProvider: (...args: unknown[]) => buildSglangProviderMock(...args),
       };
     });
-    vi.doMock("openclaw/plugin-sdk/self-hosted-provider-setup", async () => {
+    vi.doMock("foxfang/plugin-sdk/self-hosted-provider-setup", async () => {
       const actual = await vi.importActual<object>(
-        "openclaw/plugin-sdk/self-hosted-provider-setup",
+        "foxfang/plugin-sdk/self-hosted-provider-setup",
       );
       return {
         ...actual,

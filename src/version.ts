@@ -1,8 +1,8 @@
 import { createRequire } from "node:module";
 
 declare const __FOXFANG_VERSION__: string | undefined;
-declare const __OPENCLAW_VERSION__: string | undefined;
-const CORE_PACKAGE_NAMES = new Set(["foxfang", "openclaw"]);
+declare const __FOXFANG_VERSION__: string | undefined;
+const CORE_PACKAGE_NAMES = new Set(["foxfang", "foxfang"]);
 
 const PACKAGE_JSON_CANDIDATES = [
   "../package.json",
@@ -112,13 +112,13 @@ function resolveVersionFromRuntimeSources(params: {
 }): string {
   const preferredCandidates =
     params.preference === "env-first"
-      ? [params.env["FOXFANG_VERSION"], params.env["OPENCLAW_VERSION"], params.runtimeVersion]
-      : [params.runtimeVersion, params.env["FOXFANG_VERSION"], params.env["OPENCLAW_VERSION"]];
+      ? [params.env["FOXFANG_VERSION"], params.env["FOXFANG_VERSION"], params.runtimeVersion]
+      : [params.runtimeVersion, params.env["FOXFANG_VERSION"], params.env["FOXFANG_VERSION"]];
   return (
     firstNonEmpty(
       ...preferredCandidates,
       params.env["FOXFANG_SERVICE_VERSION"],
-      params.env["OPENCLAW_SERVICE_VERSION"],
+      params.env["FOXFANG_SERVICE_VERSION"],
       params.env["npm_package_version"],
     ) ?? params.fallback
   );
@@ -155,6 +155,6 @@ export const VERSION = resolveBinaryVersion({
   moduleUrl: import.meta.url,
   injectedVersion:
     (typeof __FOXFANG_VERSION__ === "string" ? __FOXFANG_VERSION__ : undefined) ||
-    (typeof __OPENCLAW_VERSION__ === "string" ? __OPENCLAW_VERSION__ : undefined),
-  bundledVersion: process.env.FOXFANG_BUNDLED_VERSION || process.env.OPENCLAW_BUNDLED_VERSION,
+    (typeof __FOXFANG_VERSION__ === "string" ? __FOXFANG_VERSION__ : undefined),
+  bundledVersion: process.env.FOXFANG_BUNDLED_VERSION || process.env.FOXFANG_BUNDLED_VERSION,
 });

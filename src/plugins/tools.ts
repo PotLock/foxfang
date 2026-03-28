@@ -5,7 +5,7 @@ import { createSubsystemLogger } from "../logging/subsystem.js";
 import { applyTestPluginDefaults, normalizePluginsConfig } from "./config-state.js";
 import { resolveRuntimePluginRegistry } from "./loader.js";
 import { createPluginLoaderLogger } from "./logger.js";
-import type { OpenClawPluginToolContext } from "./types.js";
+import type { FoxFangPluginToolContext } from "./types.js";
 
 const log = createSubsystemLogger("plugins");
 
@@ -51,7 +51,7 @@ function isOptionalToolAllowed(params: {
 }
 
 export function resolvePluginTools(params: {
-  context: OpenClawPluginToolContext;
+  context: FoxFangPluginToolContext;
   existingToolNames?: Set<string>;
   toolAllowlist?: string[];
   suppressNameConflicts?: boolean;

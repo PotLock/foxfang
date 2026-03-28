@@ -1,10 +1,10 @@
-import { buildDmGroupAccountAllowlistAdapter } from "openclaw/plugin-sdk/allowlist-config-edit";
-import { createChatChannelPlugin } from "openclaw/plugin-sdk/core";
-import { chunkText } from "openclaw/plugin-sdk/reply-runtime";
+import { buildDmGroupAccountAllowlistAdapter } from "foxfang/plugin-sdk/allowlist-config-edit";
+import { createChatChannelPlugin } from "foxfang/plugin-sdk/core";
+import { chunkText } from "foxfang/plugin-sdk/reply-runtime";
 import {
   createAsyncComputedAccountStatusAdapter,
   createDefaultChannelRuntimeState,
-} from "openclaw/plugin-sdk/status-helpers";
+} from "foxfang/plugin-sdk/status-helpers";
 // WhatsApp-specific imports from local extension code (moved from src/web/ and src/channels/plugins/)
 import { resolveWhatsAppAccount, type ResolvedWhatsAppAccount } from "./accounts.js";
 import { createWhatsAppLoginTool } from "./agent-tools-login.js";

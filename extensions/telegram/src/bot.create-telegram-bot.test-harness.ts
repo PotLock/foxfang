@@ -1,22 +1,22 @@
-import { resolveDefaultModelForAgent } from "openclaw/plugin-sdk/agent-runtime";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import { resetInboundDedupe } from "openclaw/plugin-sdk/reply-runtime";
-import type { MsgContext } from "openclaw/plugin-sdk/reply-runtime";
-import type { GetReplyOptions, ReplyPayload } from "openclaw/plugin-sdk/reply-runtime";
-import { createReplyDispatcher } from "openclaw/plugin-sdk/reply-runtime";
-import type { MockFn } from "openclaw/plugin-sdk/testing";
+import { resolveDefaultModelForAgent } from "foxfang/plugin-sdk/agent-runtime";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import { resetInboundDedupe } from "foxfang/plugin-sdk/reply-runtime";
+import type { MsgContext } from "foxfang/plugin-sdk/reply-runtime";
+import type { GetReplyOptions, ReplyPayload } from "foxfang/plugin-sdk/reply-runtime";
+import { createReplyDispatcher } from "foxfang/plugin-sdk/reply-runtime";
+import type { MockFn } from "foxfang/plugin-sdk/testing";
 import { beforeEach, vi } from "vitest";
 import type { TelegramBotDeps } from "./bot-deps.js";
 
 type AnyMock = ReturnType<typeof vi.fn>;
 type AnyAsyncMock = ReturnType<typeof vi.fn>;
-type LoadConfigFn = typeof import("openclaw/plugin-sdk/config-runtime").loadConfig;
-type ResolveStorePathFn = typeof import("openclaw/plugin-sdk/config-runtime").resolveStorePath;
+type LoadConfigFn = typeof import("foxfang/plugin-sdk/config-runtime").loadConfig;
+type ResolveStorePathFn = typeof import("foxfang/plugin-sdk/config-runtime").resolveStorePath;
 type TelegramBotRuntimeForTest = NonNullable<
   Parameters<typeof import("./bot.js").setTelegramBotRuntimeForTest>[0]
 >;
 type DispatchReplyWithBufferedBlockDispatcherFn =
-  typeof import("openclaw/plugin-sdk/reply-runtime").dispatchReplyWithBufferedBlockDispatcher;
+  typeof import("foxfang/plugin-sdk/reply-runtime").dispatchReplyWithBufferedBlockDispatcher;
 type DispatchReplyWithBufferedBlockDispatcherResult = Awaited<
   ReturnType<DispatchReplyWithBufferedBlockDispatcherFn>
 >;
@@ -29,7 +29,7 @@ const EMPTY_REPLY_COUNTS: DispatchReplyWithBufferedBlockDispatcherResult["counts
 };
 
 const { sessionStorePath } = vi.hoisted(() => ({
-  sessionStorePath: `/tmp/openclaw-telegram-${process.pid}-${process.env.VITEST_POOL_ID ?? "0"}.json`,
+  sessionStorePath: `/tmp/foxfang-telegram-${process.pid}-${process.env.VITEST_POOL_ID ?? "0"}.json`,
 }));
 
 const { loadWebMedia } = vi.hoisted((): { loadWebMedia: AnyMock } => ({
@@ -40,10 +40,10 @@ export function getLoadWebMediaMock(): AnyMock {
   return loadWebMedia;
 }
 
-vi.mock("openclaw/plugin-sdk/web-media", () => ({
+vi.mock("foxfang/plugin-sdk/web-media", () => ({
   loadWebMedia,
 }));
-vi.mock("openclaw/plugin-sdk/web-media.js", () => ({
+vi.mock("foxfang/plugin-sdk/web-media.js", () => ({
   loadWebMedia,
 }));
 
@@ -62,8 +62,8 @@ const { loadConfig, resolveStorePathMock } = vi.hoisted(
 export function getLoadConfigMock(): AnyMock {
   return loadConfig;
 }
-vi.doMock("openclaw/plugin-sdk/config-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/config-runtime")>();
+vi.doMock("foxfang/plugin-sdk/config-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/config-runtime")>();
   return {
     ...actual,
     loadConfig,
@@ -92,16 +92,16 @@ export function getUpsertChannelPairingRequestMock(): AnyAsyncMock {
   return upsertChannelPairingRequest;
 }
 
-vi.doMock("openclaw/plugin-sdk/conversation-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/conversation-runtime")>();
+vi.doMock("foxfang/plugin-sdk/conversation-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/conversation-runtime")>();
   return {
     ...actual,
     readChannelAllowFromStore,
     upsertChannelPairingRequest,
   };
 });
-vi.doMock("openclaw/plugin-sdk/conversation-runtime.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/conversation-runtime")>();
+vi.doMock("foxfang/plugin-sdk/conversation-runtime.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/conversation-runtime")>();
   return {
     ...actual,
     readChannelAllowFromStore,
@@ -123,7 +123,7 @@ const replySpyHoisted = vi.hoisted(() => ({
     (
       ctx: MsgContext,
       opts?: GetReplyOptions,
-      configOverride?: OpenClawConfig,
+      configOverride?: FoxFangConfig,
     ) => Promise<ReplyPayload | ReplyPayload[] | undefined>
   >,
 }));
@@ -201,7 +201,7 @@ function parseModelRef(raw: string): { provider?: string; model: string } {
   return { model: trimmed };
 }
 
-function createModelsProviderDataFromConfig(cfg: OpenClawConfig): {
+function createModelsProviderDataFromConfig(cfg: FoxFangConfig): {
   byProvider: Map<string, Set<string>>;
   providers: string[];
   resolvedDefault: { provider: string; model: string };
@@ -230,24 +230,24 @@ function createModelsProviderDataFromConfig(cfg: OpenClawConfig): {
   return { byProvider, providers, resolvedDefault };
 }
 
-vi.doMock("openclaw/plugin-sdk/command-auth", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/command-auth")>();
+vi.doMock("foxfang/plugin-sdk/command-auth", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/command-auth")>();
   return {
     ...actual,
     listSkillCommandsForAgents: skillCommandListHoisted.listSkillCommandsForAgents,
     buildModelsProviderData,
   };
 });
-vi.doMock("openclaw/plugin-sdk/command-auth.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/command-auth")>();
+vi.doMock("foxfang/plugin-sdk/command-auth.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/command-auth")>();
   return {
     ...actual,
     listSkillCommandsForAgents: skillCommandListHoisted.listSkillCommandsForAgents,
     buildModelsProviderData,
   };
 });
-vi.doMock("openclaw/plugin-sdk/reply-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/reply-runtime")>();
+vi.doMock("foxfang/plugin-sdk/reply-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/reply-runtime")>();
   return {
     ...actual,
     getReplyFromConfig: replySpyHoisted.replySpy,
@@ -256,8 +256,8 @@ vi.doMock("openclaw/plugin-sdk/reply-runtime", async (importOriginal) => {
       dispatchReplyHoisted.dispatchReplyWithBufferedBlockDispatcher,
   };
 });
-vi.doMock("openclaw/plugin-sdk/reply-runtime.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/reply-runtime")>();
+vi.doMock("foxfang/plugin-sdk/reply-runtime.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/reply-runtime")>();
   return {
     ...actual,
     getReplyFromConfig: replySpyHoisted.replySpy,
@@ -273,8 +273,8 @@ const systemEventsHoisted = vi.hoisted(() => ({
 export const enqueueSystemEventSpy: MockFn<TelegramBotDeps["enqueueSystemEvent"]> =
   systemEventsHoisted.enqueueSystemEventSpy;
 
-vi.doMock("openclaw/plugin-sdk/channel-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/channel-runtime")>();
+vi.doMock("foxfang/plugin-sdk/channel-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/channel-runtime")>();
   return {
     ...actual,
     enqueueSystemEvent: systemEventsHoisted.enqueueSystemEventSpy,
@@ -310,7 +310,7 @@ const grammySpies = vi.hoisted(() => ({
   setMessageReactionSpy: vi.fn(async () => undefined) as AnyAsyncMock,
   setMyCommandsSpy: vi.fn(async () => undefined) as AnyAsyncMock,
   getMeSpy: vi.fn(async () => ({
-    username: "openclaw_bot",
+    username: "foxfang_bot",
     has_topics_enabled: true,
   })) as AnyAsyncMock,
   getChatSpy: vi.fn(async () => undefined) as AnyAsyncMock,
@@ -426,7 +426,7 @@ export const getOnHandler = (event: string) => {
   return handler as (ctx: Record<string, unknown>) => Promise<void>;
 };
 
-const DEFAULT_TELEGRAM_TEST_CONFIG: OpenClawConfig = {
+const DEFAULT_TELEGRAM_TEST_CONFIG: FoxFangConfig = {
   agents: {
     defaults: {
       envelopeTimezone: "utc",
@@ -461,7 +461,7 @@ export function makeTelegramMessageCtx(params: {
         ? {}
         : { message_thread_id: params.messageThreadId }),
     },
-    me: { username: "openclaw_bot" },
+    me: { username: "foxfang_bot" },
     getFile: async () => ({ download: async () => new Uint8Array() }),
   };
 }
@@ -536,7 +536,7 @@ beforeEach(() => {
   getChatSpy.mockResolvedValue(undefined);
   getMeSpy.mockReset();
   getMeSpy.mockResolvedValue({
-    username: "openclaw_bot",
+    username: "foxfang_bot",
     has_topics_enabled: true,
   });
   editMessageTextSpy.mockReset();
@@ -551,7 +551,7 @@ beforeEach(() => {
   listSkillCommandsForAgents.mockReset();
   listSkillCommandsForAgents.mockReturnValue([]);
   buildModelsProviderData.mockReset();
-  buildModelsProviderData.mockImplementation(async (cfg: OpenClawConfig) => {
+  buildModelsProviderData.mockImplementation(async (cfg: FoxFangConfig) => {
     return createModelsProviderDataFromConfig(cfg);
   });
   middlewareUseSpy.mockReset();

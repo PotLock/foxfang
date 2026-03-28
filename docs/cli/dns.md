@@ -1,12 +1,12 @@
 ---
-summary: "CLI reference for `openclaw dns` (wide-area discovery helpers)"
+summary: "CLI reference for `foxfang dns` (wide-area discovery helpers)"
 read_when:
   - You want wide-area discovery (DNS-SD) via Tailscale + CoreDNS
-  - You’re setting up split DNS for a custom discovery domain (example: openclaw.internal)
+  - You’re setting up split DNS for a custom discovery domain (example: foxfang.internal)
 title: "dns"
 ---
 
-# `openclaw dns`
+# `foxfang dns`
 
 DNS helpers for wide-area discovery (Tailscale + CoreDNS). Currently focused on macOS + Homebrew CoreDNS.
 
@@ -18,6 +18,6 @@ Related:
 ## Setup
 
 ```bash
-openclaw dns setup
-openclaw dns setup --apply
+foxfang dns setup
+foxfang dns setup --apply
 ```

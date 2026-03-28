@@ -1,4 +1,4 @@
-import type { loadConfig } from "openclaw/plugin-sdk/config-runtime";
+import type { loadConfig } from "foxfang/plugin-sdk/config-runtime";
 import {
   evaluateSessionFreshness,
   loadSessionStore,
@@ -8,8 +8,8 @@ import {
   resolveSessionResetType,
   resolveSessionKey,
   resolveStorePath,
-} from "openclaw/plugin-sdk/config-runtime";
-import { normalizeMainKey } from "openclaw/plugin-sdk/routing";
+} from "foxfang/plugin-sdk/config-runtime";
+import { normalizeMainKey } from "foxfang/plugin-sdk/routing";
 
 export function getSessionSnapshot(
   cfg: ReturnType<typeof loadConfig>,

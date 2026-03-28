@@ -1,19 +1,19 @@
-import { resolveHumanDelayConfig } from "openclaw/plugin-sdk/agent-runtime";
+import { resolveHumanDelayConfig } from "foxfang/plugin-sdk/agent-runtime";
 import {
   logAckFailure,
   logTypingFailure,
   removeAckReactionAfterReply,
-} from "openclaw/plugin-sdk/channel-feedback";
-import { createChannelReplyPipeline } from "openclaw/plugin-sdk/channel-reply-pipeline";
-import { resolveStorePath, updateLastRoute } from "openclaw/plugin-sdk/config-runtime";
-import { resolveAgentOutboundIdentity } from "openclaw/plugin-sdk/outbound-runtime";
-import { clearHistoryEntriesIfEnabled } from "openclaw/plugin-sdk/reply-history";
-import { resolveSendableOutboundReplyParts } from "openclaw/plugin-sdk/reply-payload";
-import { dispatchInboundMessage } from "openclaw/plugin-sdk/reply-runtime";
-import { createReplyDispatcherWithTyping } from "openclaw/plugin-sdk/reply-runtime";
-import type { ReplyPayload } from "openclaw/plugin-sdk/reply-runtime";
-import { danger, logVerbose, shouldLogVerbose } from "openclaw/plugin-sdk/runtime-env";
-import { resolvePinnedMainDmOwnerFromAllowlist } from "openclaw/plugin-sdk/security-runtime";
+} from "foxfang/plugin-sdk/channel-feedback";
+import { createChannelReplyPipeline } from "foxfang/plugin-sdk/channel-reply-pipeline";
+import { resolveStorePath, updateLastRoute } from "foxfang/plugin-sdk/config-runtime";
+import { resolveAgentOutboundIdentity } from "foxfang/plugin-sdk/outbound-runtime";
+import { clearHistoryEntriesIfEnabled } from "foxfang/plugin-sdk/reply-history";
+import { resolveSendableOutboundReplyParts } from "foxfang/plugin-sdk/reply-payload";
+import { dispatchInboundMessage } from "foxfang/plugin-sdk/reply-runtime";
+import { createReplyDispatcherWithTyping } from "foxfang/plugin-sdk/reply-runtime";
+import type { ReplyPayload } from "foxfang/plugin-sdk/reply-runtime";
+import { danger, logVerbose, shouldLogVerbose } from "foxfang/plugin-sdk/runtime-env";
+import { resolvePinnedMainDmOwnerFromAllowlist } from "foxfang/plugin-sdk/security-runtime";
 import { editSlackMessage, reactSlackMessage, removeSlackReaction } from "../../actions.js";
 import { createSlackDraftStream } from "../../draft-stream.js";
 import { normalizeSlackOutboundText } from "../../format.js";

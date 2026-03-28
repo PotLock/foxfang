@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/moonshot-provider",
+  "name": "@foxfang/moonshot-provider",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw Moonshot provider plugin",
+  "description": "FoxFang Moonshot provider plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

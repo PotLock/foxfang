@@ -9,8 +9,8 @@ import {
 } from "./http-auth-helpers.js";
 import { sendInvalidRequest, sendJson, sendMethodNotAllowed } from "./http-common.js";
 import {
-  OPENCLAW_DEFAULT_MODEL_ID,
-  OPENCLAW_MODEL_ID,
+  FOXFANG_DEFAULT_MODEL_ID,
+  FOXFANG_MODEL_ID,
   resolveAgentIdFromModel,
 } from "./http-utils.js";
 import { authorizeOperatorScopesForMethod } from "./method-scopes.js";
@@ -35,7 +35,7 @@ function toOpenAiModel(id: string): OpenAiModelObject {
     id,
     object: "model",
     created: 0,
-    owned_by: "openclaw",
+    owned_by: "foxfang",
     permission: [],
   };
 }
@@ -58,10 +58,10 @@ async function authorizeRequest(
 function loadAgentModelIds(): string[] {
   const cfg = loadConfig();
   const defaultAgentId = resolveDefaultAgentId(cfg);
-  const ids = new Set<string>([OPENCLAW_MODEL_ID, OPENCLAW_DEFAULT_MODEL_ID]);
-  ids.add(`openclaw/${defaultAgentId}`);
+  const ids = new Set<string>([FOXFANG_MODEL_ID, FOXFANG_DEFAULT_MODEL_ID]);
+  ids.add(`foxfang/${defaultAgentId}`);
   for (const agentId of listAgentIds(cfg)) {
-    ids.add(`openclaw/${agentId}`);
+    ids.add(`foxfang/${agentId}`);
   }
   return Array.from(ids);
 }
@@ -125,7 +125,7 @@ export async function handleOpenAiModelsHttpRequest(
     return true;
   }
 
-  if (decodedId !== OPENCLAW_MODEL_ID && !resolveAgentIdFromModel(decodedId)) {
+  if (decodedId !== FOXFANG_MODEL_ID && !resolveAgentIdFromModel(decodedId)) {
     sendInvalidRequest(res, "Invalid model id.");
     return true;
   }

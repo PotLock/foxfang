@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "../../../config/config.js";
+import type { FoxFangConfig } from "../../../config/config.js";
 import type {
   PluginHookAgentContext,
   PluginHookBeforeAgentStartResult,
@@ -96,7 +96,7 @@ export function shouldInjectHeartbeatPrompt(params: {
 }
 
 export function resolveAttemptFsWorkspaceOnly(params: {
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   sessionAgentId: string;
 }): boolean {
   return resolveEffectiveToolFsWorkspaceOnly({

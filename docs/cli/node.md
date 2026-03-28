@@ -1,12 +1,12 @@
 ---
-summary: "CLI reference for `openclaw node` (headless node host)"
+summary: "CLI reference for `foxfang node` (headless node host)"
 read_when:
   - Running the headless node host
   - Pairing a non-macOS node for system.run
 title: "node"
 ---
 
-# `openclaw node`
+# `foxfang node`
 
 Run a **headless node host** that connects to the Gateway WebSocket and exposes
 `system.run` / `system.which` on this machine.
@@ -51,7 +51,7 @@ Disable it on the node if needed:
 ## Run (foreground)
 
 ```bash
-openclaw node run --host <gateway-host> --port 18789
+foxfang node run --host <gateway-host> --port 18789
 ```
 
 Options:
@@ -65,21 +65,21 @@ Options:
 
 ## Gateway auth for node host
 
-`openclaw node run` and `openclaw node install` resolve gateway auth from config/env (no `--token`/`--password` flags on node commands):
+`foxfang node run` and `foxfang node install` resolve gateway auth from config/env (no `--token`/`--password` flags on node commands):
 
-- `OPENCLAW_GATEWAY_TOKEN` / `OPENCLAW_GATEWAY_PASSWORD` are checked first.
+- `FOXFANG_GATEWAY_TOKEN` / `FOXFANG_GATEWAY_PASSWORD` are checked first.
 - Then local config fallback: `gateway.auth.token` / `gateway.auth.password`.
 - In local mode, node host intentionally does not inherit `gateway.remote.token` / `gateway.remote.password`.
 - If `gateway.auth.token` / `gateway.auth.password` is explicitly configured via SecretRef and unresolved, node auth resolution fails closed (no remote fallback masking).
 - In `gateway.mode=remote`, remote client fields (`gateway.remote.token` / `gateway.remote.password`) are also eligible per remote precedence rules.
-- Node host auth resolution only honors `OPENCLAW_GATEWAY_*` env vars.
+- Node host auth resolution only honors `FOXFANG_GATEWAY_*` env vars.
 
 ## Service (background)
 
 Install a headless node host as a user service.
 
 ```bash
-openclaw node install --host <gateway-host> --port 18789
+foxfang node install --host <gateway-host> --port 18789
 ```
 
 Options:
@@ -96,13 +96,13 @@ Options:
 Manage the service:
 
 ```bash
-openclaw node status
-openclaw node stop
-openclaw node restart
-openclaw node uninstall
+foxfang node status
+foxfang node stop
+foxfang node restart
+foxfang node uninstall
 ```
 
-Use `openclaw node run` for a foreground node host (no service).
+Use `foxfang node run` for a foreground node host (no service).
 
 Service commands accept `--json` for machine-readable output.
 
@@ -112,13 +112,13 @@ The first connection creates a pending device pairing request (`role: node`) on 
 Approve it via:
 
 ```bash
-openclaw devices list
-openclaw devices approve <requestId>
+foxfang devices list
+foxfang devices approve <requestId>
 ```
 
 If the node retries pairing with changed auth details (role/scopes/public key),
 the previous pending request is superseded and a new `requestId` is created.
-Run `openclaw devices list` again before approval.
+Run `foxfang devices list` again before approval.
 
 The node host stores its node id, token, display name, and gateway connection info in
 `~/.foxfang/node.json`.
@@ -129,4 +129,4 @@ The node host stores its node id, token, display name, and gateway connection in
 
 - `~/.foxfang/exec-approvals.json`
 - [Exec approvals](/tools/exec-approvals)
-- `openclaw approvals --node <id|name|ip>` (edit from the Gateway)
+- `foxfang approvals --node <id|name|ip>` (edit from the Gateway)

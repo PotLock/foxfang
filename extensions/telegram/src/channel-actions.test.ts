@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../src/config/config.js";
 import { telegramMessageActions, telegramMessageActionRuntime } from "./channel-actions.js";
 
 const handleTelegramActionMock = vi.hoisted(() => vi.fn());
@@ -64,7 +64,7 @@ describe("telegramMessageActions", () => {
     const cases = [
       {
         name: "configured telegram enables poll",
-        cfg: { channels: { telegram: { botToken: "tok" } } } as OpenClawConfig,
+        cfg: { channels: { telegram: { botToken: "tok" } } } as FoxFangConfig,
         expectPoll: true,
         expectTopicEdit: true,
       },
@@ -77,7 +77,7 @@ describe("telegramMessageActions", () => {
               actions: { sendMessage: false },
             },
           },
-        } as OpenClawConfig,
+        } as FoxFangConfig,
         expectPoll: false,
         expectTopicEdit: true,
       },
@@ -90,7 +90,7 @@ describe("telegramMessageActions", () => {
               actions: { poll: false },
             },
           },
-        } as OpenClawConfig,
+        } as FoxFangConfig,
         expectPoll: false,
         expectTopicEdit: true,
       },
@@ -117,7 +117,7 @@ describe("telegramMessageActions", () => {
               },
             },
           },
-        } as OpenClawConfig,
+        } as FoxFangConfig,
         expectPoll: false,
         expectTopicEdit: true,
       },
@@ -145,7 +145,7 @@ describe("telegramMessageActions", () => {
     const cases = [
       {
         name: "default config",
-        cfg: { channels: { telegram: { botToken: "tok" } } } as OpenClawConfig,
+        cfg: { channels: { telegram: { botToken: "tok" } } } as FoxFangConfig,
         expectSticker: false,
       },
       {
@@ -158,7 +158,7 @@ describe("telegramMessageActions", () => {
               },
             },
           },
-        } as OpenClawConfig,
+        } as FoxFangConfig,
         expectSticker: true,
       },
       {
@@ -172,7 +172,7 @@ describe("telegramMessageActions", () => {
               },
             },
           },
-        } as OpenClawConfig,
+        } as FoxFangConfig,
         expectSticker: false,
       },
     ] as const;
@@ -194,7 +194,7 @@ describe("telegramMessageActions", () => {
   });
 
   it("normalizes reaction message identifiers before dispatch", async () => {
-    const cfg = { channels: { telegram: { botToken: "tok" } } } as OpenClawConfig;
+    const cfg = { channels: { telegram: { botToken: "tok" } } } as FoxFangConfig;
     const cases = [
       {
         name: "numeric channelId/messageId",

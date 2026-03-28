@@ -40,7 +40,7 @@ describe("mattermost monitor resources", () => {
 
     const resources = createMattermostMonitorResources({
       accountId: "default",
-      callbackUrl: "https://openclaw.test/callback",
+      callbackUrl: "https://foxfang.test/callback",
       client: {
         apiBaseUrl: "https://chat.example.com/api/v4",
         baseUrl: "https://chat.example.com",
@@ -82,7 +82,7 @@ describe("mattermost monitor resources", () => {
 
     const resources = createMattermostMonitorResources({
       accountId: "default",
-      callbackUrl: "https://openclaw.test/callback",
+      callbackUrl: "https://foxfang.test/callback",
       client: {} as never,
       logger: {},
       mediaMaxBytes: 1024,
@@ -133,7 +133,7 @@ describe("mattermost monitor resources", () => {
 
     const resources = createMattermostMonitorResources({
       accountId: "default",
-      callbackUrl: "https://openclaw.test/callback",
+      callbackUrl: "https://foxfang.test/callback",
       client,
       logger: {},
       mediaMaxBytes: 1024,

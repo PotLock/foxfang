@@ -1,9 +1,9 @@
 ---
-summary: "Schema-accurate configuration examples for common OpenClaw setups"
+summary: "Schema-accurate configuration examples for common FoxFang setups"
 read_when:
-  - Learning how to configure OpenClaw
+  - Learning how to configure FoxFang
   - Looking for configuration examples
-  - Setting up OpenClaw for the first time
+  - Setting up FoxFang for the first time
 title: "Configuration Examples"
 ---
 
@@ -22,7 +22,7 @@ Examples below are aligned with the current config schema. For the exhaustive re
 }
 ```
 
-Save to `~/.foxfang/openclaw.json` and you can DM the bot from that number.
+Save to `~/.foxfang/foxfang.json` and you can DM the bot from that number.
 
 ### Recommended starter
 
@@ -93,7 +93,7 @@ Save to `~/.foxfang/openclaw.json` and you can DM the bot from that number.
   // Logging
   logging: {
     level: "info",
-    file: "/tmp/openclaw/openclaw.log",
+    file: "/tmp/foxfang/foxfang.log",
     consoleLevel: "info",
     consoleStyle: "pretty",
     redactSensitive: "tools",
@@ -101,7 +101,7 @@ Save to `~/.foxfang/openclaw.json` and you can DM the bot from that number.
 
   // Message formatting
   messages: {
-    messagePrefix: "[openclaw]",
+    messagePrefix: "[foxfang]",
     responsePrefix: ">",
     ackReaction: "👀",
     ackReactionScope: "group-mentions",
@@ -110,7 +110,7 @@ Save to `~/.foxfang/openclaw.json` and you can DM the bot from that number.
   // Routing + queue
   routing: {
     groupChat: {
-      mentionPatterns: ["@openclaw", "openclaw"],
+      mentionPatterns: ["@foxfang", "foxfang"],
       historyLimit: 50,
     },
     queue: {
@@ -205,7 +205,7 @@ Save to `~/.foxfang/openclaw.json` and you can DM the bot from that number.
       dm: { enabled: true, allowFrom: ["123456789012345678"] },
       guilds: {
         "123456789012345678": {
-          slug: "friends-of-openclaw",
+          slug: "friends-of-foxfang",
           requireMention: false,
           channels: {
             general: { allow: true },
@@ -225,7 +225,7 @@ Save to `~/.foxfang/openclaw.json` and you can DM the bot from that number.
       dm: { enabled: true, allowFrom: ["U123"] },
       slashCommand: {
         enabled: true,
-        name: "openclaw",
+        name: "foxfang",
         sessionPrefix: "slack:slash",
         ephemeral: true,
       },
@@ -291,7 +291,7 @@ Save to `~/.foxfang/openclaw.json` and you can DM the bot from that number.
         perSession: true,
         workspaceRoot: "~/.foxfang/sandboxes",
         docker: {
-          image: "openclaw-sandbox:bookworm-slim",
+          image: "foxfang-sandbox:bookworm-slim",
           workdir: "/workspace",
           readOnlyRoot: true,
           tmpfs: ["/tmp", "/var/tmp", "/run"],
@@ -408,7 +408,7 @@ Save to `~/.foxfang/openclaw.json` and you can DM the bot from that number.
       },
     ],
     gmail: {
-      account: "openclaw@gmail.com",
+      account: "foxfang@gmail.com",
       label: "INBOX",
       topic: "projects/<project-id>/topics/gog-gmail-watch",
       subscription: "gog-gmail-watch-push",
@@ -427,7 +427,7 @@ Save to `~/.foxfang/openclaw.json` and you can DM the bot from that number.
     mode: "local",
     port: 18789,
     bind: "loopback",
-    controlUi: { enabled: true, basePath: "/openclaw" },
+    controlUi: { enabled: true, basePath: "/foxfang" },
     auth: {
       mode: "token",
       token: "gateway-token",
@@ -595,7 +595,7 @@ terms before depending on subscription auth.
     theme: "professional assistant",
   },
   agent: {
-    workspace: "~/work-openclaw",
+    workspace: "~/work-foxfang",
     elevated: { enabled: false },
   },
   channels: {

@@ -1,6 +1,6 @@
 import type { AssistantMessage } from "@mariozechner/pi-ai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../config/config.js";
+import type { FoxFangConfig } from "../../config/config.js";
 import { __testing as pluginLoaderTesting } from "../../plugins/loader.js";
 import { createEmptyPluginRegistry } from "../../plugins/registry-empty.js";
 import { setActivePluginRegistry } from "../../plugins/runtime.js";
@@ -117,7 +117,7 @@ function createSummarizeTextDeps() {
   };
 }
 
-function createOpenAiTelephonyCfg(model: "tts-1" | "gpt-4o-mini-tts"): OpenClawConfig {
+function createOpenAiTelephonyCfg(model: "tts-1" | "gpt-4o-mini-tts"): FoxFangConfig {
   return {
     messages: {
       tts: {
@@ -354,7 +354,7 @@ describe("tts", () => {
   });
 
   describe("resolveEdgeOutputFormat", () => {
-    const baseCfg: OpenClawConfig = {
+    const baseCfg: FoxFangConfig = {
       agents: { defaults: { model: { primary: "openai/gpt-4o-mini" } } },
       messages: { tts: {} },
     };
@@ -374,7 +374,7 @@ describe("tts", () => {
               edge: { outputFormat: "audio-24khz-96kbitrate-mono-mp3" },
             },
           },
-        } as OpenClawConfig,
+        } as FoxFangConfig,
         expected: "audio-24khz-96kbitrate-mono-mp3",
       },
     ] as const)("$name", ({ cfg, expected, name }) => {
@@ -472,7 +472,7 @@ describe("tts", () => {
   });
 
   describe("summarizeText", () => {
-    const baseCfg: OpenClawConfig = {
+    const baseCfg: FoxFangConfig = {
       agents: { defaults: { model: { primary: "openai/gpt-4o-mini" } } },
       messages: { tts: {} },
     };
@@ -480,7 +480,7 @@ describe("tts", () => {
     async function runSummarizeText(params?: {
       text?: string;
       targetLength?: number;
-      cfg?: OpenClawConfig;
+      cfg?: FoxFangConfig;
     }) {
       const cfg = params?.cfg ?? baseCfg;
       const config = resolveTtsConfig(cfg);
@@ -526,7 +526,7 @@ describe("tts", () => {
     });
 
     it("uses summaryModel override when configured", async () => {
-      const cfg: OpenClawConfig = {
+      const cfg: FoxFangConfig = {
         agents: { defaults: { model: { primary: "anthropic/claude-opus-4-5" } } },
         messages: { tts: { summaryModel: "openai/gpt-4.1-mini" } },
       };
@@ -656,7 +656,7 @@ describe("tts", () => {
   });
 
   describe("resolveTtsConfig – openai.baseUrl", () => {
-    const baseCfg: OpenClawConfig = {
+    const baseCfg: FoxFangConfig = {
       agents: { defaults: { model: { primary: "openai/gpt-4o-mini" } } },
       messages: { tts: {} },
     };
@@ -681,7 +681,7 @@ describe("tts", () => {
           messages: {
             tts: { openai: { baseUrl: "http://my-server:9000/v1" } },
           },
-        } as OpenClawConfig,
+        } as FoxFangConfig,
         env: { OPENAI_TTS_BASE_URL: "http://localhost:8880/v1" },
         expected: "http://my-server:9000/v1",
       },
@@ -692,7 +692,7 @@ describe("tts", () => {
           messages: {
             tts: { openai: { baseUrl: "http://my-server:9000/v1///" } },
           },
-        } as OpenClawConfig,
+        } as FoxFangConfig,
         env: { OPENAI_TTS_BASE_URL: undefined },
         expected: "http://my-server:9000/v1",
       },
@@ -752,7 +752,7 @@ describe("tts", () => {
   });
 
   describe("maybeApplyTtsToPayload", () => {
-    const baseCfg: OpenClawConfig = {
+    const baseCfg: FoxFangConfig = {
       agents: { defaults: { model: { primary: "openai/gpt-4o-mini" } } },
       messages: {
         tts: {
@@ -766,16 +766,16 @@ describe("tts", () => {
     const withMockedAutoTtsFetch = async (
       run: (fetchMock: ReturnType<typeof vi.fn>) => Promise<void>,
     ) => {
-      const prevPrefs = process.env.OPENCLAW_TTS_PREFS;
-      process.env.OPENCLAW_TTS_PREFS = `/tmp/tts-test-${Date.now()}.json`;
+      const prevPrefs = process.env.FOXFANG_TTS_PREFS;
+      process.env.FOXFANG_TTS_PREFS = `/tmp/tts-test-${Date.now()}.json`;
       try {
         await withMockedSpeechFetch(run, 1);
       } finally {
-        process.env.OPENCLAW_TTS_PREFS = prevPrefs;
+        process.env.FOXFANG_TTS_PREFS = prevPrefs;
       }
     };
 
-    const taggedCfg: OpenClawConfig = {
+    const taggedCfg: FoxFangConfig = {
       ...baseCfg,
       messages: {
         ...baseCfg.messages!,
@@ -784,7 +784,7 @@ describe("tts", () => {
     };
 
     async function expectAutoTtsOutcome(params: {
-      cfg: OpenClawConfig;
+      cfg: FoxFangConfig;
       payload: { text: string };
       inboundAudio?: boolean;
       expectedFetchCalls: number;

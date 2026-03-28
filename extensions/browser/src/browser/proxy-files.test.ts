@@ -9,7 +9,7 @@ describe("persistBrowserProxyFiles", () => {
   let tempHome: TempHomeEnv;
 
   beforeEach(async () => {
-    tempHome = await createTempHomeEnv("openclaw-browser-proxy-files-");
+    tempHome = await createTempHomeEnv("foxfang-browser-proxy-files-");
   });
 
   afterEach(async () => {

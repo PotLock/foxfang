@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/exa-plugin",
+  "name": "@foxfang/exa-plugin",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw Exa plugin",
+  "description": "FoxFang Exa plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

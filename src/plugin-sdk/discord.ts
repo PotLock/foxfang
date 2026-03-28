@@ -3,7 +3,7 @@ export type {
   ChannelGatewayContext,
   ChannelMessageActionAdapter,
 } from "../channels/plugins/types.js";
-export type { OpenClawConfig } from "../config/config.js";
+export type { FoxFangConfig } from "../config/config.js";
 export type { DiscordAccountConfig, DiscordActionConfig } from "../config/types.js";
 export type { DiscordConfig, DiscordPluralKitConfig } from "../config/types.discord.js";
 export type {
@@ -27,7 +27,7 @@ export type {
 export type {
   ChannelMessageActionContext,
   ChannelPlugin,
-  OpenClawPluginApi,
+  FoxFangPluginApi,
   PluginRuntime,
 } from "./channel-plugin-common.js";
 export {

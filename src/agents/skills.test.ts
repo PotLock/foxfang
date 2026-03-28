@@ -4,7 +4,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
   clearRuntimeConfigSnapshot,
   setRuntimeConfigSnapshot,
-  type OpenClawConfig,
+  type FoxFangConfig,
 } from "../config/config.js";
 import { createFixtureSuite } from "../test-utils/fixture-suite.js";
 import { createTempHomeEnv, type TempHomeEnv } from "../test-utils/temp-home.js";
@@ -19,7 +19,7 @@ import {
 } from "./skills.js";
 import { getActiveSkillEnvKeys } from "./skills/env-overrides.js";
 
-const fixtureSuite = createFixtureSuite("openclaw-skills-suite-");
+const fixtureSuite = createFixtureSuite("foxfang-skills-suite-");
 let tempHome: TempHomeEnv | null = null;
 
 const resolveTestSkillDirs = (workspaceDir: string) => ({
@@ -60,13 +60,13 @@ async function writeEnvSkill(workspaceDir: string) {
     dir: skillDir,
     name: "env-skill",
     description: "Needs env",
-    metadata: '{"openclaw":{"requires":{"env":["ENV_KEY"]},"primaryEnv":"ENV_KEY"}}',
+    metadata: '{"foxfang":{"requires":{"env":["ENV_KEY"]},"primaryEnv":"ENV_KEY"}}',
   });
 }
 
 beforeAll(async () => {
   await fixtureSuite.setup();
-  tempHome = await createTempHomeEnv("openclaw-skills-home-");
+  tempHome = await createTempHomeEnv("foxfang-skills-home-");
   await fs.mkdir(path.join(tempHome.home, ".foxfang", "agents", "main", "sessions"), {
     recursive: true,
   });
@@ -164,7 +164,7 @@ describe("buildWorkspaceSkillCommandSpecs", () => {
     expect(cmd?.dispatch).toEqual({ kind: "tool", toolName: "sessions_send", argMode: "raw" });
   });
 
-  it("includes enabled Claude bundle markdown commands as native OpenClaw slash commands", async () => {
+  it("includes enabled Claude bundle markdown commands as native FoxFang slash commands", async () => {
     const workspaceDir = await makeWorkspace();
     const pluginRoot = path.join(tempHome!.home, ".foxfang", "extensions", "compound-bundle");
     await fs.mkdir(path.join(pluginRoot, ".claude-plugin"), { recursive: true });
@@ -384,7 +384,7 @@ describe("applySkillEnvOverrides", () => {
     await writeEnvSkill(workspaceDir);
 
     const entries = loadWorkspaceSkillEntries(workspaceDir, resolveTestSkillDirs(workspaceDir));
-    const sourceConfig: OpenClawConfig = {
+    const sourceConfig: FoxFangConfig = {
       skills: {
         entries: {
           "env-skill": {
@@ -397,7 +397,7 @@ describe("applySkillEnvOverrides", () => {
         },
       },
     };
-    const runtimeConfig: OpenClawConfig = {
+    const runtimeConfig: FoxFangConfig = {
       skills: {
         entries: {
           "env-skill": {
@@ -431,7 +431,7 @@ describe("applySkillEnvOverrides", () => {
       name: "unsafe-env-skill",
       description: "Needs env",
       metadata:
-        '{"openclaw":{"requires":{"env":["OPENAI_API_KEY","NODE_OPTIONS"]},"primaryEnv":"OPENAI_API_KEY"}}',
+        '{"foxfang":{"requires":{"env":["OPENAI_API_KEY","NODE_OPTIONS"]},"primaryEnv":"OPENAI_API_KEY"}}',
     });
 
     const entries = loadWorkspaceSkillEntries(workspaceDir, resolveTestSkillDirs(workspaceDir));
@@ -471,7 +471,7 @@ describe("applySkillEnvOverrides", () => {
       dir: skillDir,
       name: "dangerous-env-skill",
       description: "Needs env",
-      metadata: '{"openclaw":{"requires":{"env":["BASH_ENV","SHELL"]}}}',
+      metadata: '{"foxfang":{"requires":{"env":["BASH_ENV","SHELL"]}}}',
     });
 
     const entries = loadWorkspaceSkillEntries(workspaceDir, resolveTestSkillDirs(workspaceDir));
@@ -511,7 +511,7 @@ describe("applySkillEnvOverrides", () => {
       dir: skillDir,
       name: "snapshot-env-skill",
       description: "Needs env",
-      metadata: '{"openclaw":{"requires":{"env":["OPENAI_API_KEY"]}}}',
+      metadata: '{"foxfang":{"requires":{"env":["OPENAI_API_KEY"]}}}',
     });
 
     const config = {

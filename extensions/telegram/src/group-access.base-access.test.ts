@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { OpenClawConfig } from "../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../src/config/config.js";
 import type { TelegramAccountConfig } from "../../../src/config/types.js";
 import { normalizeAllowFrom, type NormalizedAllowFrom } from "./bot-access.js";
 import {
@@ -76,7 +76,7 @@ describe("evaluateTelegramGroupBaseAccess", () => {
  */
 const baseCfg = {
   channels: { telegram: {} },
-} as unknown as OpenClawConfig;
+} as unknown as FoxFangConfig;
 
 const baseTelegramCfg: TelegramAccountConfig = {
   groupPolicy: "allowlist",

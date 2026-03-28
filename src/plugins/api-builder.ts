@@ -1,6 +1,6 @@
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import type { PluginRuntime } from "./runtime/types.js";
-import type { OpenClawPluginApi, PluginLogger } from "./types.js";
+import type { FoxFangPluginApi, PluginLogger } from "./types.js";
 
 export type BuildPluginApiParams = {
   id: string;
@@ -9,15 +9,15 @@ export type BuildPluginApiParams = {
   description?: string;
   source: string;
   rootDir?: string;
-  registrationMode: OpenClawPluginApi["registrationMode"];
-  config: OpenClawConfig;
+  registrationMode: FoxFangPluginApi["registrationMode"];
+  config: FoxFangConfig;
   pluginConfig?: Record<string, unknown>;
   runtime: PluginRuntime;
   logger: PluginLogger;
   resolvePath: (input: string) => string;
   handlers?: Partial<
     Pick<
-      OpenClawPluginApi,
+      FoxFangPluginApi,
       | "registerTool"
       | "registerHook"
       | "registerHttpRoute"
@@ -44,34 +44,34 @@ export type BuildPluginApiParams = {
   >;
 };
 
-const noopRegisterTool: OpenClawPluginApi["registerTool"] = () => {};
-const noopRegisterHook: OpenClawPluginApi["registerHook"] = () => {};
-const noopRegisterHttpRoute: OpenClawPluginApi["registerHttpRoute"] = () => {};
-const noopRegisterChannel: OpenClawPluginApi["registerChannel"] = () => {};
-const noopRegisterGatewayMethod: OpenClawPluginApi["registerGatewayMethod"] = () => {};
-const noopRegisterCli: OpenClawPluginApi["registerCli"] = () => {};
-const noopRegisterService: OpenClawPluginApi["registerService"] = () => {};
-const noopRegisterCliBackend: OpenClawPluginApi["registerCliBackend"] = () => {};
-const noopRegisterProvider: OpenClawPluginApi["registerProvider"] = () => {};
-const noopRegisterSpeechProvider: OpenClawPluginApi["registerSpeechProvider"] = () => {};
-const noopRegisterMediaUnderstandingProvider: OpenClawPluginApi["registerMediaUnderstandingProvider"] =
+const noopRegisterTool: FoxFangPluginApi["registerTool"] = () => {};
+const noopRegisterHook: FoxFangPluginApi["registerHook"] = () => {};
+const noopRegisterHttpRoute: FoxFangPluginApi["registerHttpRoute"] = () => {};
+const noopRegisterChannel: FoxFangPluginApi["registerChannel"] = () => {};
+const noopRegisterGatewayMethod: FoxFangPluginApi["registerGatewayMethod"] = () => {};
+const noopRegisterCli: FoxFangPluginApi["registerCli"] = () => {};
+const noopRegisterService: FoxFangPluginApi["registerService"] = () => {};
+const noopRegisterCliBackend: FoxFangPluginApi["registerCliBackend"] = () => {};
+const noopRegisterProvider: FoxFangPluginApi["registerProvider"] = () => {};
+const noopRegisterSpeechProvider: FoxFangPluginApi["registerSpeechProvider"] = () => {};
+const noopRegisterMediaUnderstandingProvider: FoxFangPluginApi["registerMediaUnderstandingProvider"] =
   () => {};
-const noopRegisterImageGenerationProvider: OpenClawPluginApi["registerImageGenerationProvider"] =
+const noopRegisterImageGenerationProvider: FoxFangPluginApi["registerImageGenerationProvider"] =
   () => {};
-const noopRegisterWebSearchProvider: OpenClawPluginApi["registerWebSearchProvider"] = () => {};
-const noopRegisterInteractiveHandler: OpenClawPluginApi["registerInteractiveHandler"] = () => {};
-const noopOnConversationBindingResolved: OpenClawPluginApi["onConversationBindingResolved"] =
+const noopRegisterWebSearchProvider: FoxFangPluginApi["registerWebSearchProvider"] = () => {};
+const noopRegisterInteractiveHandler: FoxFangPluginApi["registerInteractiveHandler"] = () => {};
+const noopOnConversationBindingResolved: FoxFangPluginApi["onConversationBindingResolved"] =
   () => {};
-const noopRegisterCommand: OpenClawPluginApi["registerCommand"] = () => {};
-const noopRegisterContextEngine: OpenClawPluginApi["registerContextEngine"] = () => {};
-const noopRegisterMemoryPromptSection: OpenClawPluginApi["registerMemoryPromptSection"] = () => {};
-const noopRegisterMemoryFlushPlan: OpenClawPluginApi["registerMemoryFlushPlan"] = () => {};
-const noopRegisterMemoryRuntime: OpenClawPluginApi["registerMemoryRuntime"] = () => {};
-const noopRegisterMemoryEmbeddingProvider: OpenClawPluginApi["registerMemoryEmbeddingProvider"] =
+const noopRegisterCommand: FoxFangPluginApi["registerCommand"] = () => {};
+const noopRegisterContextEngine: FoxFangPluginApi["registerContextEngine"] = () => {};
+const noopRegisterMemoryPromptSection: FoxFangPluginApi["registerMemoryPromptSection"] = () => {};
+const noopRegisterMemoryFlushPlan: FoxFangPluginApi["registerMemoryFlushPlan"] = () => {};
+const noopRegisterMemoryRuntime: FoxFangPluginApi["registerMemoryRuntime"] = () => {};
+const noopRegisterMemoryEmbeddingProvider: FoxFangPluginApi["registerMemoryEmbeddingProvider"] =
   () => {};
-const noopOn: OpenClawPluginApi["on"] = () => {};
+const noopOn: FoxFangPluginApi["on"] = () => {};
 
-export function buildPluginApi(params: BuildPluginApiParams): OpenClawPluginApi {
+export function buildPluginApi(params: BuildPluginApiParams): FoxFangPluginApi {
   const handlers = params.handlers ?? {};
   return {
     id: params.id,

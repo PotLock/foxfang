@@ -1,13 +1,13 @@
-import { resolveAccountWithDefaultFallback } from "openclaw/plugin-sdk/account-resolution";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import { coerceSecretRef } from "openclaw/plugin-sdk/config-runtime";
-import { tryReadSecretFileSync } from "openclaw/plugin-sdk/core";
-import { resolveDefaultSecretProviderAlias } from "openclaw/plugin-sdk/provider-auth";
-import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "openclaw/plugin-sdk/routing";
+import { resolveAccountWithDefaultFallback } from "foxfang/plugin-sdk/account-resolution";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import { coerceSecretRef } from "foxfang/plugin-sdk/config-runtime";
+import { tryReadSecretFileSync } from "foxfang/plugin-sdk/core";
+import { resolveDefaultSecretProviderAlias } from "foxfang/plugin-sdk/provider-auth";
+import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "foxfang/plugin-sdk/routing";
 import {
   hasConfiguredSecretInput,
   normalizeSecretInputString,
-} from "openclaw/plugin-sdk/secret-input";
+} from "foxfang/plugin-sdk/secret-input";
 import type { TelegramAccountConfig } from "../runtime-api.js";
 import {
   mergeTelegramAccountConfig,
@@ -48,7 +48,7 @@ function inspectTokenFile(pathValue: unknown): {
 }
 
 function canResolveEnvSecretRefInReadOnlyPath(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   provider: string;
   id: string;
 }): boolean {
@@ -63,7 +63,7 @@ function canResolveEnvSecretRefInReadOnlyPath(params: {
   return !allowlist || allowlist.includes(params.id);
 }
 
-function inspectTokenValue(params: { cfg: OpenClawConfig; value: unknown }): {
+function inspectTokenValue(params: { cfg: FoxFangConfig; value: unknown }): {
   token: string;
   tokenSource: "config" | "env" | "none";
   tokenStatus: TelegramCredentialStatus;
@@ -117,7 +117,7 @@ function inspectTokenValue(params: { cfg: OpenClawConfig; value: unknown }): {
 }
 
 function inspectTelegramAccountPrimary(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId: string;
   envToken?: string | null;
 }): InspectedTelegramAccount {
@@ -213,7 +213,7 @@ function inspectTelegramAccountPrimary(params: {
 }
 
 export function inspectTelegramAccount(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId?: string | null;
   envToken?: string | null;
 }): InspectedTelegramAccount {

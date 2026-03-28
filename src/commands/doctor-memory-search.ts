@@ -3,7 +3,7 @@ import { resolveAgentDir, resolveDefaultAgentId } from "../agents/agent-scope.js
 import { resolveMemorySearchConfig } from "../agents/memory-search.js";
 import { resolveApiKeyForProvider } from "../agents/model-auth.js";
 import { formatCliCommand } from "../cli/command-format.js";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import {
   getBuiltinMemoryEmbeddingProviderDoctorMetadata,
   listBuiltinAutoSelectMemoryEmbeddingProviderDoctorMetadata,
@@ -22,10 +22,10 @@ function resolveSuggestedRemoteMemoryProvider(): string | undefined {
 
 /**
  * Check whether memory search has a usable embedding provider.
- * Runs as part of `openclaw doctor` — config-only, no network calls.
+ * Runs as part of `foxfang doctor` — config-only, no network calls.
  */
 export async function noteMemorySearchHealth(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   opts?: {
     gatewayMemoryProbe?: {
       checked: boolean;
@@ -71,7 +71,7 @@ export async function noteMemorySearchHealth(
               "but the gateway reports local embeddings are not ready.",
               detail ? `Gateway probe: ${detail}` : null,
               "",
-              `Verify: ${formatCliCommand("openclaw memory status --deep")}`,
+              `Verify: ${formatCliCommand("foxfang memory status --deep")}`,
             ]
               .filter(Boolean)
               .join("\n"),
@@ -87,10 +87,10 @@ export async function noteMemorySearchHealth(
           "Fix (pick one):",
           `- Install node-llama-cpp and set a local model path in config`,
           suggestedRemoteProvider
-            ? `- Switch to a remote provider: ${formatCliCommand(`openclaw config set agents.defaults.memorySearch.provider ${suggestedRemoteProvider}`)}`
+            ? `- Switch to a remote provider: ${formatCliCommand(`foxfang config set agents.defaults.memorySearch.provider ${suggestedRemoteProvider}`)}`
             : `- Switch to a remote embedding provider in config`,
           "",
-          `Verify: ${formatCliCommand("openclaw memory status --deep")}`,
+          `Verify: ${formatCliCommand("foxfang memory status --deep")}`,
         ].join("\n"),
         "Memory search",
       );
@@ -105,7 +105,7 @@ export async function noteMemorySearchHealth(
         [
           `Memory search provider is set to "${resolved.provider}" but the API key was not found in the CLI environment.`,
           "The running gateway reports memory embeddings are ready for the default agent.",
-          `Verify: ${formatCliCommand("openclaw memory status --deep")}`,
+          `Verify: ${formatCliCommand("foxfang memory status --deep")}`,
         ].join("\n"),
         "Memory search",
       );
@@ -121,10 +121,10 @@ export async function noteMemorySearchHealth(
         "",
         "Fix (pick one):",
         `- Set ${envVar} in your environment`,
-        `- Configure credentials: ${formatCliCommand("openclaw configure --section model")}`,
-        `- To disable: ${formatCliCommand("openclaw config set agents.defaults.memorySearch.enabled false")}`,
+        `- Configure credentials: ${formatCliCommand("foxfang configure --section model")}`,
+        `- To disable: ${formatCliCommand("foxfang config set agents.defaults.memorySearch.enabled false")}`,
         "",
-        `Verify: ${formatCliCommand("openclaw memory status --deep")}`,
+        `Verify: ${formatCliCommand("foxfang memory status --deep")}`,
       ].join("\n"),
       "Memory search",
     );
@@ -149,7 +149,7 @@ export async function noteMemorySearchHealth(
       [
         'Memory search provider is set to "auto" but the API key was not found in the CLI environment.',
         "The running gateway reports memory embeddings are ready for the default agent.",
-        `Verify: ${formatCliCommand("openclaw memory status --deep")}`,
+        `Verify: ${formatCliCommand("foxfang memory status --deep")}`,
       ].join("\n"),
       "Memory search",
     );
@@ -165,11 +165,11 @@ export async function noteMemorySearchHealth(
       "",
       "Fix (pick one):",
       `- Set ${formatMemoryProviderEnvVarList(autoSelectProviders)} in your environment`,
-      `- Configure credentials: ${formatCliCommand("openclaw configure --section model")}`,
+      `- Configure credentials: ${formatCliCommand("foxfang configure --section model")}`,
       `- For local embeddings: configure agents.defaults.memorySearch.provider and local model path`,
-      `- To disable: ${formatCliCommand("openclaw config set agents.defaults.memorySearch.enabled false")}`,
+      `- To disable: ${formatCliCommand("foxfang config set agents.defaults.memorySearch.enabled false")}`,
       "",
-      `Verify: ${formatCliCommand("openclaw memory status --deep")}`,
+      `Verify: ${formatCliCommand("foxfang memory status --deep")}`,
     ].join("\n"),
     "Memory search",
   );
@@ -208,7 +208,7 @@ function hasLocalEmbeddings(local: { modelPath?: string }, useDefaultFallback = 
 
 async function hasApiKeyForProvider(
   provider: string,
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   agentDir: string,
 ): Promise<boolean> {
   const metadata = getBuiltinMemoryEmbeddingProviderDoctorMetadata(provider);

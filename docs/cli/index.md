@@ -1,5 +1,5 @@
 ---
-summary: "OpenClaw CLI reference for `openclaw` commands, subcommands, and options"
+summary: "FoxFang CLI reference for `foxfang` commands, subcommands, and options"
 read_when:
   - Adding or modifying CLI commands or options
   - Documenting new command surfaces
@@ -65,7 +65,7 @@ This page describes the current CLI behavior. If commands change, update this do
 - `--dev`: isolate state under `~/.foxfang-dev` and shift default ports.
 - `--profile <name>`: isolate state under `~/.foxfang-<name>`.
 - `--no-color`: disable ANSI colors.
-- `--update`: shorthand for `openclaw update` (source installs only).
+- `--update`: shorthand for `foxfang update` (source installs only).
 - `-V`, `--version`, `-v`: print version and exit.
 
 ## Output styling
@@ -78,7 +78,7 @@ This page describes the current CLI behavior. If commands change, update this do
 
 ## Color palette
 
-OpenClaw uses a lobster palette for CLI output.
+FoxFang uses a lobster palette for CLI output.
 
 - `accent` (#FF5A2D): headings, labels, primary highlights.
 - `accentBright` (#FF7A3D): command names, emphasis.
@@ -94,7 +94,7 @@ Palette source of truth: `src/terminal/palette.ts` (the “lobster palette”).
 ## Command tree
 
 ```
-openclaw [--dev] [--profile <name>] <command>
+foxfang [--dev] [--profile <name>] <command>
   setup
   onboard
   configure
@@ -274,31 +274,31 @@ openclaw [--dev] [--profile <name>] <command>
   tui
 ```
 
-Note: plugins can add additional top-level commands (for example `openclaw voicecall`).
+Note: plugins can add additional top-level commands (for example `foxfang voicecall`).
 
 ## Security
 
-- `openclaw security audit` — audit config + local state for common security foot-guns.
-- `openclaw security audit --deep` — best-effort live Gateway probe.
-- `openclaw security audit --fix` — tighten safe defaults and chmod state/config.
+- `foxfang security audit` — audit config + local state for common security foot-guns.
+- `foxfang security audit --deep` — best-effort live Gateway probe.
+- `foxfang security audit --fix` — tighten safe defaults and chmod state/config.
 
 ## Secrets
 
-- `openclaw secrets reload` — re-resolve refs and atomically swap the runtime snapshot.
-- `openclaw secrets audit` — scan for plaintext residues, unresolved refs, and precedence drift (`--allow-exec` to execute exec providers during audit).
-- `openclaw secrets configure` — interactive helper for provider setup + SecretRef mapping + preflight/apply (`--allow-exec` to execute exec providers during preflight and exec-containing apply flows).
-- `openclaw secrets apply --from <plan.json>` — apply a previously generated plan (`--dry-run` supported; use `--allow-exec` to permit exec providers in dry-run and exec-containing write plans).
+- `foxfang secrets reload` — re-resolve refs and atomically swap the runtime snapshot.
+- `foxfang secrets audit` — scan for plaintext residues, unresolved refs, and precedence drift (`--allow-exec` to execute exec providers during audit).
+- `foxfang secrets configure` — interactive helper for provider setup + SecretRef mapping + preflight/apply (`--allow-exec` to execute exec providers during preflight and exec-containing apply flows).
+- `foxfang secrets apply --from <plan.json>` — apply a previously generated plan (`--dry-run` supported; use `--allow-exec` to permit exec providers in dry-run and exec-containing write plans).
 
 ## Plugins
 
 Manage extensions and their config:
 
-- `openclaw plugins list` — discover plugins (use `--json` for machine output).
-- `openclaw plugins inspect <id>` — show details for a plugin (`info` is an alias).
-- `openclaw plugins install <path|.tgz|npm-spec|plugin@marketplace>` — install a plugin (or add a plugin path to `plugins.load.paths`).
-- `openclaw plugins marketplace list <marketplace>` — list marketplace entries before install.
-- `openclaw plugins enable <id>` / `disable <id>` — toggle `plugins.entries.<id>.enabled`.
-- `openclaw plugins doctor` — report plugin load errors.
+- `foxfang plugins list` — discover plugins (use `--json` for machine output).
+- `foxfang plugins inspect <id>` — show details for a plugin (`info` is an alias).
+- `foxfang plugins install <path|.tgz|npm-spec|plugin@marketplace>` — install a plugin (or add a plugin path to `plugins.load.paths`).
+- `foxfang plugins marketplace list <marketplace>` — list marketplace entries before install.
+- `foxfang plugins enable <id>` / `disable <id>` — toggle `plugins.entries.<id>.enabled`.
+- `foxfang plugins doctor` — report plugin load errors.
 
 Most plugin changes require a gateway restart. See [/plugin](/tools/plugin).
 
@@ -306,9 +306,9 @@ Most plugin changes require a gateway restart. See [/plugin](/tools/plugin).
 
 Vector search over `MEMORY.md` + `memory/*.md`:
 
-- `openclaw memory status` — show index stats.
-- `openclaw memory index` — reindex memory files.
-- `openclaw memory search "<query>"` (or `--query "<query>"`) — semantic search over memory.
+- `foxfang memory status` — show index stats.
+- `foxfang memory index` — reindex memory files.
+- `foxfang memory search "<query>"` (or `--query "<query>"`) — semantic search over memory.
 
 ## Chat slash commands
 
@@ -398,7 +398,7 @@ Interactive configuration wizard (models, channels, skills, gateway).
 
 ### `config`
 
-Non-interactive config helpers (get/set/unset/file/schema/validate). Running `openclaw config` with no
+Non-interactive config helpers (get/set/unset/file/schema/validate). Running `foxfang config` with no
 subcommand launches the wizard.
 
 Subcommands:
@@ -409,13 +409,13 @@ Subcommands:
   - SecretRef builder mode: `config set <path> --ref-provider <provider> --ref-source <source> --ref-id <id>`
   - provider builder mode: `config set secrets.providers.<alias> --provider-source <env|file|exec> ...`
   - batch mode: `config set --batch-json '<json>'` or `config set --batch-file <path>`
-- `config set --dry-run`: validate assignments without writing `openclaw.json` (exec SecretRef checks are skipped by default).
+- `config set --dry-run`: validate assignments without writing `foxfang.json` (exec SecretRef checks are skipped by default).
 - `config set --allow-exec --dry-run`: opt in to exec SecretRef dry-run checks (may execute provider commands).
 - `config set --dry-run --json`: emit machine-readable dry-run output (checks + completeness signal, operations, refs checked/skipped, errors).
 - `config set --strict-json`: require JSON5 parsing for path/value input. `--json` remains a legacy alias for strict parsing outside dry-run output mode.
 - `config unset <path>`: remove a value.
 - `config file`: print the active config file path.
-- `config schema`: print the generated JSON schema for `openclaw.json`.
+- `config schema`: print the generated JSON schema for `foxfang.json`.
 - `config validate`: validate the current config against the schema without starting the gateway.
 - `config validate --json`: emit machine-readable JSON output.
 
@@ -439,11 +439,11 @@ Manage chat channel accounts (WhatsApp/Telegram/Discord/Google Chat/Slack/Matter
 Subcommands:
 
 - `channels list`: show configured channels and auth profiles.
-- `channels status`: check gateway reachability and channel health (`--probe` runs extra checks; use `openclaw health` or `openclaw status --deep` for gateway health probes).
-- Tip: `channels status` prints warnings with suggested fixes when it can detect common misconfigurations (then points you to `openclaw doctor`).
+- `channels status`: check gateway reachability and channel health (`--probe` runs extra checks; use `foxfang health` or `foxfang status --deep` for gateway health probes).
+- Tip: `channels status` prints warnings with suggested fixes when it can detect common misconfigurations (then points you to `foxfang doctor`).
 - `channels logs`: show recent channel logs from the gateway log file.
 - `channels add`: wizard-style setup when no flags are passed; flags switch to non-interactive mode.
-  - When adding a non-default account to a channel still using single-account top-level config, OpenClaw moves account-scoped values into `channels.<channel>.accounts.default` before writing the new account.
+  - When adding a non-default account to a channel still using single-account top-level config, FoxFang moves account-scoped values into `channels.<channel>.accounts.default` before writing the new account.
   - Non-interactive `channels add` does not auto-create/upgrade bindings; channel-only bindings continue to match the default account.
 - `channels remove`: disable by default; pass `--delete` to remove config entries without prompts.
 - `channels login`: interactive channel login (WhatsApp Web only).
@@ -482,11 +482,11 @@ More detail: [/concepts/oauth](/concepts/oauth)
 Examples:
 
 ```bash
-openclaw channels add --channel telegram --account alerts --name "Alerts Bot" --token $TELEGRAM_BOT_TOKEN
-openclaw channels add --channel discord --account work --name "Work Bot" --token $DISCORD_BOT_TOKEN
-openclaw channels remove --channel discord --account work --delete
-openclaw channels status --probe
-openclaw status --deep
+foxfang channels add --channel telegram --account alerts --name "Alerts Bot" --token $TELEGRAM_BOT_TOKEN
+foxfang channels add --channel discord --account work --name "Work Bot" --token $DISCORD_BOT_TOKEN
+foxfang channels remove --channel discord --account work --delete
+foxfang channels status --probe
+foxfang status --deep
 ```
 
 ### `skills`
@@ -508,7 +508,7 @@ Options:
 - `--json`: output JSON (no styling).
 - `-v`, `--verbose`: include missing requirements detail.
 
-Tip: use `openclaw skills search`, `openclaw skills install`, and `openclaw skills update` for ClawHub-backed skills.
+Tip: use `foxfang skills search`, `foxfang skills install`, and `foxfang skills update` for ClawHub-backed skills.
 
 ### `pairing`
 
@@ -573,8 +573,8 @@ Subcommands:
 
 Examples:
 
-- `openclaw message send --target +15555550123 --message "Hi"`
-- `openclaw message poll --channel discord --target channel:123 --poll-question "Snack?" --poll-option Pizza --poll-option Sushi`
+- `foxfang message send --target +15555550123 --message "Hi"`
+- `foxfang message poll --channel discord --target channel:123 --poll-question "Snack?" --poll-option Pizza --poll-option Sushi`
 
 ### `agent`
 
@@ -622,7 +622,7 @@ Options:
 - `--non-interactive`
 - `--json`
 
-Binding specs use `channel[:accountId]`. When `accountId` is omitted, OpenClaw may resolve account scope via channel defaults/plugin hooks; otherwise it is a channel binding without explicit account scope.
+Binding specs use `channel[:accountId]`. When `accountId` is omitted, FoxFang may resolve account scope via channel defaults/plugin hooks; otherwise it is a channel binding without explicit account scope.
 
 #### `agents bindings`
 
@@ -689,12 +689,12 @@ Notes:
 
 ### Usage tracking
 
-OpenClaw can surface provider usage/quota when OAuth/API creds are available.
+FoxFang can surface provider usage/quota when OAuth/API creds are available.
 
 Surfaces:
 
 - `/status` (adds a short provider usage line when available)
-- `openclaw status --usage` (prints full provider breakdown)
+- `foxfang status --usage` (prints full provider breakdown)
 - macOS menu bar (Usage section under Context)
 
 Notes:
@@ -806,7 +806,7 @@ Notes:
 
 - `gateway status` probes the Gateway RPC by default using the service’s resolved port/config (override with `--url/--token/--password`).
 - `gateway status` supports `--no-probe`, `--deep`, `--require-rpc`, and `--json` for scripting.
-- `gateway status` also surfaces legacy or extra gateway services when it can detect them (`--deep` adds system-level scans). Profile-named OpenClaw services are treated as first-class and aren't flagged as "extra".
+- `gateway status` also surfaces legacy or extra gateway services when it can detect them (`--deep` adds system-level scans). Profile-named FoxFang services are treated as first-class and aren't flagged as "extra".
 - `gateway status` prints which config path the CLI uses vs which config the service likely uses (service env), plus the resolved probe target URL.
 - If gateway auth SecretRefs are unresolved in the current command path, `gateway status --json` reports `rpc.authWarning` only when probe connectivity/auth fails (warnings are suppressed when probe succeeds).
 - On Linux systemd installs, status token-drift checks include both `Environment=` and `EnvironmentFile=` unit sources.
@@ -826,11 +826,11 @@ Notes:
 Examples:
 
 ```bash
-openclaw logs --follow
-openclaw logs --limit 200
-openclaw logs --plain
-openclaw logs --json
-openclaw logs --no-color
+foxfang logs --follow
+foxfang logs --limit 200
+foxfang logs --plain
+foxfang logs --json
+foxfang logs --no-color
 ```
 
 ### `gateway <subcommand>`
@@ -866,8 +866,8 @@ Anthropic setup-token (supported):
 
 ```bash
 claude setup-token
-openclaw models auth setup-token --provider anthropic
-openclaw models status
+foxfang models auth setup-token --provider anthropic
+foxfang models status
 ```
 
 Policy note: this is technical compatibility. Anthropic has blocked some
@@ -877,13 +877,13 @@ terms before relying on setup-token in production.
 Anthropic Claude CLI migration:
 
 ```bash
-openclaw models auth login --provider anthropic --method cli --set-default
-openclaw onboard --auth-choice anthropic-cli
+foxfang models auth login --provider anthropic --method cli --set-default
+foxfang onboard --auth-choice anthropic-cli
 ```
 
 ### `models` (root)
 
-`openclaw models` is an alias for `models status`.
+`foxfang models` is an alias for `models status`.
 
 Root options:
 
@@ -1039,7 +1039,7 @@ All `cron` commands accept `--url`, `--token`, `--timeout`, `--expect-final`.
 ## Node host
 
 `node` runs a **headless node host** or manages it as a background service. See
-[`openclaw node`](/cli/node).
+[`foxfang node`](/cli/node).
 
 Subcommands:
 
@@ -1052,8 +1052,8 @@ Subcommands:
 
 Auth notes:
 
-- `node` resolves gateway auth from env/config (no `--token`/`--password` flags): `OPENCLAW_GATEWAY_TOKEN` / `OPENCLAW_GATEWAY_PASSWORD`, then `gateway.auth.*`. In local mode, node host intentionally ignores `gateway.remote.*`; in `gateway.mode=remote`, `gateway.remote.*` participates per remote precedence rules.
-- Node-host auth resolution only honors `OPENCLAW_GATEWAY_*` env vars.
+- `node` resolves gateway auth from env/config (no `--token`/`--password` flags): `FOXFANG_GATEWAY_TOKEN` / `FOXFANG_GATEWAY_PASSWORD`, then `gateway.auth.*`. In local mode, node host intentionally ignores `gateway.remote.*`; in `gateway.mode=remote`, `gateway.remote.*` participates per remote precedence rules.
+- Node-host auth resolution only honors `FOXFANG_GATEWAY_*` env vars.
 
 ## Nodes
 
@@ -1099,7 +1099,7 @@ Location:
 
 ## Browser
 
-Browser control CLI (dedicated Chrome/Brave/Edge/Chromium). See [`openclaw browser`](/cli/browser) and the [Browser tool](/tools/browser).
+Browser control CLI (dedicated Chrome/Brave/Edge/Chromium). See [`foxfang browser`](/cli/browser) and the [Browser tool](/tools/browser).
 
 Common options:
 

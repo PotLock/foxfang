@@ -1,24 +1,24 @@
 {
-  "name": "@openclaw/zalouser",
+  "name": "@foxfang/zalouser",
   "version": "2026.3.27",
-  "description": "OpenClaw Zalo Personal Account plugin via native zca-js integration",
+  "description": "FoxFang Zalo Personal Account plugin via native zca-js integration",
   "type": "module",
   "dependencies": {
     "@sinclair/typebox": "0.34.48",
     "zca-js": "2.1.2"
   },
   "devDependencies": {
-    "openclaw": "workspace:*"
+    "foxfang": "workspace:*"
   },
   "peerDependencies": {
-    "openclaw": ">=2026.3.27"
+    "foxfang": ">=2026.3.27"
   },
   "peerDependenciesMeta": {
-    "openclaw": {
+    "foxfang": {
       "optional": true
     }
   },
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ],
@@ -37,7 +37,7 @@
       "quickstartAllowFrom": false
     },
     "install": {
-      "npmSpec": "@openclaw/zalouser",
+      "npmSpec": "@foxfang/zalouser",
       "localPath": "extensions/zalouser",
       "defaultChoice": "npm",
       "minHostVersion": ">=2026.3.27"

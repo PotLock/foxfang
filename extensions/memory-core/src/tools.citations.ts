@@ -1,11 +1,11 @@
 import {
   parseAgentSessionKey,
   type MemoryCitationsMode,
-  type OpenClawConfig,
-} from "openclaw/plugin-sdk/memory-core-host-runtime-core";
-import type { MemorySearchResult } from "openclaw/plugin-sdk/memory-core-host-runtime-files";
+  type FoxFangConfig,
+} from "foxfang/plugin-sdk/memory-core-host-runtime-core";
+import type { MemorySearchResult } from "foxfang/plugin-sdk/memory-core-host-runtime-files";
 
-export function resolveMemoryCitationsMode(cfg: OpenClawConfig): MemoryCitationsMode {
+export function resolveMemoryCitationsMode(cfg: FoxFangConfig): MemoryCitationsMode {
   const mode = cfg.memory?.citations;
   if (mode === "on" || mode === "off" || mode === "auto") {
     return mode;

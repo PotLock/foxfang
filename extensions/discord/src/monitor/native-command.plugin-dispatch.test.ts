@@ -2,7 +2,7 @@ import { ChannelType } from "discord-api-types/v10";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { NativeCommandSpec } from "../../../../src/auto-reply/commands-registry.js";
 import { setDefaultChannelPluginRegistryForTests } from "../../../../src/commands/channel-test-helpers.js";
-import type { OpenClawConfig } from "../../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../../src/config/config.js";
 import { clearPluginCommands, registerPluginCommand } from "../../../../src/plugins/commands.js";
 import {
   createMockCommandInteraction,
@@ -18,8 +18,8 @@ const runtimeModuleMocks = vi.hoisted(() => ({
   dispatchReplyWithDispatcher: vi.fn(),
 }));
 
-vi.mock("openclaw/plugin-sdk/plugin-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/plugin-runtime")>();
+vi.mock("foxfang/plugin-sdk/plugin-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/plugin-runtime")>();
   return {
     ...actual,
     matchPluginCommand: (...args: unknown[]) => runtimeModuleMocks.matchPluginCommand(...args),
@@ -27,8 +27,8 @@ vi.mock("openclaw/plugin-sdk/plugin-runtime", async (importOriginal) => {
   };
 });
 
-vi.mock("openclaw/plugin-sdk/reply-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/reply-runtime")>();
+vi.mock("foxfang/plugin-sdk/reply-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/reply-runtime")>();
   return {
     ...actual,
     dispatchReplyWithDispatcher: (...args: unknown[]) =>
@@ -56,14 +56,14 @@ function createInteraction(params?: {
   });
 }
 
-function createConfig(): OpenClawConfig {
+function createConfig(): FoxFangConfig {
   return {
     channels: {
       discord: {
         dm: { enabled: true, policy: "open" },
       },
     },
-  } as OpenClawConfig;
+  } as FoxFangConfig;
 }
 
 function createConfiguredAcpBinding(params: {
@@ -129,7 +129,7 @@ function createConfiguredAcpCase(params: {
           agentId: params.agentId,
         }),
       ],
-    } as OpenClawConfig,
+    } as FoxFangConfig,
     interaction: createInteraction({
       channelType: params.channelType,
       channelId: params.channelId,
@@ -139,7 +139,7 @@ function createConfiguredAcpCase(params: {
   };
 }
 
-async function createNativeCommand(cfg: OpenClawConfig, commandSpec: NativeCommandSpec) {
+async function createNativeCommand(cfg: FoxFangConfig, commandSpec: NativeCommandSpec) {
   return createDiscordNativeCommand({
     command: commandSpec,
     cfg,
@@ -217,7 +217,7 @@ function createUnboundRouteState(params: {
   >;
 }
 
-async function createPluginCommand(params: { cfg: OpenClawConfig; name: string }) {
+async function createPluginCommand(params: { cfg: FoxFangConfig; name: string }) {
   return createDiscordNativeCommand({
     command: {
       name: params.name,
@@ -254,7 +254,7 @@ function registerPairPlugin(params?: { discordNativeName?: string }) {
 }
 
 async function expectPairCommandReply(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   commandName: string;
   interaction: MockCommandInteraction;
 }) {
@@ -280,7 +280,7 @@ async function expectPairCommandReply(params: {
   );
 }
 
-async function createStatusCommand(cfg: OpenClawConfig) {
+async function createStatusCommand(cfg: FoxFangConfig) {
   return await createNativeCommand(cfg, {
     name: "status",
     description: "Status",
@@ -314,7 +314,7 @@ function expectBoundSessionDispatch(
 }
 
 async function expectBoundStatusCommandDispatch(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   interaction: MockCommandInteraction;
   expectedPattern: RegExp;
 }) {
@@ -340,8 +340,8 @@ describe("Discord native plugin command dispatch", () => {
     clearPluginCommands();
     setDefaultChannelPluginRegistryForTests();
     const actualPluginRuntime = await vi.importActual<
-      typeof import("openclaw/plugin-sdk/plugin-runtime")
-    >("openclaw/plugin-sdk/plugin-runtime");
+      typeof import("foxfang/plugin-sdk/plugin-runtime")
+    >("foxfang/plugin-sdk/plugin-runtime");
     runtimeModuleMocks.matchPluginCommand.mockReset();
     runtimeModuleMocks.matchPluginCommand.mockImplementation(
       actualPluginRuntime.matchPluginCommand,
@@ -359,13 +359,13 @@ describe("Discord native plugin command dispatch", () => {
       },
     } as never);
     discordNativeCommandTesting.setMatchPluginCommand(
-      runtimeModuleMocks.matchPluginCommand as typeof import("openclaw/plugin-sdk/plugin-runtime").matchPluginCommand,
+      runtimeModuleMocks.matchPluginCommand as typeof import("foxfang/plugin-sdk/plugin-runtime").matchPluginCommand,
     );
     discordNativeCommandTesting.setExecutePluginCommand(
-      runtimeModuleMocks.executePluginCommand as typeof import("openclaw/plugin-sdk/plugin-runtime").executePluginCommand,
+      runtimeModuleMocks.executePluginCommand as typeof import("foxfang/plugin-sdk/plugin-runtime").executePluginCommand,
     );
     discordNativeCommandTesting.setDispatchReplyWithDispatcher(
-      runtimeModuleMocks.dispatchReplyWithDispatcher as typeof import("openclaw/plugin-sdk/reply-runtime").dispatchReplyWithDispatcher,
+      runtimeModuleMocks.dispatchReplyWithDispatcher as typeof import("foxfang/plugin-sdk/reply-runtime").dispatchReplyWithDispatcher,
     );
     discordNativeCommandTesting.setResolveDiscordNativeInteractionRouteState(async (params) =>
       createUnboundRouteState({
@@ -423,7 +423,7 @@ describe("Discord native plugin command dispatch", () => {
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     const commandSpec: NativeCommandSpec = {
       name: "pair",
       description: "Pair",
@@ -527,7 +527,7 @@ describe("Discord native plugin command dispatch", () => {
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     const commandSpec: NativeCommandSpec = {
       name: "cron_jobs",
       description: "List cron jobs",
@@ -621,7 +621,7 @@ describe("Discord native plugin command dispatch", () => {
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     const interaction = createInteraction({
       channelType: ChannelType.GuildText,
       channelId,

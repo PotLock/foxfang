@@ -15,7 +15,7 @@ export {
   IMessageConfigSchema,
   type ChannelPlugin,
   type IMessageAccountConfig,
-} from "openclaw/plugin-sdk/imessage";
+} from "foxfang/plugin-sdk/imessage";
 export {
   resolveIMessageGroupRequireMention,
   resolveIMessageGroupToolPolicy,

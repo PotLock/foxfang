@@ -1,10 +1,10 @@
 import { Type } from "@sinclair/typebox";
-import type { OpenClawPluginApi } from "openclaw/plugin-sdk/plugin-runtime";
+import type { FoxFangPluginApi } from "foxfang/plugin-sdk/plugin-runtime";
 import {
   jsonResult,
   readNumberParam,
   readStringParam,
-} from "openclaw/plugin-sdk/provider-web-search";
+} from "foxfang/plugin-sdk/provider-web-search";
 import { runFirecrawlScrape } from "./firecrawl-client.js";
 
 function optionalStringEnum<const T extends readonly string[]>(
@@ -61,7 +61,7 @@ const FirecrawlScrapeToolSchema = Type.Object(
   { additionalProperties: false },
 );
 
-export function createFirecrawlScrapeTool(api: OpenClawPluginApi) {
+export function createFirecrawlScrapeTool(api: FoxFangPluginApi) {
   return {
     name: "firecrawl_scrape",
     label: "Firecrawl Scrape",

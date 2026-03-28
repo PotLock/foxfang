@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/together-provider",
+  "name": "@foxfang/together-provider",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw Together provider plugin",
+  "description": "FoxFang Together provider plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

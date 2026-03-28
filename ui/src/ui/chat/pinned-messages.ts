@@ -1,6 +1,6 @@
 import { getSafeLocalStorage } from "../../local-storage.ts";
 
-const PREFIX = "openclaw:pinned:";
+const PREFIX = "foxfang:pinned:";
 
 export class PinnedMessages {
   private key: string;

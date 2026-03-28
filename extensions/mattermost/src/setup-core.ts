@@ -1,5 +1,5 @@
-import type { ChannelSetupAdapter } from "openclaw/plugin-sdk/channel-setup";
-import { createSetupInputPresenceValidator } from "openclaw/plugin-sdk/setup-runtime";
+import type { ChannelSetupAdapter } from "foxfang/plugin-sdk/channel-setup";
+import { createSetupInputPresenceValidator } from "foxfang/plugin-sdk/setup-runtime";
 import { resolveMattermostAccount, type ResolvedMattermostAccount } from "./mattermost/accounts.js";
 import { normalizeMattermostBaseUrl } from "./mattermost/client.js";
 import {
@@ -8,7 +8,7 @@ import {
   DEFAULT_ACCOUNT_ID,
   migrateBaseNameToDefaultAccount,
   normalizeAccountId,
-  type OpenClawConfig,
+  type FoxFangConfig,
 } from "./runtime-api.js";
 import { hasConfiguredSecretInput } from "./secret-input.js";
 
@@ -20,7 +20,7 @@ export function isMattermostConfigured(account: ResolvedMattermostAccount): bool
   return tokenConfigured && Boolean(account.baseUrl);
 }
 
-export function resolveMattermostAccountWithSecrets(cfg: OpenClawConfig, accountId: string) {
+export function resolveMattermostAccountWithSecrets(cfg: FoxFangConfig, accountId: string) {
   return resolveMattermostAccount({
     cfg,
     accountId,

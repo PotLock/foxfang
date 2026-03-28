@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../src/config/config.js";
 import {
   createTestWizardPrompter,
   runSetupWizardFinalize,
@@ -15,7 +15,7 @@ describe("slackSetupWizard.finalize", () => {
         appToken: "xapp-test",
       },
     },
-  } as OpenClawConfig;
+  } as FoxFangConfig;
 
   it("prompts to enable interactive replies for newly configured Slack accounts", async () => {
     const confirm = vi.fn(async () => true);

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig, PluginRuntime, RuntimeEnv } from "../runtime-api.js";
+import type { FoxFangConfig, PluginRuntime, RuntimeEnv } from "../runtime-api.js";
 import {
   type MSTeamsActivityHandler,
   type MSTeamsMessageHandlerDeps,
@@ -41,7 +41,7 @@ const runtimeStub: PluginRuntime = {
 
 function createDeps(): MSTeamsMessageHandlerDeps {
   return createMSTeamsMessageHandlerDeps({
-    cfg: {} as OpenClawConfig,
+    cfg: {} as FoxFangConfig,
     runtime: {
       error: vi.fn(),
     } as unknown as RuntimeEnv,

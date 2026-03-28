@@ -12,7 +12,7 @@ policy. This page covers per-agent configuration, precedence rules, and
 examples.
 
 - **Sandbox backends and modes**: see [Sandboxing](/gateway/sandboxing).
-- **Debugging blocked tools**: see [Sandbox vs Tool Policy vs Elevated](/gateway/sandbox-vs-tool-policy-vs-elevated) and `openclaw sandbox explain`.
+- **Debugging blocked tools**: see [Sandbox vs Tool Policy vs Elevated](/gateway/sandbox-vs-tool-policy-vs-elevated) and `foxfang sandbox explain`.
 - **Elevated exec**: see [Elevated Mode](/tools/elevated).
 
 Auth is per-agent: each agent reads from its own `agentDir` auth store at
@@ -255,7 +255,7 @@ Per-agent elevated overrides (`agents.list[].tools.elevated`) can further restri
 }
 ```
 
-Legacy `agent.*` configs are migrated by `openclaw doctor`; prefer `agents.defaults` + `agents.list` going forward.
+Legacy `agent.*` configs are migrated by `foxfang doctor`; prefer `agents.defaults` + `agents.list` going forward.
 
 ---
 
@@ -313,13 +313,13 @@ After configuring multi-agent sandbox and tools:
 1. **Check agent resolution:**
 
    ```exec
-   openclaw agents list --bindings
+   foxfang agents list --bindings
    ```
 
 2. **Verify sandbox containers:**
 
    ```exec
-   docker ps --filter "name=openclaw-sbx-"
+   docker ps --filter "name=foxfang-sbx-"
    ```
 
 3. **Test tool restrictions:**
@@ -329,7 +329,7 @@ After configuring multi-agent sandbox and tools:
 4. **Monitor logs:**
 
    ```exec
-   tail -f "${OPENCLAW_STATE_DIR:-$HOME/.foxfang}/logs/gateway.log" | grep -E "routing|sandbox|tools"
+   tail -f "${FOXFANG_STATE_DIR:-$HOME/.foxfang}/logs/gateway.log" | grep -E "routing|sandbox|tools"
    ```
 
 ---

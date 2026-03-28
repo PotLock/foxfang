@@ -1,5 +1,5 @@
-import { buildChannelConfigSchema } from "openclaw/plugin-sdk/channel-config-schema";
-import { z } from "openclaw/plugin-sdk/zod";
+import { buildChannelConfigSchema } from "foxfang/plugin-sdk/channel-config-schema";
+import { z } from "foxfang/plugin-sdk/zod";
 
 export const SynologyChatChannelConfigSchema = buildChannelConfigSchema(
   z

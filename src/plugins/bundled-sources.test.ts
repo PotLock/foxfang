@@ -5,11 +5,11 @@ import {
   resolveBundledPluginSources,
 } from "./bundled-sources.js";
 
-const discoverOpenClawPluginsMock = vi.fn();
+const discoverFoxFangPluginsMock = vi.fn();
 const loadPluginManifestMock = vi.fn();
 
 vi.mock("./discovery.js", () => ({
-  discoverOpenClawPlugins: (...args: unknown[]) => discoverOpenClawPluginsMock(...args),
+  discoverFoxFangPlugins: (...args: unknown[]) => discoverFoxFangPluginsMock(...args),
 }));
 
 vi.mock("./manifest.js", () => ({
@@ -35,7 +35,7 @@ function createBundledCandidate(params: {
 }
 
 function setBundledDiscoveryCandidates(candidates: unknown[]) {
-  discoverOpenClawPluginsMock.mockReturnValue({
+  discoverFoxFangPluginsMock.mockReturnValue({
     candidates,
     diagnostics: [],
   });
@@ -48,7 +48,7 @@ function setBundledManifestIdsByRoot(manifestIds: Record<string, string>) {
       : {
           ok: false,
           error: "invalid manifest",
-          manifestPath: `${rootDir}/openclaw.plugin.json`,
+          manifestPath: `${rootDir}/foxfang.plugin.json`,
         },
   );
 }
@@ -57,11 +57,11 @@ function setBundledLookupFixture() {
   setBundledDiscoveryCandidates([
     createBundledCandidate({
       rootDir: "/app/extensions/feishu",
-      packageName: "@openclaw/feishu",
+      packageName: "@foxfang/feishu",
     }),
     createBundledCandidate({
       rootDir: "/app/extensions/diffs",
-      packageName: "@openclaw/diffs",
+      packageName: "@foxfang/diffs",
     }),
   ]);
   setBundledManifestIdsByRoot({
@@ -78,7 +78,7 @@ function createResolvedBundledSource(params: {
   return {
     pluginId: params.pluginId,
     localPath: params.localPath,
-    npmSpec: params.npmSpec ?? `@openclaw/${params.pluginId}`,
+    npmSpec: params.npmSpec ?? `@foxfang/${params.pluginId}`,
   };
 }
 
@@ -115,7 +115,7 @@ function expectBundledSourceLookupCase(params: {
 
 describe("bundled plugin sources", () => {
   beforeEach(() => {
-    discoverOpenClawPluginsMock.mockReset();
+    discoverFoxFangPluginsMock.mockReset();
     loadPluginManifestMock.mockReset();
   });
 
@@ -124,19 +124,19 @@ describe("bundled plugin sources", () => {
       createBundledCandidate({
         origin: "global",
         rootDir: "/global/feishu",
-        packageName: "@openclaw/feishu",
+        packageName: "@foxfang/feishu",
       }),
       createBundledCandidate({
         rootDir: "/app/extensions/feishu",
-        packageName: "@openclaw/feishu",
+        packageName: "@foxfang/feishu",
       }),
       createBundledCandidate({
         rootDir: "/app/extensions/feishu-dup",
-        packageName: "@openclaw/feishu",
+        packageName: "@foxfang/feishu",
       }),
       createBundledCandidate({
         rootDir: "/app/extensions/msteams",
-        packageName: "@openclaw/msteams",
+        packageName: "@foxfang/msteams",
       }),
     ]);
     setBundledManifestIdsByRoot({
@@ -158,12 +158,12 @@ describe("bundled plugin sources", () => {
   it.each([
     [
       "finds bundled source by npm spec",
-      { kind: "npmSpec", value: "@openclaw/feishu" } as const,
+      { kind: "npmSpec", value: "@foxfang/feishu" } as const,
       { pluginId: "feishu", localPath: "/app/extensions/feishu" },
     ],
     [
       "returns undefined for missing npm spec",
-      { kind: "npmSpec", value: "@openclaw/not-found" } as const,
+      { kind: "npmSpec", value: "@foxfang/not-found" } as const,
       undefined,
     ],
     [
@@ -183,7 +183,7 @@ describe("bundled plugin sources", () => {
   it("forwards an explicit env to bundled discovery helpers", () => {
     setBundledDiscoveryCandidates([]);
 
-    const env = { HOME: "/tmp/openclaw-home" } as NodeJS.ProcessEnv;
+    const env = { HOME: "/tmp/foxfang-home" } as NodeJS.ProcessEnv;
 
     resolveBundledPluginSources({
       workspaceDir: "/workspace",
@@ -195,11 +195,11 @@ describe("bundled plugin sources", () => {
       env,
     });
 
-    expect(discoverOpenClawPluginsMock).toHaveBeenNthCalledWith(1, {
+    expect(discoverFoxFangPluginsMock).toHaveBeenNthCalledWith(1, {
       workspaceDir: "/workspace",
       env,
     });
-    expect(discoverOpenClawPluginsMock).toHaveBeenNthCalledWith(2, {
+    expect(discoverFoxFangPluginsMock).toHaveBeenNthCalledWith(2, {
       workspaceDir: "/workspace",
       env,
     });
@@ -230,7 +230,7 @@ describe("bundled plugin sources", () => {
     expect(
       findBundledPluginSourceInMap({
         bundled,
-        lookup: { kind: "npmSpec", value: "@openclaw/feishu" },
+        lookup: { kind: "npmSpec", value: "@foxfang/feishu" },
       })?.pluginId,
     ).toBe("feishu");
   });

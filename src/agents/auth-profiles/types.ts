@@ -1,5 +1,5 @@
 import type { OAuthCredentials } from "@mariozechner/pi-ai";
-import type { OpenClawConfig } from "../../config/config.js";
+import type { FoxFangConfig } from "../../config/config.js";
 import type { SecretRef } from "../../config/types.secrets.js";
 
 export type ApiKeyCredential = {
@@ -16,7 +16,7 @@ export type ApiKeyCredential = {
 export type TokenCredential = {
   /**
    * Static bearer-style token (often OAuth access token / PAT).
-   * Not refreshable by OpenClaw (unlike `type: "oauth"`).
+   * Not refreshable by FoxFang (unlike `type: "oauth"`).
    */
   type: "token";
   provider: string;
@@ -78,7 +78,7 @@ export type AuthProfileStore = {
 };
 
 export type AuthProfileIdRepairResult = {
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   changes: string[];
   migrated: boolean;
   fromProfileId?: string;

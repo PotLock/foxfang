@@ -15,18 +15,18 @@ import {
   withManager,
   withProgress,
   withProgressTotals,
-} from "openclaw/plugin-sdk/memory-core-host-runtime-cli";
+} from "foxfang/plugin-sdk/memory-core-host-runtime-cli";
 import {
   loadConfig,
   resolveDefaultAgentId,
   resolveSessionTranscriptsDirForAgent,
   resolveStateDir,
-  type OpenClawConfig,
-} from "openclaw/plugin-sdk/memory-core-host-runtime-core";
+  type FoxFangConfig,
+} from "foxfang/plugin-sdk/memory-core-host-runtime-core";
 import {
   listMemoryFiles,
   normalizeExtraMemoryPaths,
-} from "openclaw/plugin-sdk/memory-core-host-runtime-files";
+} from "foxfang/plugin-sdk/memory-core-host-runtime-files";
 import type { MemoryCommandOptions, MemorySearchCommandOptions } from "./cli.types.js";
 import { getMemorySearchManager } from "./memory/index.js";
 
@@ -48,7 +48,7 @@ type MemorySourceScan = {
 };
 
 type LoadedMemoryCommandConfig = {
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   diagnostics: string[];
 };
 
@@ -104,7 +104,7 @@ function formatSourceLabel(source: string, workspaceDir: string, agentId: string
   return source;
 }
 
-function resolveAgent(cfg: OpenClawConfig, agent?: string) {
+function resolveAgent(cfg: FoxFangConfig, agent?: string) {
   const trimmed = agent?.trim();
   if (trimmed) {
     return trimmed;
@@ -112,7 +112,7 @@ function resolveAgent(cfg: OpenClawConfig, agent?: string) {
   return resolveDefaultAgentId(cfg);
 }
 
-function resolveAgentIds(cfg: OpenClawConfig, agent?: string): string[] {
+function resolveAgentIds(cfg: FoxFangConfig, agent?: string): string[] {
   const trimmed = agent?.trim();
   if (trimmed) {
     return [trimmed];
@@ -129,7 +129,7 @@ function formatExtraPaths(workspaceDir: string, extraPaths: string[]): string[] 
 }
 
 async function withMemoryManagerForAgent(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   agentId: string;
   purpose?: MemoryManagerPurpose;
   run: (manager: MemoryManager) => Promise<void>;

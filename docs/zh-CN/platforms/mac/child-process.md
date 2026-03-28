@@ -16,7 +16,7 @@ x-i18n:
 
 macOS 应用**默认通过 launchd 管理 Gateway 网关**，不会将
 Gateway 网关作为子进程生成。它首先尝试连接到配置端口上已运行的
-Gateway 网关；如果无法访问，它会通过外部 `openclaw` CLI（无嵌入式运行时）启用 launchd
+Gateway 网关；如果无法访问，它会通过外部 `foxfang` CLI（无嵌入式运行时）启用 launchd
 服务。这为你提供了可靠的登录时自动启动和崩溃后重启。
 
 子进程模式（由应用直接生成 Gateway 网关）**目前未使用**。
@@ -25,7 +25,7 @@ Gateway 网关；如果无法访问，它会通过外部 `openclaw` CLI（无嵌
 ## 默认行为（launchd）
 
 - 应用安装标记为 `bot.molt.gateway` 的按用户 LaunchAgent
-  （使用 `--profile`/`OPENCLAW_PROFILE` 时为 `bot.molt.<profile>`；支持旧版 `com.openclaw.*`）。
+  （使用 `--profile`/`FOXFANG_PROFILE` 时为 `bot.molt.<profile>`；支持旧版 `com.foxfang.*`）。
 - 当启用本地模式时，应用确保 LaunchAgent 已加载，并
   在需要时启动 Gateway 网关。
 - 日志写入 launchd Gateway 网关日志路径（在调试设置中可见）。

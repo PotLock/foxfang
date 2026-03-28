@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/modelstudio-provider",
+  "name": "@foxfang/modelstudio-provider",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw Model Studio provider plugin",
+  "description": "FoxFang Model Studio provider plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

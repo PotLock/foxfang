@@ -1,7 +1,7 @@
-import { resolveAgentRoute } from "openclaw/plugin-sdk/routing";
-import { normalizeE164 } from "openclaw/plugin-sdk/text-runtime";
+import { resolveAgentRoute } from "foxfang/plugin-sdk/routing";
+import { normalizeE164 } from "foxfang/plugin-sdk/text-runtime";
 import { describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../src/config/config.js";
 import { expectPairingReplyText } from "../../../test/helpers/pairing-reply.js";
 import {
   createSignalToolResultConfig,
@@ -33,7 +33,7 @@ type MonitorSignalProviderOptions = Parameters<typeof monitorSignalProvider>[0];
 
 async function runMonitorWithMocks(opts: MonitorSignalProviderOptions) {
   return monitorSignalProvider({
-    config: config as OpenClawConfig,
+    config: config as FoxFangConfig,
     waitForTransportReady: waitForTransportReadyMock as any,
     ...opts,
   });
@@ -66,7 +66,7 @@ async function receiveSignalPayloads(params: {
 
 function hasQueuedReactionEventFor(sender: string) {
   const route = resolveAgentRoute({
-    cfg: config as OpenClawConfig,
+    cfg: config as FoxFangConfig,
     channel: "signal",
     accountId: "default",
     peer: { kind: "direct", id: normalizeE164(sender) },

@@ -1,7 +1,7 @@
-import { createArmableStallWatchdog } from "openclaw/plugin-sdk/channel-lifecycle";
-import { createConnectedChannelStatusPatch } from "openclaw/plugin-sdk/gateway-runtime";
-import { danger } from "openclaw/plugin-sdk/runtime-env";
-import type { RuntimeEnv } from "openclaw/plugin-sdk/runtime-env";
+import { createArmableStallWatchdog } from "foxfang/plugin-sdk/channel-lifecycle";
+import { createConnectedChannelStatusPatch } from "foxfang/plugin-sdk/gateway-runtime";
+import { danger } from "foxfang/plugin-sdk/runtime-env";
+import type { RuntimeEnv } from "foxfang/plugin-sdk/runtime-env";
 import type { MutableDiscordGateway } from "./gateway-handle.js";
 import type { DiscordMonitorStatusSink } from "./status.js";
 

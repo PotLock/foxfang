@@ -10,8 +10,8 @@ import {
   splitSetupEntries,
   type ChannelSetupDmPolicy,
   type ChannelSetupWizard,
-  type OpenClawConfig,
-} from "openclaw/plugin-sdk/setup";
+  type FoxFangConfig,
+} from "foxfang/plugin-sdk/setup";
 import {
   listGoogleChatAccountIds,
   resolveDefaultGoogleChatAccountId,

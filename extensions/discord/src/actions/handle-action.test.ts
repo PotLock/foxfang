@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../../src/config/config.js";
 
 const runtimeModule = await import("./runtime.js");
 const handleDiscordActionMock = vi
@@ -23,7 +23,7 @@ describe("handleDiscordMessageAction", () => {
       },
       cfg: {
         channels: { discord: { token: "tok", actions: { moderation: true } } },
-      } as OpenClawConfig,
+      } as FoxFangConfig,
       requesterSenderId: "trusted-sender-id",
       toolContext: { currentChannelProvider: "discord" },
     });
@@ -55,7 +55,7 @@ describe("handleDiscordMessageAction", () => {
       },
       cfg: {
         channels: { discord: { token: "tok" } },
-      } as OpenClawConfig,
+      } as FoxFangConfig,
       toolContext: { currentMessageId: "9001" },
     });
 
@@ -81,7 +81,7 @@ describe("handleDiscordMessageAction", () => {
         },
         cfg: {
           channels: { discord: { token: "tok" } },
-        } as OpenClawConfig,
+        } as FoxFangConfig,
       }),
     ).rejects.toThrow(/messageId required/i);
 

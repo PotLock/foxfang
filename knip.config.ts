@@ -89,7 +89,7 @@ const config = {
     "extensions/*": {
       entry: ["index.ts!"],
       project: ["index.ts!", "src/**/*.ts!"],
-      ignoreDependencies: ["openclaw"],
+      ignoreDependencies: ["foxfang"],
     },
   },
 } as const;

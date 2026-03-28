@@ -3,4 +3,4 @@ export {
   buildImageResizeSideGrid,
   getImageMetadata,
   resizeToJpeg,
-} from "openclaw/plugin-sdk/browser-support";
+} from "foxfang/plugin-sdk/browser-support";

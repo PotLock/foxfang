@@ -1,5 +1,5 @@
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import { resolveStorePath, updateSessionStore } from "openclaw/plugin-sdk/config-runtime";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import { resolveStorePath, updateSessionStore } from "foxfang/plugin-sdk/config-runtime";
 
 /**
  * Marks every session entry in the store whose key contains {@link threadId}
@@ -11,7 +11,7 @@ import { resolveStorePath, updateSessionStore } from "openclaw/plugin-sdk/config
  * any on-disk transcript history.
  */
 export async function closeDiscordThreadSessions(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId: string;
   threadId: string;
 }): Promise<number> {

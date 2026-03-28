@@ -12,7 +12,7 @@ describe("detectMacCloudSyncedStateDir", () => {
       "Library",
       "Mobile Documents",
       "com~apple~CloudDocs",
-      "OpenClaw",
+      "FoxFang",
       ".foxfang",
     );
 
@@ -28,7 +28,7 @@ describe("detectMacCloudSyncedStateDir", () => {
   });
 
   it("detects state dir under Library/CloudStorage", () => {
-    const stateDir = path.join(home, "Library", "CloudStorage", "Dropbox", "OpenClaw", ".foxfang");
+    const stateDir = path.join(home, "Library", "CloudStorage", "Dropbox", "FoxFang", ".foxfang");
 
     const result = detectMacCloudSyncedStateDir(stateDir, {
       platform: "darwin",
@@ -42,13 +42,13 @@ describe("detectMacCloudSyncedStateDir", () => {
   });
 
   it("detects cloud-synced target when state dir resolves via symlink", () => {
-    const symlinkPath = "/tmp/openclaw-state";
+    const symlinkPath = "/tmp/foxfang-state";
     const resolvedCloudPath = path.join(
       home,
       "Library",
       "CloudStorage",
       "OneDrive-Personal",
-      "OpenClaw",
+      "FoxFang",
       ".foxfang",
     );
 
@@ -70,7 +70,7 @@ describe("detectMacCloudSyncedStateDir", () => {
       "Library",
       "CloudStorage",
       "OneDrive-Personal",
-      "OpenClaw",
+      "FoxFang",
       ".foxfang",
     );
     const resolvedLocalPath = path.join(home, ".foxfang");
@@ -84,10 +84,10 @@ describe("detectMacCloudSyncedStateDir", () => {
     expect(result).toBeNull();
   });
 
-  it("anchors cloud detection to OS homedir when OPENCLAW_HOME is overridden", () => {
+  it("anchors cloud detection to OS homedir when FOXFANG_HOME is overridden", () => {
     const stateDir = path.join(home, "Library", "CloudStorage", "iCloud Drive", ".foxfang");
-    const originalOpenClawHome = process.env.OPENCLAW_HOME;
-    process.env.OPENCLAW_HOME = "/tmp/openclaw-home-override";
+    const originalFoxFangHome = process.env.FOXFANG_HOME;
+    process.env.FOXFANG_HOME = "/tmp/foxfang-home-override";
     const homedirSpy = vi.spyOn(os, "homedir").mockReturnValue(home);
     try {
       const result = detectMacCloudSyncedStateDir(stateDir, {
@@ -100,10 +100,10 @@ describe("detectMacCloudSyncedStateDir", () => {
       });
     } finally {
       homedirSpy.mockRestore();
-      if (originalOpenClawHome === undefined) {
-        delete process.env.OPENCLAW_HOME;
+      if (originalFoxFangHome === undefined) {
+        delete process.env.FOXFANG_HOME;
       } else {
-        process.env.OPENCLAW_HOME = originalOpenClawHome;
+        process.env.FOXFANG_HOME = originalFoxFangHome;
       }
     }
   });
@@ -114,7 +114,7 @@ describe("detectMacCloudSyncedStateDir", () => {
       "Library",
       "Mobile Documents",
       "com~apple~CloudDocs",
-      "OpenClaw",
+      "FoxFang",
       ".foxfang",
     );
 

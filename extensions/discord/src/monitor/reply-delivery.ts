@@ -1,22 +1,22 @@
 import type { RequestClient } from "@buape/carbon";
-import { resolveAgentAvatar } from "openclaw/plugin-sdk/agent-runtime";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import type { MarkdownTableMode, ReplyToMode } from "openclaw/plugin-sdk/config-runtime";
+import { resolveAgentAvatar } from "foxfang/plugin-sdk/agent-runtime";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import type { MarkdownTableMode, ReplyToMode } from "foxfang/plugin-sdk/config-runtime";
 import {
   resolveSendableOutboundReplyParts,
   resolveTextChunksWithFallback,
   sendMediaWithLeadingCaption,
-} from "openclaw/plugin-sdk/reply-payload";
-import type { ChunkMode } from "openclaw/plugin-sdk/reply-runtime";
-import type { ReplyPayload } from "openclaw/plugin-sdk/reply-runtime";
+} from "foxfang/plugin-sdk/reply-payload";
+import type { ChunkMode } from "foxfang/plugin-sdk/reply-runtime";
+import type { ReplyPayload } from "foxfang/plugin-sdk/reply-runtime";
 import {
   resolveRetryConfig,
   retryAsync,
   type RetryConfig,
   type RetryRunner,
-} from "openclaw/plugin-sdk/retry-runtime";
-import type { RuntimeEnv } from "openclaw/plugin-sdk/runtime-env";
-import { convertMarkdownTables } from "openclaw/plugin-sdk/text-runtime";
+} from "foxfang/plugin-sdk/retry-runtime";
+import type { RuntimeEnv } from "foxfang/plugin-sdk/runtime-env";
+import { convertMarkdownTables } from "foxfang/plugin-sdk/text-runtime";
 import { resolveDiscordAccount } from "../accounts.js";
 import { chunkDiscordTextWithMode } from "../chunk.js";
 import { createDiscordRetryRunner } from "../retry.js";
@@ -114,7 +114,7 @@ function resolveBoundThreadBinding(params: {
 }
 
 function resolveBindingPersona(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   binding: DiscordThreadBindingLookupRecord | undefined,
 ): {
   username?: string;
@@ -139,7 +139,7 @@ function resolveBindingPersona(
 }
 
 async function sendDiscordChunkWithFallback(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   target: string;
   text: string;
   token: string;
@@ -216,7 +216,7 @@ async function sendDiscordChunkWithFallback(params: {
 }
 
 export async function deliverDiscordReply(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   replies: ReplyPayload[];
   target: string;
   token: string;

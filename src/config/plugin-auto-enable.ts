@@ -13,7 +13,7 @@ import {
 } from "../plugins/manifest-registry.js";
 import { isRecord, resolveConfigDir, resolveUserPath } from "../utils.js";
 import { isChannelConfigured } from "./channel-configured.js";
-import type { OpenClawConfig } from "./config.js";
+import type { FoxFangConfig } from "./config.js";
 import { ensurePluginAllowlisted } from "./plugins-allowlist.js";
 
 type PluginEnableChange = {
@@ -22,7 +22,7 @@ type PluginEnableChange = {
 };
 
 export type PluginAutoEnableResult = {
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   changes: string[];
 };
 
@@ -31,7 +31,7 @@ const EMPTY_PLUGIN_MANIFEST_REGISTRY: PluginManifestRegistry = {
   diagnostics: [],
 };
 
-const ENV_CATALOG_PATHS = ["OPENCLAW_PLUGIN_CATALOG_PATHS", "OPENCLAW_MPM_CATALOG_PATHS"];
+const ENV_CATALOG_PATHS = ["FOXFANG_PLUGIN_CATALOG_PATHS", "FOXFANG_MPM_CATALOG_PATHS"];
 
 function resolveAutoEnableProviderPluginIds(
   registry: PluginManifestRegistry,
@@ -47,7 +47,7 @@ function resolveAutoEnableProviderPluginIds(
   return Object.fromEntries(entries);
 }
 
-function collectModelRefs(cfg: OpenClawConfig): string[] {
+function collectModelRefs(cfg: FoxFangConfig): string[] {
   const refs: string[] = [];
   const pushModelRef = (value: unknown) => {
     if (typeof value === "string" && value.trim()) {
@@ -101,7 +101,7 @@ function extractProviderFromModelRef(value: string): string | null {
   return normalizeProviderId(trimmed.slice(0, slash));
 }
 
-function isProviderConfigured(cfg: OpenClawConfig, providerId: string): boolean {
+function isProviderConfigured(cfg: FoxFangConfig, providerId: string): boolean {
   const normalized = normalizeProviderId(providerId);
 
   const profiles = cfg.auth?.profiles;
@@ -195,10 +195,10 @@ function parseExternalCatalogChannelEntries(raw: unknown): ExternalCatalogChanne
 
   const channels: ExternalCatalogChannelEntry[] = [];
   for (const entry of list) {
-    if (!isRecord(entry) || !isRecord(entry.openclaw) || !isRecord(entry.openclaw.channel)) {
+    if (!isRecord(entry) || !isRecord(entry.foxfang) || !isRecord(entry.foxfang.channel)) {
       continue;
     }
-    const channel = entry.openclaw.channel;
+    const channel = entry.foxfang.channel;
     const id = typeof channel.id === "string" ? channel.id.trim() : "";
     if (!id) {
       continue;
@@ -249,7 +249,7 @@ function listKnownChannelPluginIds(): string[] {
   return listChatChannels().map((meta) => meta.id);
 }
 
-function collectCandidateChannelIds(cfg: OpenClawConfig): string[] {
+function collectCandidateChannelIds(cfg: FoxFangConfig): string[] {
   const channelIds = new Set<string>(listKnownChannelPluginIds());
   const configuredChannels = cfg.channels as Record<string, unknown> | undefined;
   if (!configuredChannels || typeof configuredChannels !== "object") {
@@ -265,7 +265,7 @@ function collectCandidateChannelIds(cfg: OpenClawConfig): string[] {
   return Array.from(channelIds);
 }
 
-function configMayNeedPluginManifestRegistry(cfg: OpenClawConfig): boolean {
+function configMayNeedPluginManifestRegistry(cfg: FoxFangConfig): boolean {
   const configuredChannels = cfg.channels as Record<string, unknown> | undefined;
   if (!configuredChannels || typeof configuredChannels !== "object") {
     return false;
@@ -282,7 +282,7 @@ function configMayNeedPluginManifestRegistry(cfg: OpenClawConfig): boolean {
 }
 
 function resolveConfiguredPlugins(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   env: NodeJS.ProcessEnv,
   registry: PluginManifestRegistry,
 ): PluginEnableChange[] {
@@ -319,7 +319,7 @@ function resolveConfiguredPlugins(
   return changes;
 }
 
-function isPluginExplicitlyDisabled(cfg: OpenClawConfig, pluginId: string): boolean {
+function isPluginExplicitlyDisabled(cfg: FoxFangConfig, pluginId: string): boolean {
   const builtInChannelId = normalizeChatChannelId(pluginId);
   if (builtInChannelId) {
     const channels = cfg.channels as Record<string, unknown> | undefined;
@@ -337,7 +337,7 @@ function isPluginExplicitlyDisabled(cfg: OpenClawConfig, pluginId: string): bool
   return entry?.enabled === false;
 }
 
-function isPluginDenied(cfg: OpenClawConfig, pluginId: string): boolean {
+function isPluginDenied(cfg: FoxFangConfig, pluginId: string): boolean {
   const deny = cfg.plugins?.deny;
   return Array.isArray(deny) && deny.includes(pluginId);
 }
@@ -364,7 +364,7 @@ function resolvePreferredOverIds(
 }
 
 function shouldSkipPreferredPluginAutoEnable(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   entry: PluginEnableChange,
   configured: PluginEnableChange[],
   env: NodeJS.ProcessEnv,
@@ -388,7 +388,7 @@ function shouldSkipPreferredPluginAutoEnable(
   return false;
 }
 
-function registerPluginEntry(cfg: OpenClawConfig, pluginId: string): OpenClawConfig {
+function registerPluginEntry(cfg: FoxFangConfig, pluginId: string): FoxFangConfig {
   const builtInChannelId = normalizeChatChannelId(pluginId);
   if (builtInChannelId) {
     const channels = cfg.channels as Record<string, unknown> | undefined;
@@ -435,7 +435,7 @@ function formatAutoEnableChange(entry: PluginEnableChange): string {
 }
 
 export function applyPluginAutoEnable(params: {
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   env?: NodeJS.ProcessEnv;
   /** Pre-loaded manifest registry. When omitted, the registry is loaded from
    *  the installed plugins on disk. Pass an explicit registry in tests to

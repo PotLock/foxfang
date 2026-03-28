@@ -1,7 +1,7 @@
 {
-  "name": "@openclaw/voice-call",
+  "name": "@foxfang/voice-call",
   "version": "2026.3.27",
-  "description": "OpenClaw voice-call plugin",
+  "description": "FoxFang voice-call plugin",
   "type": "module",
   "dependencies": {
     "@sinclair/typebox": "0.34.48",
@@ -9,17 +9,17 @@
     "ws": "^8.20.0"
   },
   "devDependencies": {
-    "openclaw": "workspace:*"
+    "foxfang": "workspace:*"
   },
   "peerDependencies": {
-    "openclaw": ">=2026.3.27"
+    "foxfang": ">=2026.3.27"
   },
   "peerDependenciesMeta": {
-    "openclaw": {
+    "foxfang": {
       "optional": true
     }
   },
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ],

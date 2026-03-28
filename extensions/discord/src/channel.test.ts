@@ -6,7 +6,7 @@ import type {
 import type { PluginRuntime } from "../../../src/plugins/runtime/types.js";
 import { createStartAccountContext } from "../../../test/helpers/extensions/start-account-context.js";
 import type { ResolvedDiscordAccount } from "./accounts.js";
-import type { OpenClawConfig } from "./runtime-api.js";
+import type { FoxFangConfig } from "./runtime-api.js";
 let discordPlugin: typeof import("./channel.js").discordPlugin;
 let setDiscordRuntime: typeof import("./runtime.js").setDiscordRuntime;
 
@@ -38,7 +38,7 @@ vi.mock("./audit.js", async (importOriginal) => {
   };
 });
 
-function createCfg(): OpenClawConfig {
+function createCfg(): FoxFangConfig {
   return {
     channels: {
       discord: {
@@ -46,7 +46,7 @@ function createCfg(): OpenClawConfig {
         token: "discord-token",
       },
     },
-  } as OpenClawConfig;
+  } as FoxFangConfig;
 }
 
 function createPluginApprovalRequest(
@@ -81,11 +81,11 @@ function createPluginApprovalResolved(
   };
 }
 
-function resolveAccount(cfg: OpenClawConfig): ResolvedDiscordAccount {
+function resolveAccount(cfg: FoxFangConfig): ResolvedDiscordAccount {
   return discordPlugin.config.resolveAccount(cfg, "default") as ResolvedDiscordAccount;
 }
 
-function startDiscordAccount(cfg: OpenClawConfig) {
+function startDiscordAccount(cfg: FoxFangConfig) {
   return discordPlugin.gateway!.startAccount!(
     createStartAccountContext({
       account: resolveAccount(cfg),
@@ -129,7 +129,7 @@ describe("discordPlugin outbound", () => {
     });
 
     const result = await discordPlugin.outbound!.sendMedia!({
-      cfg: {} as OpenClawConfig,
+      cfg: {} as FoxFangConfig,
       to: "channel:123",
       text: "hi",
       mediaUrl: "/tmp/image.png",
@@ -386,7 +386,7 @@ describe("discordPlugin security", () => {
           dm: { policy: "allowlist", allowFrom: ["  discord:<@!123456789>  "] },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
 
     const result = resolveDmPolicy({
       cfg,
@@ -423,7 +423,7 @@ describe("discordPlugin groups", () => {
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
 
     expect(
       discordPlugin.groups?.resolveRequireMention?.({

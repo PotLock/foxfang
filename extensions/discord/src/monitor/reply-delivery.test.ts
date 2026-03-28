@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../../src/config/config.js";
 import type { RuntimeEnv } from "../../../../src/runtime.js";
 import {
   __testing as threadBindingTesting,
@@ -50,8 +50,8 @@ vi.mock("../send.shared.js", () => ({
   sendDiscordText: (...args: unknown[]) => sendDiscordTextMock(...args),
 }));
 
-vi.mock("openclaw/plugin-sdk/retry-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/retry-runtime")>();
+vi.mock("foxfang/plugin-sdk/retry-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/retry-runtime")>();
   return {
     ...actual,
     retryAsync: retryAsyncMock,
@@ -64,7 +64,7 @@ describe("deliverDiscordReply", () => {
   const runtime = {} as RuntimeEnv;
   const cfg = {
     channels: { discord: { token: "test-token" } },
-  } as OpenClawConfig;
+  } as FoxFangConfig;
   const expectBotSendRetrySuccess = async (status: number, message: string) => {
     sendMessageDiscordMock
       .mockRejectedValueOnce(Object.assign(new Error(message), { status }))

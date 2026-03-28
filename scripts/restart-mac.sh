@@ -1,24 +1,24 @@
 #!/usr/bin/env bash
-# Reset OpenClaw like Trimmy: kill running instances, rebuild, repackage, relaunch, verify.
+# Reset FoxFang like Trimmy: kill running instances, rebuild, repackage, relaunch, verify.
 
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_BUNDLE="${OPENCLAW_APP_BUNDLE:-}"
-APP_PROCESS_PATTERN="OpenClaw.app/Contents/MacOS/OpenClaw"
-DEBUG_PROCESS_PATTERN="${ROOT_DIR}/apps/macos/.build/debug/OpenClaw"
-LOCAL_PROCESS_PATTERN="${ROOT_DIR}/apps/macos/.build-local/debug/OpenClaw"
-RELEASE_PROCESS_PATTERN="${ROOT_DIR}/apps/macos/.build/release/OpenClaw"
-LAUNCH_AGENT="${HOME}/Library/LaunchAgents/ai.openclaw.mac.plist"
+APP_BUNDLE="${FOXFANG_APP_BUNDLE:-}"
+APP_PROCESS_PATTERN="FoxFang.app/Contents/MacOS/FoxFang"
+DEBUG_PROCESS_PATTERN="${ROOT_DIR}/apps/macos/.build/debug/FoxFang"
+LOCAL_PROCESS_PATTERN="${ROOT_DIR}/apps/macos/.build-local/debug/FoxFang"
+RELEASE_PROCESS_PATTERN="${ROOT_DIR}/apps/macos/.build/release/FoxFang"
+LAUNCH_AGENT="${HOME}/Library/LaunchAgents/ai.foxfang.mac.plist"
 LOCK_KEY="$(printf '%s' "${ROOT_DIR}" | shasum -a 256 | cut -c1-8)"
-LOCK_DIR="${TMPDIR:-/tmp}/openclaw-restart-${LOCK_KEY}"
+LOCK_DIR="${TMPDIR:-/tmp}/foxfang-restart-${LOCK_KEY}"
 LOCK_PID_FILE="${LOCK_DIR}/pid"
 WAIT_FOR_LOCK=0
-LOG_PATH="${OPENCLAW_RESTART_LOG:-/tmp/openclaw-restart.log}"
+LOG_PATH="${FOXFANG_RESTART_LOG:-/tmp/foxfang-restart.log}"
 NO_SIGN=0
 SIGN=0
 AUTO_DETECT_SIGNING=1
-GATEWAY_WAIT_SECONDS="${OPENCLAW_GATEWAY_WAIT_SECONDS:-0}"
+GATEWAY_WAIT_SECONDS="${FOXFANG_GATEWAY_WAIT_SECONDS:-0}"
 LAUNCHAGENT_DISABLE_MARKER="${HOME}/.foxfang/disable-launchagent"
 ATTACH_ONLY=1
 
@@ -93,7 +93,7 @@ for arg in "$@"; do
       log "  --no-attach-only Launch app without attach-only override"
       log ""
       log "Env:"
-      log "  OPENCLAW_GATEWAY_WAIT_SECONDS=0  Wait time before gateway port check (unsigned only)"
+      log "  FOXFANG_GATEWAY_WAIT_SECONDS=0  Wait time before gateway port check (unsigned only)"
       log ""
       log "Unsigned recovery:"
       log "  node foxfang.mjs daemon install --force --runtime node"
@@ -126,18 +126,18 @@ fi
 
 acquire_lock
 
-kill_all_openclaw() {
+kill_all_foxfang() {
   for _ in {1..10}; do
     pkill -f "${APP_PROCESS_PATTERN}" 2>/dev/null || true
     pkill -f "${DEBUG_PROCESS_PATTERN}" 2>/dev/null || true
     pkill -f "${LOCAL_PROCESS_PATTERN}" 2>/dev/null || true
     pkill -f "${RELEASE_PROCESS_PATTERN}" 2>/dev/null || true
-    pkill -x "OpenClaw" 2>/dev/null || true
+    pkill -x "FoxFang" 2>/dev/null || true
     if ! pgrep -f "${APP_PROCESS_PATTERN}" >/dev/null 2>&1 \
        && ! pgrep -f "${DEBUG_PROCESS_PATTERN}" >/dev/null 2>&1 \
        && ! pgrep -f "${LOCAL_PROCESS_PATTERN}" >/dev/null 2>&1 \
        && ! pgrep -f "${RELEASE_PROCESS_PATTERN}" >/dev/null 2>&1 \
-       && ! pgrep -x "OpenClaw" >/dev/null 2>&1; then
+       && ! pgrep -x "FoxFang" >/dev/null 2>&1; then
       return 0
     fi
     sleep 0.3
@@ -145,12 +145,12 @@ kill_all_openclaw() {
 }
 
 stop_launch_agent() {
-  launchctl bootout gui/"$UID"/ai.openclaw.mac 2>/dev/null || true
+  launchctl bootout gui/"$UID"/ai.foxfang.mac 2>/dev/null || true
 }
 
 # 1) Kill all running instances first.
-log "==> Killing existing OpenClaw instances"
-kill_all_openclaw
+log "==> Killing existing FoxFang instances"
+kill_all_foxfang
 stop_launch_agent
 
 # Bundle Gateway-hosted Canvas A2UI assets.
@@ -158,7 +158,7 @@ run_step "bundle canvas a2ui" bash -lc "cd '${ROOT_DIR}' && pnpm canvas:a2ui:bun
 
 # 2) Rebuild into the same path the packager consumes (.build).
 run_step "clean build cache" bash -lc "cd '${ROOT_DIR}/apps/macos' && rm -rf .build .build-swift .swiftpm 2>/dev/null || true"
-run_step "swift build" bash -lc "cd '${ROOT_DIR}/apps/macos' && swift build -q --product OpenClaw"
+run_step "swift build" bash -lc "cd '${ROOT_DIR}/apps/macos' && swift build -q --product FoxFang"
 
 if [ "$AUTO_DETECT_SIGNING" -eq 1 ]; then
   if check_signing_keys; then
@@ -191,20 +191,20 @@ choose_app_bundle() {
     return 0
   fi
 
-  if [[ -d "/Applications/OpenClaw.app" ]]; then
-    APP_BUNDLE="/Applications/OpenClaw.app"
+  if [[ -d "/Applications/FoxFang.app" ]]; then
+    APP_BUNDLE="/Applications/FoxFang.app"
     return 0
   fi
 
-  if [[ -d "${ROOT_DIR}/dist/OpenClaw.app" ]]; then
-    APP_BUNDLE="${ROOT_DIR}/dist/OpenClaw.app"
+  if [[ -d "${ROOT_DIR}/dist/FoxFang.app" ]]; then
+    APP_BUNDLE="${ROOT_DIR}/dist/FoxFang.app"
     if [[ ! -d "${APP_BUNDLE}/Contents/Frameworks/Sparkle.framework" ]]; then
-      fail "dist/OpenClaw.app missing Sparkle after packaging"
+      fail "dist/FoxFang.app missing Sparkle after packaging"
     fi
     return 0
   fi
 
-  fail "App bundle not found. Set OPENCLAW_APP_BUNDLE to your installed OpenClaw.app"
+  fail "App bundle not found. Set FOXFANG_APP_BUNDLE to your installed FoxFang.app"
 }
 
 choose_app_bundle
@@ -227,7 +227,7 @@ if [ "$NO_SIGN" -eq 1 ] && [ "$ATTACH_ONLY" -ne 1 ]; then
       const fs = require("node:fs");
       const path = require("node:path");
       try {
-        const raw = fs.readFileSync(path.join(process.env.HOME, ".foxfang", "openclaw.json"), "utf8");
+        const raw = fs.readFileSync(path.join(process.env.HOME, ".foxfang", "foxfang.json"), "utf8");
         const cfg = JSON.parse(raw);
         const port = cfg && cfg.gateway && typeof cfg.gateway.port === "number" ? cfg.gateway.port : 18789;
         process.stdout.write(String(port));
@@ -259,11 +259,11 @@ run_step "launch app" env -i \
 # 5) Verify the app is alive.
 sleep 1.5
 if pgrep -f "${APP_PROCESS_PATTERN}" >/dev/null 2>&1; then
-  log "OK: OpenClaw is running."
+  log "OK: FoxFang is running."
 else
   fail "App exited immediately. Check ${LOG_PATH} or Console.app (User Reports)."
 fi
 
 if [ "$NO_SIGN" -eq 1 ] && [ "$ATTACH_ONLY" -ne 1 ]; then
-  run_step "show gateway launch agent args (unsigned)" bash -lc "/usr/bin/plutil -p '${HOME}/Library/LaunchAgents/ai.openclaw.gateway.plist' | head -n 40 || true"
+  run_step "show gateway launch agent args (unsigned)" bash -lc "/usr/bin/plutil -p '${HOME}/Library/LaunchAgents/ai.foxfang.gateway.plist' | head -n 40 || true"
 fi

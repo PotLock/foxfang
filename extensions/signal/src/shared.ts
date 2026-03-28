@@ -1,11 +1,11 @@
-import { describeAccountSnapshot } from "openclaw/plugin-sdk/account-helpers";
+import { describeAccountSnapshot } from "foxfang/plugin-sdk/account-helpers";
 import {
   adaptScopedAccountAccessor,
   createScopedChannelConfigAdapter,
-} from "openclaw/plugin-sdk/channel-config-helpers";
-import { createRestrictSendersChannelSecurity } from "openclaw/plugin-sdk/channel-policy";
-import { createChannelPluginBase } from "openclaw/plugin-sdk/core";
-import { normalizeE164 } from "openclaw/plugin-sdk/text-runtime";
+} from "foxfang/plugin-sdk/channel-config-helpers";
+import { createRestrictSendersChannelSecurity } from "foxfang/plugin-sdk/channel-policy";
+import { createChannelPluginBase } from "foxfang/plugin-sdk/core";
+import { normalizeE164 } from "foxfang/plugin-sdk/text-runtime";
 import {
   listSignalAccountIds,
   resolveDefaultSignalAccountId,

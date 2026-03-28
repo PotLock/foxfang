@@ -2,8 +2,8 @@ import {
   findModelInCatalog,
   loadModelCatalog,
   modelSupportsVision,
-} from "openclaw/plugin-sdk/agent-runtime";
-import { resolveDefaultModelForAgent } from "openclaw/plugin-sdk/agent-runtime";
+} from "foxfang/plugin-sdk/agent-runtime";
+import { resolveDefaultModelForAgent } from "foxfang/plugin-sdk/agent-runtime";
 import {
   buildMentionRegexes,
   formatLocationText,
@@ -11,21 +11,21 @@ import {
   matchesMentionWithExplicit,
   resolveMentionGatingWithBypass,
   type NormalizedLocation,
-} from "openclaw/plugin-sdk/channel-inbound";
-import { resolveControlCommandGate } from "openclaw/plugin-sdk/command-auth";
-import { hasControlCommand } from "openclaw/plugin-sdk/command-auth";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
+} from "foxfang/plugin-sdk/channel-inbound";
+import { resolveControlCommandGate } from "foxfang/plugin-sdk/command-auth";
+import { hasControlCommand } from "foxfang/plugin-sdk/command-auth";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
 import type {
   TelegramDirectConfig,
   TelegramGroupConfig,
   TelegramTopicConfig,
-} from "openclaw/plugin-sdk/config-runtime";
+} from "foxfang/plugin-sdk/config-runtime";
 import {
   recordPendingHistoryEntryIfEnabled,
   type HistoryEntry,
-} from "openclaw/plugin-sdk/reply-history";
-import type { MsgContext } from "openclaw/plugin-sdk/reply-runtime";
-import { logVerbose } from "openclaw/plugin-sdk/runtime-env";
+} from "foxfang/plugin-sdk/reply-history";
+import type { MsgContext } from "foxfang/plugin-sdk/reply-runtime";
+import { logVerbose } from "foxfang/plugin-sdk/runtime-env";
 import type { NormalizedAllowFrom } from "./bot-access.js";
 import { isSenderAllowed } from "./bot-access.js";
 import type {
@@ -58,7 +58,7 @@ export type TelegramInboundBodyResult = {
 };
 
 async function resolveStickerVisionSupport(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   agentId?: string;
 }): Promise<boolean> {
   try {
@@ -78,7 +78,7 @@ async function resolveStickerVisionSupport(params: {
 }
 
 export async function resolveTelegramInboundBody(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   primaryCtx: TelegramContext;
   msg: TelegramContext["message"];
   allMedia: TelegramMediaRef[];

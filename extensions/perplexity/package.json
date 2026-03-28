@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/perplexity-plugin",
+  "name": "@foxfang/perplexity-plugin",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw Perplexity plugin",
+  "description": "FoxFang Perplexity plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

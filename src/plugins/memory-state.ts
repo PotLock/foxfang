@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import type { MemoryCitationsMode } from "../config/types.memory.js";
 import type {
   MemoryEmbeddingProbeResult,
@@ -21,7 +21,7 @@ export type MemoryFlushPlan = {
 };
 
 export type MemoryFlushPlanResolver = (params: {
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   nowMs?: number;
 }) => MemoryFlushPlan | null;
 
@@ -45,7 +45,7 @@ export type MemoryRuntimeBackendConfig = {
 
 export type MemoryPluginRuntime = {
   getMemorySearchManager(params: {
-    cfg: OpenClawConfig;
+    cfg: FoxFangConfig;
     agentId: string;
     purpose?: "default" | "status";
   }): Promise<{
@@ -53,7 +53,7 @@ export type MemoryPluginRuntime = {
     error?: string;
   }>;
   resolveMemoryBackendConfig(params: {
-    cfg: OpenClawConfig;
+    cfg: FoxFangConfig;
     agentId: string;
   }): MemoryRuntimeBackendConfig;
   closeAllMemorySearchManagers?(): Promise<void>;
@@ -87,7 +87,7 @@ export function registerMemoryFlushPlanResolver(resolver: MemoryFlushPlanResolve
 }
 
 export function resolveMemoryFlushPlan(params: {
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   nowMs?: number;
 }): MemoryFlushPlan | null {
   return memoryPluginState.flushPlanResolver?.(params) ?? null;

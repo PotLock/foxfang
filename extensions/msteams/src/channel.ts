@@ -1,26 +1,26 @@
-import { describeAccountSnapshot } from "openclaw/plugin-sdk/account-helpers";
-import { formatAllowFromLowercase } from "openclaw/plugin-sdk/allow-from";
-import { createMessageToolCardSchema } from "openclaw/plugin-sdk/channel-actions";
-import { createTopLevelChannelConfigAdapter } from "openclaw/plugin-sdk/channel-config-helpers";
+import { describeAccountSnapshot } from "foxfang/plugin-sdk/account-helpers";
+import { formatAllowFromLowercase } from "foxfang/plugin-sdk/allow-from";
+import { createMessageToolCardSchema } from "foxfang/plugin-sdk/channel-actions";
+import { createTopLevelChannelConfigAdapter } from "foxfang/plugin-sdk/channel-config-helpers";
 import type {
   ChannelMessageActionAdapter,
   ChannelMessageToolDiscovery,
-} from "openclaw/plugin-sdk/channel-contract";
-import { createPairingPrefixStripper } from "openclaw/plugin-sdk/channel-pairing";
+} from "foxfang/plugin-sdk/channel-contract";
+import { createPairingPrefixStripper } from "foxfang/plugin-sdk/channel-pairing";
 import {
   createAllowlistProviderGroupPolicyWarningCollector,
   projectConfigWarningCollector,
-} from "openclaw/plugin-sdk/channel-policy";
-import { createChatChannelPlugin } from "openclaw/plugin-sdk/core";
+} from "foxfang/plugin-sdk/channel-policy";
+import { createChatChannelPlugin } from "foxfang/plugin-sdk/core";
 import {
   createChannelDirectoryAdapter,
   createRuntimeDirectoryLiveAdapter,
   listDirectoryEntriesFromSources,
-} from "openclaw/plugin-sdk/directory-runtime";
-import { createLazyRuntimeNamedExport } from "openclaw/plugin-sdk/lazy-runtime";
-import { createRuntimeOutboundDelegates } from "openclaw/plugin-sdk/outbound-runtime";
-import { createComputedAccountStatusAdapter } from "openclaw/plugin-sdk/status-helpers";
-import type { ChannelMessageActionName, ChannelPlugin, OpenClawConfig } from "../runtime-api.js";
+} from "foxfang/plugin-sdk/directory-runtime";
+import { createLazyRuntimeNamedExport } from "foxfang/plugin-sdk/lazy-runtime";
+import { createRuntimeOutboundDelegates } from "foxfang/plugin-sdk/outbound-runtime";
+import { createComputedAccountStatusAdapter } from "foxfang/plugin-sdk/status-helpers";
+import type { ChannelMessageActionName, ChannelPlugin, FoxFangConfig } from "../runtime-api.js";
 import {
   buildProbeChannelStatusSummary,
   chunkTextForOutbound,
@@ -73,7 +73,7 @@ const TEAMS_GRAPH_PERMISSION_HINTS: Record<string, string> = {
 };
 
 const collectMSTeamsSecurityWarnings = createAllowlistProviderGroupPolicyWarningCollector<{
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
 }>({
   providerConfigPresent: (cfg) => cfg.channels?.msteams !== undefined,
   resolveGroupPolicy: ({ cfg }) => cfg.channels?.msteams?.groupPolicy,
@@ -90,7 +90,7 @@ const loadMSTeamsChannelRuntime = createLazyRuntimeNamedExport(
   "msTeamsChannelRuntime",
 );
 
-const resolveMSTeamsChannelConfig = (cfg: OpenClawConfig) => ({
+const resolveMSTeamsChannelConfig = (cfg: FoxFangConfig) => ({
   allowFrom: cfg.channels?.msteams?.allowFrom,
   defaultTo: cfg.channels?.msteams?.defaultTo,
 });
@@ -910,7 +910,7 @@ export const msteamsPlugin: ChannelPlugin<ResolvedMSTeamsAccount, ProbeMSTeamsRe
       },
     },
     security: {
-      collectWarnings: projectConfigWarningCollector<{ cfg: OpenClawConfig }>(
+      collectWarnings: projectConfigWarningCollector<{ cfg: FoxFangConfig }>(
         collectMSTeamsSecurityWarnings,
       ),
     },

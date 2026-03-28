@@ -39,19 +39,19 @@ reach other host locations unless sandboxing is enabled. See
 
 ## Paths (quick map)
 
-- Config: `~/.foxfang/openclaw.json` (or `OPENCLAW_CONFIG_PATH`)
-- State dir: `~/.foxfang` (or `OPENCLAW_STATE_DIR`)
+- Config: `~/.foxfang/foxfang.json` (or `FOXFANG_CONFIG_PATH`)
+- State dir: `~/.foxfang` (or `FOXFANG_STATE_DIR`)
 - Workspace: `~/.foxfang/workspace` (or `~/.foxfang/workspace-<agentId>`)
 - Agent dir: `~/.foxfang/agents/<agentId>/agent` (or `agents.list[].agentDir`)
 - Sessions: `~/.foxfang/agents/<agentId>/sessions`
 
 ### Single-agent mode (default)
 
-If you do nothing, OpenClaw runs a single agent:
+If you do nothing, FoxFang runs a single agent:
 
 - `agentId` defaults to **`main`**.
 - Sessions are keyed as `agent:main:<mainKey>`.
-- Workspace defaults to `~/.foxfang/workspace` (or `~/.foxfang/workspace-<profile>` when `OPENCLAW_PROFILE` is set).
+- Workspace defaults to `~/.foxfang/workspace` (or `~/.foxfang/workspace-<profile>` when `FOXFANG_PROFILE` is set).
 - State defaults to `~/.foxfang/agents/main/agent`.
 
 ## Agent helper
@@ -59,7 +59,7 @@ If you do nothing, OpenClaw runs a single agent:
 Use the agent wizard to add a new isolated agent:
 
 ```bash
-openclaw agents add work
+foxfang agents add work
 ```
 
 Then add `bindings` (or let the wizard do it) to route inbound messages.
@@ -67,7 +67,7 @@ Then add `bindings` (or let the wizard do it) to route inbound messages.
 Verify with:
 
 ```bash
-openclaw agents list --bindings
+foxfang agents list --bindings
 ```
 
 ## Quick start
@@ -78,8 +78,8 @@ openclaw agents list --bindings
 Use the wizard or create workspaces manually:
 
 ```bash
-openclaw agents add coding
-openclaw agents add social
+foxfang agents add coding
+foxfang agents add social
 ```
 
 Each agent gets its own workspace with `SOUL.md`, `AGENTS.md`, and optional `USER.md`, plus a dedicated `agentDir` and session store under `~/.foxfang/agents/<agentId>`.
@@ -95,7 +95,7 @@ Create one account per agent on your preferred channels:
 - WhatsApp: link each phone number per account.
 
 ```bash
-openclaw channels login --channel whatsapp --account work
+foxfang channels login --channel whatsapp --account work
 ```
 
 See channel guides: [Discord](/channels/discord), [Telegram](/channels/telegram), [WhatsApp](/channels/whatsapp).
@@ -111,9 +111,9 @@ Add agents under `agents.list`, channel accounts under `channels.<channel>.accou
   <Step title="Restart and verify">
 
 ```bash
-openclaw gateway restart
-openclaw agents list --bindings
-openclaw channels status --probe
+foxfang gateway restart
+foxfang agents list --bindings
+foxfang channels status --probe
 ```
 
   </Step>
@@ -189,7 +189,7 @@ Important account-scope detail:
 
 - A binding that omits `accountId` matches the default account only.
 - Use `accountId: "*"` for a channel-wide fallback across all accounts.
-- If you later add the same binding for the same agent with an explicit account id, OpenClaw upgrades the existing channel-only binding to account-scoped instead of duplicating it.
+- If you later add the same binding for the same agent with an explicit account id, FoxFang upgrades the existing channel-only binding to account-scoped instead of duplicating it.
 
 ## Multiple accounts / phone numbers
 
@@ -198,7 +198,7 @@ each login. Each `accountId` can be routed to a different agent, so one server c
 multiple phone numbers without mixing sessions.
 
 If you want a channel-wide default account when `accountId` is omitted, set
-`channels.<channel>.defaultAccount` (optional). When unset, OpenClaw falls back
+`channels.<channel>.defaultAccount` (optional). When unset, FoxFang falls back
 to `default` if present, otherwise the first configured account id (sorted).
 
 Common channels supporting this pattern include:
@@ -309,11 +309,11 @@ Notes:
 Link each account before starting the gateway:
 
 ```bash
-openclaw channels login --channel whatsapp --account personal
-openclaw channels login --channel whatsapp --account biz
+foxfang channels login --channel whatsapp --account personal
+foxfang channels login --channel whatsapp --account biz
 ```
 
-`~/.foxfang/openclaw.json` (JSON5):
+`~/.foxfang/foxfang.json` (JSON5):
 
 ```js
 {

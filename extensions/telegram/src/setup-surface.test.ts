@@ -1,6 +1,6 @@
-import { DEFAULT_ACCOUNT_ID } from "openclaw/plugin-sdk/setup";
+import { DEFAULT_ACCOUNT_ID } from "foxfang/plugin-sdk/setup";
 import { describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../src/config/config.js";
 import {
   createTestWizardPrompter,
   runSetupWizardFinalize,
@@ -9,7 +9,7 @@ import {
 import { resolveTelegramAllowFromEntries } from "./setup-core.js";
 import { telegramSetupWizard } from "./setup-surface.js";
 
-async function runPrepare(cfg: OpenClawConfig, accountId: string) {
+async function runPrepare(cfg: FoxFangConfig, accountId: string) {
   return await runSetupWizardPrepare({
     prepare: telegramSetupWizard.prepare,
     cfg,
@@ -18,7 +18,7 @@ async function runPrepare(cfg: OpenClawConfig, accountId: string) {
   });
 }
 
-async function runFinalize(cfg: OpenClawConfig, accountId: string) {
+async function runFinalize(cfg: FoxFangConfig, accountId: string) {
   const note = vi.fn(async () => undefined);
 
   await runSetupWizardFinalize({
@@ -33,7 +33,7 @@ async function runFinalize(cfg: OpenClawConfig, accountId: string) {
 
 function expectPreparedResult(
   prepared: Awaited<ReturnType<typeof runPrepare>>,
-): { cfg: OpenClawConfig } & Exclude<Awaited<ReturnType<typeof runPrepare>>, void | undefined> {
+): { cfg: FoxFangConfig } & Exclude<Awaited<ReturnType<typeof runPrepare>>, void | undefined> {
   expect(prepared).toBeDefined();
   if (
     !prepared ||
@@ -43,7 +43,7 @@ function expectPreparedResult(
   ) {
     throw new Error("Expected prepare result with cfg");
   }
-  return prepared as { cfg: OpenClawConfig } & Exclude<
+  return prepared as { cfg: FoxFangConfig } & Exclude<
     Awaited<ReturnType<typeof runPrepare>>,
     void | undefined
   >;
@@ -106,11 +106,11 @@ describe("telegramSetupWizard.finalize", () => {
     );
 
     expect(note).toHaveBeenCalledWith(
-      expect.stringContaining('openclaw config set channels.telegram.dmPolicy "allowlist"'),
+      expect.stringContaining('foxfang config set channels.telegram.dmPolicy "allowlist"'),
       "Telegram DM access warning",
     );
     expect(note).toHaveBeenCalledWith(
-      expect.stringContaining(`openclaw config set channels.telegram.allowFrom '["YOUR_USER_ID"]'`),
+      expect.stringContaining(`foxfang config set channels.telegram.allowFrom '["YOUR_USER_ID"]'`),
       "Telegram DM access warning",
     );
   });
@@ -133,13 +133,13 @@ describe("telegramSetupWizard.finalize", () => {
 
     expect(note).toHaveBeenCalledWith(
       expect.stringContaining(
-        'openclaw config set channels.telegram.accounts.alerts.dmPolicy "allowlist"',
+        'foxfang config set channels.telegram.accounts.alerts.dmPolicy "allowlist"',
       ),
       "Telegram DM access warning",
     );
     expect(note).toHaveBeenCalledWith(
       expect.stringContaining(
-        `openclaw config set channels.telegram.accounts.alerts.allowFrom '["YOUR_USER_ID"]'`,
+        `foxfang config set channels.telegram.accounts.alerts.allowFrom '["YOUR_USER_ID"]'`,
       ),
       "Telegram DM access warning",
     );

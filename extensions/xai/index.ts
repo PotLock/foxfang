@@ -1,5 +1,5 @@
-import { defineSingleProviderPluginEntry } from "openclaw/plugin-sdk/provider-entry";
-import { createToolStreamWrapper } from "openclaw/plugin-sdk/provider-stream";
+import { defineSingleProviderPluginEntry } from "foxfang/plugin-sdk/provider-entry";
+import { createToolStreamWrapper } from "foxfang/plugin-sdk/provider-stream";
 import { applyXaiModelCompat, buildXaiProvider, normalizeXaiModelId } from "./api.js";
 import { applyXaiConfig, XAI_DEFAULT_MODEL_REF } from "./onboard.js";
 import { isModernXaiModel, resolveXaiForwardCompatModel } from "./provider-models.js";

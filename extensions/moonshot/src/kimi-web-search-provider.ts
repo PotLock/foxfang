@@ -23,7 +23,7 @@ import {
   withTrustedWebSearchEndpoint,
   wrapWebContent,
   writeCachedSearchPayload,
-} from "openclaw/plugin-sdk/provider-web-search";
+} from "foxfang/plugin-sdk/provider-web-search";
 
 const DEFAULT_KIMI_BASE_URL = "https://api.moonshot.ai/v1";
 const DEFAULT_KIMI_MODEL = "moonshot-v1-128k";
@@ -262,7 +262,7 @@ function createKimiToolDefinition(
           error: "missing_kimi_api_key",
           message:
             "web_search (kimi) needs a Moonshot API key. Set KIMI_API_KEY or MOONSHOT_API_KEY in the Gateway environment, or configure tools.web.search.kimi.apiKey.",
-          docs: "https://docs.openclaw.ai/tools/web",
+          docs: "https://docs.foxfang.ai/tools/web",
         };
       }
 
@@ -323,7 +323,7 @@ export function createKimiWebSearchProvider(): WebSearchProviderPlugin {
     envVars: ["KIMI_API_KEY", "MOONSHOT_API_KEY"],
     placeholder: "sk-...",
     signupUrl: "https://platform.moonshot.cn/",
-    docsUrl: "https://docs.openclaw.ai/tools/web",
+    docsUrl: "https://docs.foxfang.ai/tools/web",
     autoDetectOrder: 40,
     credentialPath: "plugins.entries.moonshot.config.webSearch.apiKey",
     inactiveSecretPaths: ["plugins.entries.moonshot.config.webSearch.apiKey"],

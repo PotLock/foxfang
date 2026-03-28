@@ -18,20 +18,20 @@ import {
   type ExecApprovalResolved,
   type PluginApprovalRequest,
   type PluginApprovalResolved,
-} from "openclaw/plugin-sdk/approval-runtime";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import { loadSessionStore, resolveStorePath } from "openclaw/plugin-sdk/config-runtime";
-import type { DiscordExecApprovalConfig } from "openclaw/plugin-sdk/config-runtime";
-import type { EventFrame } from "openclaw/plugin-sdk/gateway-runtime";
-import * as gatewayRuntime from "openclaw/plugin-sdk/gateway-runtime";
+} from "foxfang/plugin-sdk/approval-runtime";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import { loadSessionStore, resolveStorePath } from "foxfang/plugin-sdk/config-runtime";
+import type { DiscordExecApprovalConfig } from "foxfang/plugin-sdk/config-runtime";
+import type { EventFrame } from "foxfang/plugin-sdk/gateway-runtime";
+import * as gatewayRuntime from "foxfang/plugin-sdk/gateway-runtime";
 import {
   normalizeAccountId,
   normalizeMessageChannel,
   resolveAgentIdFromSessionKey,
-} from "openclaw/plugin-sdk/routing";
-import type { RuntimeEnv } from "openclaw/plugin-sdk/runtime-env";
-import { compileSafeRegex, testRegexWithBoundedInput } from "openclaw/plugin-sdk/security-runtime";
-import { logDebug, logError } from "openclaw/plugin-sdk/text-runtime";
+} from "foxfang/plugin-sdk/routing";
+import type { RuntimeEnv } from "foxfang/plugin-sdk/runtime-env";
+import { compileSafeRegex, testRegexWithBoundedInput } from "foxfang/plugin-sdk/security-runtime";
+import { logDebug, logError } from "foxfang/plugin-sdk/text-runtime";
 import * as sendShared from "../send.shared.js";
 import { DiscordUiContainer } from "../ui.js";
 
@@ -126,7 +126,7 @@ function isPluginApprovalRequest(
 }
 
 type ExecApprovalContainerParams = {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId: string;
   title: string;
   description?: string;
@@ -216,7 +216,7 @@ class ExecApprovalActionRow extends Row<Button> {
 }
 
 function resolveAccountIdFromSessionKey(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   sessionKey?: string | null;
 }): string | null {
   const sessionKey = params.sessionKey?.trim();
@@ -240,7 +240,7 @@ function resolveAccountIdFromSessionKey(params: {
 }
 
 function resolveExecApprovalAccountId(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   request: ExecApprovalRequest;
 }): string | null {
   return resolveAccountIdFromSessionKey({
@@ -250,7 +250,7 @@ function resolveExecApprovalAccountId(params: {
 }
 
 function resolvePluginApprovalAccountId(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   request: PluginApprovalRequest;
 }): string | null {
   const fromSession = resolveAccountIdFromSessionKey({
@@ -264,7 +264,7 @@ function resolvePluginApprovalAccountId(params: {
 }
 
 function resolveApprovalAccountId(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   request: ExecApprovalRequest | PluginApprovalRequest;
 }): string | null {
   return isPluginApprovalRequest(params.request)
@@ -355,7 +355,7 @@ function resolveExecApprovalPreviews(
 
 function createExecApprovalRequestContainer(params: {
   request: ExecApprovalRequest;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId: string;
   actionRow?: Row<Button>;
 }): ExecApprovalContainer {
@@ -382,7 +382,7 @@ function createExecApprovalRequestContainer(params: {
 
 function createPluginApprovalRequestContainer(params: {
   request: PluginApprovalRequest;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId: string;
   actionRow?: Row<Button>;
 }): ExecApprovalContainer {
@@ -408,7 +408,7 @@ function createExecResolvedContainer(params: {
   request: ExecApprovalRequest;
   decision: ExecApprovalDecision;
   resolvedBy?: string | null;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId: string;
 }): ExecApprovalContainer {
   const { commandPreview, commandSecondaryPreview } = resolveExecApprovalPreviews(
@@ -447,7 +447,7 @@ function createPluginResolvedContainer(params: {
   request: PluginApprovalRequest;
   decision: ExecApprovalDecision;
   resolvedBy?: string | null;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId: string;
 }): ExecApprovalContainer {
   const decisionLabel =
@@ -479,7 +479,7 @@ function createPluginResolvedContainer(params: {
 
 function createExecExpiredContainer(params: {
   request: ExecApprovalRequest;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId: string;
 }): ExecApprovalContainer {
   const { commandPreview, commandSecondaryPreview } = resolveExecApprovalPreviews(
@@ -502,7 +502,7 @@ function createExecExpiredContainer(params: {
 
 function createPluginExpiredContainer(params: {
   request: PluginApprovalRequest;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId: string;
 }): ExecApprovalContainer {
   return new ExecApprovalContainer({
@@ -523,7 +523,7 @@ export type DiscordExecApprovalHandlerOpts = {
   accountId: string;
   config: DiscordExecApprovalConfig;
   gatewayUrl?: string;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   runtime?: RuntimeEnv;
   onResolve?: (id: string, decision: ExecApprovalDecision) => Promise<void>;
   __testing?: {

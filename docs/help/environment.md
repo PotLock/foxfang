@@ -1,5 +1,5 @@
 ---
-summary: "Where OpenClaw loads environment variables and the precedence order"
+summary: "Where FoxFang loads environment variables and the precedence order"
 read_when:
   - You need to know which env vars are loaded, and in what order
   - You are debugging missing API keys in the Gateway
@@ -9,15 +9,15 @@ title: "Environment Variables"
 
 # Environment variables
 
-OpenClaw pulls environment variables from multiple sources. The rule is **never override existing values**.
+FoxFang pulls environment variables from multiple sources. The rule is **never override existing values**.
 
 ## Precedence (highest → lowest)
 
 1. **Process environment** (what the Gateway process already has from the parent shell/daemon).
 2. **`.env` in the current working directory** (dotenv default; does not override).
-3. **Global `.env`** at `~/.foxfang/.env` (aka `$OPENCLAW_STATE_DIR/.env`; does not override).
-4. **Config `env` block** in `~/.foxfang/openclaw.json` (applied only if missing).
-5. **Optional login-shell import** (`env.shellEnv.enabled` or `OPENCLAW_LOAD_SHELL_ENV=1`), applied only for missing expected keys.
+3. **Global `.env`** at `~/.foxfang/.env` (aka `$FOXFANG_STATE_DIR/.env`; does not override).
+4. **Config `env` block** in `~/.foxfang/foxfang.json` (applied only if missing).
+5. **Optional login-shell import** (`env.shellEnv.enabled` or `FOXFANG_LOAD_SHELL_ENV=1`), applied only for missing expected keys.
 
 If the config file is missing entirely, step 4 is skipped; shell import still runs if enabled.
 
@@ -53,26 +53,26 @@ Two equivalent ways to set inline env vars (both are non-overriding):
 
 Env var equivalents:
 
-- `OPENCLAW_LOAD_SHELL_ENV=1`
-- `OPENCLAW_SHELL_ENV_TIMEOUT_MS=15000`
+- `FOXFANG_LOAD_SHELL_ENV=1`
+- `FOXFANG_SHELL_ENV_TIMEOUT_MS=15000`
 
 ## Runtime-injected env vars
 
-OpenClaw also injects context markers into spawned child processes:
+FoxFang also injects context markers into spawned child processes:
 
-- `OPENCLAW_SHELL=exec`: set for commands run through the `exec` tool.
-- `OPENCLAW_SHELL=acp`: set for ACP runtime backend process spawns (for example `acpx`).
-- `OPENCLAW_SHELL=acp-client`: set for `openclaw acp client` when it spawns the ACP bridge process.
-- `OPENCLAW_SHELL=tui-local`: set for local TUI `!` shell commands.
+- `FOXFANG_SHELL=exec`: set for commands run through the `exec` tool.
+- `FOXFANG_SHELL=acp`: set for ACP runtime backend process spawns (for example `acpx`).
+- `FOXFANG_SHELL=acp-client`: set for `foxfang acp client` when it spawns the ACP bridge process.
+- `FOXFANG_SHELL=tui-local`: set for local TUI `!` shell commands.
 
 These are runtime markers (not required user config). They can be used in shell/profile logic
 to apply context-specific rules.
 
 ## UI env vars
 
-- `OPENCLAW_THEME=light`: force the light TUI palette when your terminal has a light background.
-- `OPENCLAW_THEME=dark`: force the dark TUI palette.
-- `COLORFGBG`: if your terminal exports it, OpenClaw uses the background color hint to auto-pick the TUI palette.
+- `FOXFANG_THEME=light`: force the light TUI palette when your terminal has a light background.
+- `FOXFANG_THEME=dark`: force the dark TUI palette.
+- `COLORFGBG`: if your terminal exports it, FoxFang uses the background color hint to auto-pick the TUI palette.
 
 ## Env var substitution in config
 
@@ -94,7 +94,7 @@ See [Configuration: Env var substitution](/gateway/configuration-reference#env-v
 
 ## Secret refs vs `${ENV}` strings
 
-OpenClaw supports two env-driven patterns:
+FoxFang supports two env-driven patterns:
 
 - `${VAR}` string substitution in config values.
 - SecretRef objects (`{ source: "env", provider: "default", id: "VAR" }`) for fields that support secrets references.
@@ -105,33 +105,33 @@ Both resolve from process env at activation time. SecretRef details are document
 
 | Variable               | Purpose                                                                                                                                                                          |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `OPENCLAW_HOME`        | Override the home directory used for all internal path resolution (`~/.foxfang/`, agent dirs, sessions, credentials). Useful when running OpenClaw as a dedicated service user. |
-| `OPENCLAW_STATE_DIR`   | Override the state directory (default `~/.foxfang`).                                                                                                                            |
-| `OPENCLAW_CONFIG_PATH` | Override the config file path (default `~/.foxfang/openclaw.json`).                                                                                                             |
+| `FOXFANG_HOME`        | Override the home directory used for all internal path resolution (`~/.foxfang/`, agent dirs, sessions, credentials). Useful when running FoxFang as a dedicated service user. |
+| `FOXFANG_STATE_DIR`   | Override the state directory (default `~/.foxfang`).                                                                                                                            |
+| `FOXFANG_CONFIG_PATH` | Override the config file path (default `~/.foxfang/foxfang.json`).                                                                                                             |
 
 ## Logging
 
 | Variable             | Purpose                                                                                                                                                                                      |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `OPENCLAW_LOG_LEVEL` | Override log level for both file and console (e.g. `debug`, `trace`). Takes precedence over `logging.level` and `logging.consoleLevel` in config. Invalid values are ignored with a warning. |
+| `FOXFANG_LOG_LEVEL` | Override log level for both file and console (e.g. `debug`, `trace`). Takes precedence over `logging.level` and `logging.consoleLevel` in config. Invalid values are ignored with a warning. |
 
-### `OPENCLAW_HOME`
+### `FOXFANG_HOME`
 
-When set, `OPENCLAW_HOME` replaces the system home directory (`$HOME` / `os.homedir()`) for all internal path resolution. This enables full filesystem isolation for headless service accounts.
+When set, `FOXFANG_HOME` replaces the system home directory (`$HOME` / `os.homedir()`) for all internal path resolution. This enables full filesystem isolation for headless service accounts.
 
-**Precedence:** `OPENCLAW_HOME` > `$HOME` > `USERPROFILE` > `os.homedir()`
+**Precedence:** `FOXFANG_HOME` > `$HOME` > `USERPROFILE` > `os.homedir()`
 
 **Example** (macOS LaunchDaemon):
 
 ```xml
 <key>EnvironmentVariables</key>
 <dict>
-  <key>OPENCLAW_HOME</key>
+  <key>FOXFANG_HOME</key>
   <string>/Users/kira</string>
 </dict>
 ```
 
-`OPENCLAW_HOME` can also be set to a tilde path (e.g. `~/svc`), which gets expanded using `$HOME` before use.
+`FOXFANG_HOME` can also be set to a tilde path (e.g. `~/svc`), which gets expanded using `$HOME` before use.
 
 ## nvm users: web_fetch TLS failures
 
@@ -139,18 +139,18 @@ If Node.js was installed via **nvm** (not the system package manager), the built
 nvm's bundled CA store, which may be missing modern root CAs (ISRG Root X1/X2 for Let's Encrypt,
 DigiCert Global Root G2, etc.). This causes `web_fetch` to fail with `"fetch failed"` on most HTTPS sites.
 
-On Linux, OpenClaw automatically detects nvm and applies the fix in the actual startup environment:
+On Linux, FoxFang automatically detects nvm and applies the fix in the actual startup environment:
 
-- `openclaw gateway install` writes `NODE_EXTRA_CA_CERTS` into the systemd service environment
-- the `openclaw` CLI entrypoint re-execs itself with `NODE_EXTRA_CA_CERTS` set before Node startup
+- `foxfang gateway install` writes `NODE_EXTRA_CA_CERTS` into the systemd service environment
+- the `foxfang` CLI entrypoint re-execs itself with `NODE_EXTRA_CA_CERTS` set before Node startup
 
 **Manual fix (for older versions or direct `node ...` launches):**
 
-Export the variable before starting OpenClaw:
+Export the variable before starting FoxFang:
 
 ```bash
 export NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
-openclaw gateway run
+foxfang gateway run
 ```
 
 Do not rely on writing only to `~/.foxfang/.env` for this variable; Node reads

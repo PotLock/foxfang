@@ -1,10 +1,10 @@
-import { normalizeResolvedSecretInputString } from "openclaw/plugin-sdk/secret-input";
+import { normalizeResolvedSecretInputString } from "foxfang/plugin-sdk/secret-input";
 import type {
   SpeechDirectiveTokenParseContext,
   SpeechProviderConfig,
   SpeechProviderOverrides,
   SpeechProviderPlugin,
-} from "openclaw/plugin-sdk/speech-core";
+} from "foxfang/plugin-sdk/speech-core";
 import {
   DEFAULT_OPENAI_BASE_URL,
   isValidOpenAIModel,

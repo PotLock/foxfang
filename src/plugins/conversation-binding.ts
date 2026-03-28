@@ -28,8 +28,8 @@ const PLUGIN_BINDING_CUSTOM_ID_PREFIX = "pluginbind";
 const PLUGIN_BINDING_OWNER = "plugin";
 const PLUGIN_BINDING_SESSION_PREFIX = "plugin-binding";
 const LEGACY_CODEX_PLUGIN_SESSION_PREFIXES = [
-  "openclaw-app-server:thread:",
-  "openclaw-codex-app-server:thread:",
+  "foxfang-app-server:thread:",
+  "foxfang-codex-app-server:thread:",
 ] as const;
 
 // Runtime plugin conversation bindings are approval-driven and distinct from
@@ -105,7 +105,7 @@ type PluginBindingResolveResult =
       status: "expired";
     };
 
-const PLUGIN_BINDING_PENDING_REQUESTS_KEY = Symbol.for("openclaw.pluginBindingPendingRequests");
+const PLUGIN_BINDING_PENDING_REQUESTS_KEY = Symbol.for("foxfang.pluginBindingPendingRequests");
 
 const pendingRequests = resolveGlobalMap<string, PendingPluginBindingRequest>(
   PLUGIN_BINDING_PENDING_REQUESTS_KEY,
@@ -117,7 +117,7 @@ type PluginBindingGlobalState = {
   approvalsLoaded: boolean;
 };
 
-const pluginBindingGlobalStateKey = Symbol.for("openclaw.plugins.binding.global-state");
+const pluginBindingGlobalStateKey = Symbol.for("foxfang.plugins.binding.global-state");
 const pluginBindingGlobalState = resolveGlobalSingleton<PluginBindingGlobalState>(
   pluginBindingGlobalStateKey,
   () => ({
@@ -492,7 +492,7 @@ function buildDetachHintSuffix(detachHint?: string): string {
 }
 
 export function buildPluginBindingUnavailableText(binding: PluginConversationBinding): string {
-  return `The bound plugin ${resolvePluginBindingDisplayName(binding)} is not currently loaded. Routing this message to OpenClaw instead.${buildDetachHintSuffix(binding.detachHint)}`;
+  return `The bound plugin ${resolvePluginBindingDisplayName(binding)} is not currently loaded. Routing this message to FoxFang instead.${buildDetachHintSuffix(binding.detachHint)}`;
 }
 
 export function buildPluginBindingDeclinedText(binding: PluginConversationBinding): string {

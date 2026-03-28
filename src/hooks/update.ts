@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import {
   expectedIntegrityForUpdate,
   readInstalledPackageVersion,
@@ -26,7 +26,7 @@ export type HookPackUpdateOutcome = {
 };
 
 export type HookPackUpdateSummary = {
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   changed: boolean;
   outcomes: HookPackUpdateOutcome[];
 };
@@ -66,7 +66,7 @@ function createHookPackUpdateIntegrityDriftHandler(params: {
 }
 
 export async function updateNpmInstalledHookPacks(params: {
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   logger?: HookPackUpdateLogger;
   hookIds?: string[];
   dryRun?: boolean;

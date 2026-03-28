@@ -39,11 +39,11 @@ x-i18n:
 ## CLI 工作流程（支持无头模式）
 
 ```bash
-openclaw nodes pending
-openclaw nodes approve <requestId>
-openclaw nodes reject <requestId>
-openclaw nodes status
-openclaw nodes rename --node <id|name|ip> --name "Living Room iPad"
+foxfang nodes pending
+foxfang nodes approve <requestId>
+foxfang nodes reject <requestId>
+foxfang nodes status
+foxfang nodes rename --node <id|name|ip> --name "Living Room iPad"
 ```
 
 `nodes status` 显示已配对/已连接的节点及其功能。
@@ -85,7 +85,7 @@ openclaw nodes rename --node <id|name|ip> --name "Living Room iPad"
 - `~/.foxfang/nodes/paired.json`
 - `~/.foxfang/nodes/pending.json`
 
-如果你覆盖了 `OPENCLAW_STATE_DIR`，`nodes/` 文件夹会随之移动。
+如果你覆盖了 `FOXFANG_STATE_DIR`，`nodes/` 文件夹会随之移动。
 
 安全注意事项：
 

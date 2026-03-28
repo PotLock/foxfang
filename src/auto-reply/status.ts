@@ -15,7 +15,7 @@ import type { EffectiveToolInventoryResult } from "../agents/tools-effective-inv
 import { derivePromptTokens, normalizeUsage, type UsageLike } from "../agents/usage.js";
 import { resolveChannelModelOverride } from "../channels/model-overrides.js";
 import { isCommandFlagEnabled } from "../config/commands.js";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import {
   resolveMainSessionKey,
   resolveSessionFilePath,
@@ -53,7 +53,7 @@ import { resolveActiveFallbackState } from "./fallback-state.js";
 import { formatProviderModelRef, resolveSelectedAndActiveModel } from "./model-runtime.js";
 import type { ElevatedLevel, ReasoningLevel, ThinkLevel, VerboseLevel } from "./thinking.js";
 
-type AgentDefaults = NonNullable<NonNullable<OpenClawConfig["agents"]>["defaults"]>;
+type AgentDefaults = NonNullable<NonNullable<FoxFangConfig["agents"]>["defaults"]>;
 type AgentConfig = Partial<AgentDefaults> & {
   model?: AgentDefaults["model"] | string;
 };
@@ -70,7 +70,7 @@ type QueueStatus = {
 };
 
 type StatusArgs = {
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   agent: AgentConfig;
   agentId?: string;
   runtimeContextTokens?: number;
@@ -392,7 +392,7 @@ const formatMediaUnderstandingLine = (decisions?: ReadonlyArray<MediaUnderstandi
 };
 
 const formatVoiceModeLine = (
-  config?: OpenClawConfig,
+  config?: FoxFangConfig,
   sessionEntry?: SessionEntry,
 ): string | null => {
   if (!config) {
@@ -421,7 +421,7 @@ export function buildStatusMessage(args: StatusArgs): string {
     agents: {
       defaults: args.agent ?? {},
     },
-  } as OpenClawConfig;
+  } as FoxFangConfig;
   const contextConfig = args.config
     ? ({
         ...args.config,
@@ -432,12 +432,12 @@ export function buildStatusMessage(args: StatusArgs): string {
             ...args.agent,
           },
         },
-      } as OpenClawConfig)
+      } as FoxFangConfig)
     : ({
         agents: {
           defaults: args.agent ?? {},
         },
-      } as OpenClawConfig);
+      } as FoxFangConfig);
   const resolved = resolveConfiguredModelRef({
     cfg: selectionConfig,
     defaultProvider: DEFAULT_PROVIDER,
@@ -776,7 +776,7 @@ export function buildStatusMessage(args: StatusArgs): string {
       } (${fallbackState.reason ?? "selected model unavailable"})`
     : null;
   const commit = resolveCommitHash({ moduleUrl: import.meta.url });
-  const versionLine = `🦞 OpenClaw ${VERSION}${commit ? ` (${commit})` : ""}`;
+  const versionLine = `🦞 FoxFang ${VERSION}${commit ? ` (${commit})` : ""}`;
   const usagePair = formatUsagePair(inputTokens, outputTokens);
   const cacheLine = formatCacheLine(inputTokens, cacheRead, cacheWrite);
   const costLine = costLabel ? `💵 Cost: ${costLabel}` : null;
@@ -841,7 +841,7 @@ function groupCommandsByCategory(
   return grouped;
 }
 
-export function buildHelpMessage(cfg?: OpenClawConfig): string {
+export function buildHelpMessage(cfg?: FoxFangConfig): string {
   const lines = ["ℹ️ Help", ""];
 
   lines.push("Session");
@@ -1047,7 +1047,7 @@ function formatCommandList(items: CommandsListItem[]): string {
 }
 
 export function buildCommandsMessage(
-  cfg?: OpenClawConfig,
+  cfg?: FoxFangConfig,
   skillCommands?: SkillCommandSpec[],
   options?: CommandsMessageOptions,
 ): string {
@@ -1056,7 +1056,7 @@ export function buildCommandsMessage(
 }
 
 export function buildCommandsMessagePaginated(
-  cfg?: OpenClawConfig,
+  cfg?: FoxFangConfig,
   skillCommands?: SkillCommandSpec[],
   options?: CommandsMessageOptions,
 ): CommandsMessageResult {

@@ -2,34 +2,34 @@ import {
   buildLegacyDmAccountAllowlistAdapter,
   createAccountScopedAllowlistNameResolver,
   createFlatAllowlistOverrideResolver,
-} from "openclaw/plugin-sdk/allowlist-config-edit";
+} from "foxfang/plugin-sdk/allowlist-config-edit";
 import {
   adaptScopedAccountAccessor,
   createScopedDmSecurityResolver,
-} from "openclaw/plugin-sdk/channel-config-helpers";
-import { createPairingPrefixStripper } from "openclaw/plugin-sdk/channel-pairing";
-import { createOpenProviderConfiguredRouteWarningCollector } from "openclaw/plugin-sdk/channel-policy";
-import { resolveTargetsWithOptionalToken } from "openclaw/plugin-sdk/channel-targets";
-import { createChatChannelPlugin } from "openclaw/plugin-sdk/core";
+} from "foxfang/plugin-sdk/channel-config-helpers";
+import { createPairingPrefixStripper } from "foxfang/plugin-sdk/channel-pairing";
+import { createOpenProviderConfiguredRouteWarningCollector } from "foxfang/plugin-sdk/channel-policy";
+import { resolveTargetsWithOptionalToken } from "foxfang/plugin-sdk/channel-targets";
+import { createChatChannelPlugin } from "foxfang/plugin-sdk/core";
 import {
   createChannelDirectoryAdapter,
   createRuntimeDirectoryLiveAdapter,
-} from "openclaw/plugin-sdk/directory-runtime";
-import { buildPassiveProbedChannelStatusSummary } from "openclaw/plugin-sdk/extension-shared";
+} from "foxfang/plugin-sdk/directory-runtime";
+import { buildPassiveProbedChannelStatusSummary } from "foxfang/plugin-sdk/extension-shared";
 import {
   createRuntimeOutboundDelegates,
   resolveOutboundSendDep,
-} from "openclaw/plugin-sdk/outbound-runtime";
+} from "foxfang/plugin-sdk/outbound-runtime";
 import {
   buildOutboundBaseSessionKey,
   normalizeOutboundThreadId,
   resolveThreadSessionKeys,
   type RoutePeer,
-} from "openclaw/plugin-sdk/routing";
+} from "foxfang/plugin-sdk/routing";
 import {
   createComputedAccountStatusAdapter,
   createDefaultChannelRuntimeState,
-} from "openclaw/plugin-sdk/status-helpers";
+} from "foxfang/plugin-sdk/status-helpers";
 import {
   listEnabledSlackAccounts,
   resolveSlackAccount,
@@ -59,7 +59,7 @@ import {
   projectCredentialSnapshotFields,
   resolveConfiguredFromRequiredCredentialStatuses,
   type ChannelPlugin,
-  type OpenClawConfig,
+  type FoxFangConfig,
 } from "./runtime-api.js";
 import { getSlackRuntime } from "./runtime.js";
 import { fetchSlackScopes } from "./scopes.js";
@@ -146,7 +146,7 @@ function parseSlackExplicitTarget(raw: string) {
 }
 
 function buildSlackBaseSessionKey(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   agentId: string;
   accountId?: string | null;
   peer: RoutePeer;
@@ -155,7 +155,7 @@ function buildSlackBaseSessionKey(params: {
 }
 
 async function resolveSlackOutboundSessionRoute(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   agentId: string;
   accountId?: string | null;
   target: string;
@@ -375,7 +375,7 @@ export const slackPlugin: ChannelPlugin<ResolvedSlackAccount, SlackProbe> = crea
       invoke: async (action, cfg, toolContext) =>
         await getSlackRuntime().channel.slack.handleSlackAction(
           action,
-          cfg as OpenClawConfig,
+          cfg as FoxFangConfig,
           toolContext as SlackActionContext | undefined,
         ),
     }),

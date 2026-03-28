@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-IMAGE_NAME="openclaw-plugins-e2e"
+IMAGE_NAME="foxfang-plugins-e2e"
 
 echo "Building Docker image..."
 docker build -t "$IMAGE_NAME" -f "$ROOT_DIR/scripts/e2e/Dockerfile" "$ROOT_DIR"
@@ -12,17 +12,17 @@ docker run --rm -e COREPACK_ENABLE_DOWNLOAD_PROMPT=0 -e OPENAI_API_KEY -i "$IMAG
 set -euo pipefail
 
 if [ -f dist/index.mjs ]; then
-  OPENCLAW_ENTRY="dist/index.mjs"
+  FOXFANG_ENTRY="dist/index.mjs"
 elif [ -f dist/index.js ]; then
-  OPENCLAW_ENTRY="dist/index.js"
+  FOXFANG_ENTRY="dist/index.js"
 else
   echo "Missing dist/index.(m)js (build output):"
   ls -la dist || true
   exit 1
 fi
-export OPENCLAW_ENTRY
+export FOXFANG_ENTRY
 
-home_dir=$(mktemp -d "/tmp/openclaw-plugins-e2e.XXXXXX")
+home_dir=$(mktemp -d "/tmp/foxfang-plugins-e2e.XXXXXX")
 export HOME="$home_dir"
 
 gateway_pid=""
@@ -38,7 +38,7 @@ stop_gateway() {
 start_gateway() {
   local log_file="$1"
   : > "$log_file"
-  node "$OPENCLAW_ENTRY" gateway --port 18789 --bind loopback --allow-unconfigured \
+  node "$FOXFANG_ENTRY" gateway --port 18789 --bind loopback --allow-unconfigured \
     >"$log_file" 2>&1 &
   gateway_pid=$!
 
@@ -61,7 +61,7 @@ start_gateway() {
 
 wait_for_gateway_health() {
   for _ in $(seq 1 120); do
-    if node "$OPENCLAW_ENTRY" gateway health \
+    if node "$FOXFANG_ENTRY" gateway health \
       --url ws://127.0.0.1:18789 \
       --token plugin-e2e-token \
       --json >/dev/null 2>&1; then
@@ -79,7 +79,7 @@ run_gateway_chat_json() {
   local message="$2"
   local output_file="$3"
   local timeout_ms="${4:-15000}"
-  node - <<'NODE' "$OPENCLAW_ENTRY" "$session_key" "$message" "$output_file" "$timeout_ms"
+  node - <<'NODE' "$FOXFANG_ENTRY" "$session_key" "$message" "$output_file" "$timeout_ms"
 const { execFileSync } = require("node:child_process");
 const fs = require("node:fs");
 const { randomUUID } = require("node:crypto");
@@ -219,9 +219,9 @@ write_fixture_plugin() {
   mkdir -p "$dir"
   cat > "$dir/package.json" <<JSON
 {
-  "name": "@openclaw/$id",
+  "name": "@foxfang/$id",
   "version": "$version",
-  "openclaw": { "extensions": ["./index.js"] }
+  "foxfang": { "extensions": ["./index.js"] }
 }
 JSON
   cat > "$dir/index.js" <<JS
@@ -233,7 +233,7 @@ module.exports = {
   },
 };
 JS
-  cat > "$dir/openclaw.plugin.json" <<'JSON'
+  cat > "$dir/foxfang.plugin.json" <<'JSON'
 {
   "id": "placeholder",
   "configSchema": {
@@ -242,7 +242,7 @@ JS
   }
 }
 JSON
-  node - <<'NODE' "$dir/openclaw.plugin.json" "$id"
+  node - <<'NODE' "$dir/foxfang.plugin.json" "$id"
 const fs = require("node:fs");
 const file = process.argv[2];
 const id = process.argv[3];
@@ -267,7 +267,7 @@ module.exports = {
   },
 };
 JS
-cat > "$HOME/.foxfang/extensions/demo-plugin/openclaw.plugin.json" <<'JSON'
+cat > "$HOME/.foxfang/extensions/demo-plugin/foxfang.plugin.json" <<'JSON'
 {
   "id": "demo-plugin",
   "configSchema": {
@@ -277,7 +277,7 @@ cat > "$HOME/.foxfang/extensions/demo-plugin/openclaw.plugin.json" <<'JSON'
 }
 JSON
 
-node "$OPENCLAW_ENTRY" plugins list --json > /tmp/plugins.json
+node "$FOXFANG_ENTRY" plugins list --json > /tmp/plugins.json
 
 node - <<'NODE'
 const fs = require("node:fs");
@@ -309,13 +309,13 @@ console.log("ok");
 NODE
 
 echo "Testing tgz install flow..."
-pack_dir="$(mktemp -d "/tmp/openclaw-plugin-pack.XXXXXX")"
+pack_dir="$(mktemp -d "/tmp/foxfang-plugin-pack.XXXXXX")"
 mkdir -p "$pack_dir/package"
 cat > "$pack_dir/package/package.json" <<'JSON'
 {
-  "name": "@openclaw/demo-plugin-tgz",
+  "name": "@foxfang/demo-plugin-tgz",
   "version": "0.0.1",
-  "openclaw": { "extensions": ["./index.js"] }
+  "foxfang": { "extensions": ["./index.js"] }
 }
 JSON
 cat > "$pack_dir/package/index.js" <<'JS'
@@ -327,7 +327,7 @@ module.exports = {
   },
 };
 JS
-cat > "$pack_dir/package/openclaw.plugin.json" <<'JSON'
+cat > "$pack_dir/package/foxfang.plugin.json" <<'JSON'
 {
   "id": "demo-plugin-tgz",
   "configSchema": {
@@ -338,8 +338,8 @@ cat > "$pack_dir/package/openclaw.plugin.json" <<'JSON'
 JSON
 tar -czf /tmp/demo-plugin-tgz.tgz -C "$pack_dir" package
 
-node "$OPENCLAW_ENTRY" plugins install /tmp/demo-plugin-tgz.tgz
-node "$OPENCLAW_ENTRY" plugins list --json > /tmp/plugins2.json
+node "$FOXFANG_ENTRY" plugins install /tmp/demo-plugin-tgz.tgz
+node "$FOXFANG_ENTRY" plugins list --json > /tmp/plugins2.json
 
 node - <<'NODE'
 const fs = require("node:fs");
@@ -357,12 +357,12 @@ console.log("ok");
 NODE
 
 echo "Testing install from local folder (plugins.load.paths)..."
-dir_plugin="$(mktemp -d "/tmp/openclaw-plugin-dir.XXXXXX")"
+dir_plugin="$(mktemp -d "/tmp/foxfang-plugin-dir.XXXXXX")"
 cat > "$dir_plugin/package.json" <<'JSON'
 {
-  "name": "@openclaw/demo-plugin-dir",
+  "name": "@foxfang/demo-plugin-dir",
   "version": "0.0.1",
-  "openclaw": { "extensions": ["./index.js"] }
+  "foxfang": { "extensions": ["./index.js"] }
 }
 JSON
 cat > "$dir_plugin/index.js" <<'JS'
@@ -374,7 +374,7 @@ module.exports = {
   },
 };
 JS
-cat > "$dir_plugin/openclaw.plugin.json" <<'JSON'
+cat > "$dir_plugin/foxfang.plugin.json" <<'JSON'
 {
   "id": "demo-plugin-dir",
   "configSchema": {
@@ -384,8 +384,8 @@ cat > "$dir_plugin/openclaw.plugin.json" <<'JSON'
 }
 JSON
 
-node "$OPENCLAW_ENTRY" plugins install "$dir_plugin"
-node "$OPENCLAW_ENTRY" plugins list --json > /tmp/plugins3.json
+node "$FOXFANG_ENTRY" plugins install "$dir_plugin"
+node "$FOXFANG_ENTRY" plugins list --json > /tmp/plugins3.json
 
 node - <<'NODE'
 const fs = require("node:fs");
@@ -403,13 +403,13 @@ console.log("ok");
 NODE
 
 echo "Testing install from npm spec (file:)..."
-file_pack_dir="$(mktemp -d "/tmp/openclaw-plugin-filepack.XXXXXX")"
+file_pack_dir="$(mktemp -d "/tmp/foxfang-plugin-filepack.XXXXXX")"
 mkdir -p "$file_pack_dir/package"
 cat > "$file_pack_dir/package/package.json" <<'JSON'
 {
-  "name": "@openclaw/demo-plugin-file",
+  "name": "@foxfang/demo-plugin-file",
   "version": "0.0.1",
-  "openclaw": { "extensions": ["./index.js"] }
+  "foxfang": { "extensions": ["./index.js"] }
 }
 JSON
 cat > "$file_pack_dir/package/index.js" <<'JS'
@@ -421,7 +421,7 @@ module.exports = {
   },
 };
 JS
-cat > "$file_pack_dir/package/openclaw.plugin.json" <<'JSON'
+cat > "$file_pack_dir/package/foxfang.plugin.json" <<'JSON'
 {
   "id": "demo-plugin-file",
   "configSchema": {
@@ -431,8 +431,8 @@ cat > "$file_pack_dir/package/openclaw.plugin.json" <<'JSON'
 }
 JSON
 
-node "$OPENCLAW_ENTRY" plugins install "file:$file_pack_dir/package"
-node "$OPENCLAW_ENTRY" plugins list --json > /tmp/plugins4.json
+node "$FOXFANG_ENTRY" plugins install "file:$file_pack_dir/package"
+node "$FOXFANG_ENTRY" plugins list --json > /tmp/plugins4.json
 
 node - <<'NODE'
 const fs = require("node:fs");
@@ -471,7 +471,7 @@ node - <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
 
-const configPath = path.join(process.env.HOME, ".foxfang", "openclaw.json");
+const configPath = path.join(process.env.HOME, ".foxfang", "foxfang.json");
 const config = fs.existsSync(configPath)
   ? JSON.parse(fs.readFileSync(configPath, "utf8"))
   : {};
@@ -499,17 +499,17 @@ fs.mkdirSync(path.dirname(configPath), { recursive: true });
 fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
 NODE
 
-gateway_log="/tmp/openclaw-plugin-command-e2e.log"
+gateway_log="/tmp/foxfang-plugin-command-e2e.log"
 start_gateway "$gateway_log"
 wait_for_gateway_health
 
 echo "Testing /plugin install with auto-restart..."
-slash_install_dir="$(mktemp -d "/tmp/openclaw-plugin-slash-install.XXXXXX")"
+slash_install_dir="$(mktemp -d "/tmp/foxfang-plugin-slash-install.XXXXXX")"
 cat > "$slash_install_dir/package.json" <<'JSON'
 {
-  "name": "@openclaw/slash-install-plugin",
+  "name": "@foxfang/slash-install-plugin",
   "version": "0.0.1",
-  "openclaw": { "extensions": ["./index.js"] }
+  "foxfang": { "extensions": ["./index.js"] }
 }
 JSON
 cat > "$slash_install_dir/index.js" <<'JS'
@@ -521,7 +521,7 @@ module.exports = {
   },
 };
 JS
-cat > "$slash_install_dir/openclaw.plugin.json" <<'JSON'
+cat > "$slash_install_dir/foxfang.plugin.json" <<'JSON'
 {
   "id": "slash-install-plugin",
   "configSchema": {
@@ -674,13 +674,13 @@ cat > "$HOME/.claude/plugins/known_marketplaces.json" <<JSON
     "installLocation": "$marketplace_root",
     "source": {
       "type": "github",
-      "repo": "openclaw/fixture-marketplace"
+      "repo": "foxfang/fixture-marketplace"
     }
   }
 }
 JSON
 
-node "$OPENCLAW_ENTRY" plugins marketplace list claude-fixtures --json > /tmp/marketplace-list.json
+node "$FOXFANG_ENTRY" plugins marketplace list claude-fixtures --json > /tmp/marketplace-list.json
 
 node - <<'NODE'
 const fs = require("node:fs");
@@ -696,9 +696,9 @@ if (!names.includes("marketplace-shortcut") || !names.includes("marketplace-dire
 console.log("ok");
 NODE
 
-node "$OPENCLAW_ENTRY" plugins install marketplace-shortcut@claude-fixtures
-node "$OPENCLAW_ENTRY" plugins install marketplace-direct --marketplace claude-fixtures
-node "$OPENCLAW_ENTRY" plugins list --json > /tmp/plugins-marketplace.json
+node "$FOXFANG_ENTRY" plugins install marketplace-shortcut@claude-fixtures
+node "$FOXFANG_ENTRY" plugins install marketplace-direct --marketplace claude-fixtures
+node "$FOXFANG_ENTRY" plugins list --json > /tmp/plugins-marketplace.json
 
 node - <<'NODE'
 const fs = require("node:fs");
@@ -734,7 +734,7 @@ node - <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
 
-const configPath = path.join(process.env.HOME, ".foxfang", "openclaw.json");
+const configPath = path.join(process.env.HOME, ".foxfang", "foxfang.json");
 const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
 for (const id of ["marketplace-shortcut", "marketplace-direct"]) {
   const record = config.plugins?.installs?.[id];
@@ -758,9 +758,9 @@ write_fixture_plugin \
   "0.0.2" \
   "demo.marketplace.shortcut.v2" \
   "Marketplace Shortcut"
-node "$OPENCLAW_ENTRY" plugins update marketplace-shortcut --dry-run
-node "$OPENCLAW_ENTRY" plugins update marketplace-shortcut
-node "$OPENCLAW_ENTRY" plugins list --json > /tmp/plugins-marketplace-updated.json
+node "$FOXFANG_ENTRY" plugins update marketplace-shortcut --dry-run
+node "$FOXFANG_ENTRY" plugins update marketplace-shortcut
+node "$FOXFANG_ENTRY" plugins list --json > /tmp/plugins-marketplace-updated.json
 
 node - <<'NODE'
 const fs = require("node:fs");

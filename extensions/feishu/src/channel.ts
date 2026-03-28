@@ -1,28 +1,28 @@
-import { describeAccountSnapshot } from "openclaw/plugin-sdk/account-helpers";
-import { formatAllowFromLowercase } from "openclaw/plugin-sdk/allow-from";
-import { createMessageToolCardSchema } from "openclaw/plugin-sdk/channel-actions";
+import { describeAccountSnapshot } from "foxfang/plugin-sdk/account-helpers";
+import { formatAllowFromLowercase } from "foxfang/plugin-sdk/allow-from";
+import { createMessageToolCardSchema } from "foxfang/plugin-sdk/channel-actions";
 import {
   adaptScopedAccountAccessor,
   createHybridChannelConfigAdapter,
-} from "openclaw/plugin-sdk/channel-config-helpers";
+} from "foxfang/plugin-sdk/channel-config-helpers";
 import type {
   ChannelMessageActionAdapter,
   ChannelMessageToolDiscovery,
-} from "openclaw/plugin-sdk/channel-contract";
-import { createPairingPrefixStripper } from "openclaw/plugin-sdk/channel-pairing";
+} from "foxfang/plugin-sdk/channel-contract";
+import { createPairingPrefixStripper } from "foxfang/plugin-sdk/channel-pairing";
 import {
   createAllowlistProviderGroupPolicyWarningCollector,
   projectConfigAccountIdWarningCollector,
-} from "openclaw/plugin-sdk/channel-policy";
-import { getSessionBindingService } from "openclaw/plugin-sdk/conversation-runtime";
-import { createChatChannelPlugin } from "openclaw/plugin-sdk/core";
+} from "foxfang/plugin-sdk/channel-policy";
+import { getSessionBindingService } from "foxfang/plugin-sdk/conversation-runtime";
+import { createChatChannelPlugin } from "foxfang/plugin-sdk/core";
 import {
   createChannelDirectoryAdapter,
   createRuntimeDirectoryLiveAdapter,
-} from "openclaw/plugin-sdk/directory-runtime";
-import { createLazyRuntimeNamedExport } from "openclaw/plugin-sdk/lazy-runtime";
-import { createRuntimeOutboundDelegates } from "openclaw/plugin-sdk/outbound-runtime";
-import { createComputedAccountStatusAdapter } from "openclaw/plugin-sdk/status-helpers";
+} from "foxfang/plugin-sdk/directory-runtime";
+import { createLazyRuntimeNamedExport } from "foxfang/plugin-sdk/lazy-runtime";
+import { createRuntimeOutboundDelegates } from "foxfang/plugin-sdk/outbound-runtime";
+import { createComputedAccountStatusAdapter } from "foxfang/plugin-sdk/status-helpers";
 import type { ChannelMeta, ChannelPlugin, ClawdbotConfig } from "../runtime-api.js";
 import {
   buildChannelConfigSchema,

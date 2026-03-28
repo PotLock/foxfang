@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import { buildPluginApi } from "./api-builder.js";
 import type { PluginRuntime } from "./runtime/types.js";
 import type {
@@ -6,14 +6,14 @@ import type {
   CliBackendPlugin,
   ImageGenerationProviderPlugin,
   MediaUnderstandingProviderPlugin,
-  OpenClawPluginApi,
+  FoxFangPluginApi,
   ProviderPlugin,
   SpeechProviderPlugin,
   WebSearchProviderPlugin,
 } from "./types.js";
 
 export type CapturedPluginRegistration = {
-  api: OpenClawPluginApi;
+  api: FoxFangPluginApi;
   providers: ProviderPlugin[];
   cliBackends: CliBackendPlugin[];
   speechProviders: SpeechProviderPlugin[];
@@ -51,7 +51,7 @@ export function createCapturedPluginRegistration(): CapturedPluginRegistration {
       name: "Captured Plugin Registration",
       source: "captured-plugin-registration",
       registrationMode: "full",
-      config: {} as OpenClawConfig,
+      config: {} as FoxFangConfig,
       runtime: {} as PluginRuntime,
       logger: noopLogger,
       resolvePath: (input) => input,
@@ -85,7 +85,7 @@ export function createCapturedPluginRegistration(): CapturedPluginRegistration {
 }
 
 export function capturePluginRegistration(params: {
-  register(api: OpenClawPluginApi): void;
+  register(api: FoxFangPluginApi): void;
 }): CapturedPluginRegistration {
   const captured = createCapturedPluginRegistration();
   params.register(captured.api);

@@ -22,15 +22,15 @@ const state = vi.hoisted(() => ({
   heartbeatWarnLogs: [] as string[],
 }));
 
-vi.mock("openclaw/plugin-sdk/agent-runtime", () => ({
+vi.mock("foxfang/plugin-sdk/agent-runtime", () => ({
   appendCronStyleCurrentTimeLine: (body: string) =>
     `${body}\nCurrent time: 2026-02-15T00:00:00Z (mock)`,
 }));
 
 // Perf: this module otherwise pulls a large dependency graph that we don't need
 // for these unit tests.
-vi.mock("openclaw/plugin-sdk/reply-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/reply-runtime")>();
+vi.mock("foxfang/plugin-sdk/reply-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/reply-runtime")>();
   return {
     ...actual,
     getReplyFromConfig: vi.fn(async () => undefined),
@@ -41,24 +41,24 @@ vi.mock("../../../../src/channels/plugins/whatsapp-heartbeat.js", () => ({
   resolveWhatsAppHeartbeatRecipients: () => [],
 }));
 
-vi.mock("openclaw/plugin-sdk/config-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/config-runtime")>();
+vi.mock("foxfang/plugin-sdk/config-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/config-runtime")>();
   return {
     ...actual,
     loadConfig: () => ({ agents: { defaults: {} }, session: {} }),
   };
 });
 
-vi.mock("openclaw/plugin-sdk/routing", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/routing")>();
+vi.mock("foxfang/plugin-sdk/routing", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/routing")>();
   return {
     ...actual,
     normalizeMainKey: () => null,
   };
 });
 
-vi.mock("openclaw/plugin-sdk/channel-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/channel-runtime")>();
+vi.mock("foxfang/plugin-sdk/channel-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/channel-runtime")>();
   return {
     ...actual,
     resolveHeartbeatVisibility: () => state.visibility,
@@ -67,8 +67,8 @@ vi.mock("openclaw/plugin-sdk/channel-runtime", async (importOriginal) => {
   };
 });
 
-vi.mock("openclaw/plugin-sdk/runtime-env", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/runtime-env")>();
+vi.mock("foxfang/plugin-sdk/runtime-env", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/runtime-env")>();
   const logger = {
     child: () => logger,
     info: (...args: unknown[]) => state.loggerInfoCalls.push(args),
@@ -83,8 +83,8 @@ vi.mock("openclaw/plugin-sdk/runtime-env", async (importOriginal) => {
   };
 });
 
-vi.mock("openclaw/plugin-sdk/text-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/text-runtime")>();
+vi.mock("foxfang/plugin-sdk/text-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/text-runtime")>();
   return {
     ...actual,
     redactIdentifier,
@@ -109,8 +109,8 @@ vi.mock("./session-snapshot.js", () => ({
 }));
 
 vi.mock("../auth-store.js", () => ({
-  WA_WEB_AUTH_DIR: "/tmp/openclaw-oauth/whatsapp/default",
-  resolveDefaultWebAuthDir: () => "/tmp/openclaw-oauth/whatsapp/default",
+  WA_WEB_AUTH_DIR: "/tmp/foxfang-oauth/whatsapp/default",
+  resolveDefaultWebAuthDir: () => "/tmp/foxfang-oauth/whatsapp/default",
   hasWebCredsSync: () => false,
   maybeRestoreCredsFromBackup: () => undefined,
   webAuthExists: async () => false,

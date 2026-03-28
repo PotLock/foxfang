@@ -6,10 +6,10 @@ import type { Bot } from "grammy";
 import {
   normalizeTelegramCommandName,
   TELEGRAM_COMMAND_NAME_PATTERN,
-} from "openclaw/plugin-sdk/config-runtime";
-import { logVerbose } from "openclaw/plugin-sdk/runtime-env";
-import type { RuntimeEnv } from "openclaw/plugin-sdk/runtime-env";
-import { resolveStateDir } from "openclaw/plugin-sdk/state-paths";
+} from "foxfang/plugin-sdk/config-runtime";
+import { logVerbose } from "foxfang/plugin-sdk/runtime-env";
+import type { RuntimeEnv } from "foxfang/plugin-sdk/runtime-env";
+import { resolveStateDir } from "foxfang/plugin-sdk/state-paths";
 import { withTelegramApiErrorLogging } from "./api-logging.js";
 
 export const TELEGRAM_MAX_COMMANDS = 100;
@@ -185,7 +185,7 @@ export function syncTelegramMenuCommands(params: {
     // Skip sync if the command list hasn't changed since the last successful
     // sync. This prevents hitting Telegram's 429 rate limit when the gateway
     // is restarted several times in quick succession.
-    // See: openclaw/openclaw#32017
+    // See: foxfang/foxfang#32017
     const currentHash = hashCommandList(commandsToRegister);
     const cachedHash = await readCachedCommandHash(accountId, botIdentity);
     if (cachedHash === currentHash) {

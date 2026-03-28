@@ -1,6 +1,6 @@
-import { applyModelCompatPatch } from "openclaw/plugin-sdk/provider-model-shared";
-import type { ModelCompatConfig } from "openclaw/plugin-sdk/provider-model-shared";
-import { XAI_UNSUPPORTED_SCHEMA_KEYWORDS } from "openclaw/plugin-sdk/provider-tools";
+import { applyModelCompatPatch } from "foxfang/plugin-sdk/provider-model-shared";
+import type { ModelCompatConfig } from "foxfang/plugin-sdk/provider-model-shared";
+import { XAI_UNSUPPORTED_SCHEMA_KEYWORDS } from "foxfang/plugin-sdk/provider-tools";
 
 export { buildXaiProvider } from "./provider-catalog.js";
 export {

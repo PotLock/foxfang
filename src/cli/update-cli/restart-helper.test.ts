@@ -68,21 +68,21 @@ describe("restart-helper", () => {
     it("creates a systemd restart script on Linux", async () => {
       Object.defineProperty(process, "platform", { value: "linux" });
       const { scriptPath, content } = await prepareAndReadScript({
-        OPENCLAW_PROFILE: "default",
+        FOXFANG_PROFILE: "default",
       });
       expect(scriptPath.endsWith(".sh")).toBe(true);
       expect(content).toContain("#!/bin/sh");
-      expect(content).toContain("systemctl --user restart 'openclaw-gateway.service'");
+      expect(content).toContain("systemctl --user restart 'foxfang-gateway.service'");
       // Script should self-cleanup
       expect(content).toContain('rm -f "$0"');
       await cleanupScript(scriptPath);
     });
 
-    it("uses OPENCLAW_SYSTEMD_UNIT override for systemd scripts", async () => {
+    it("uses FOXFANG_SYSTEMD_UNIT override for systemd scripts", async () => {
       Object.defineProperty(process, "platform", { value: "linux" });
       const { scriptPath, content } = await prepareAndReadScript({
-        OPENCLAW_PROFILE: "default",
-        OPENCLAW_SYSTEMD_UNIT: "custom-gateway",
+        FOXFANG_PROFILE: "default",
+        FOXFANG_SYSTEMD_UNIT: "custom-gateway",
       });
       expect(content).toContain("systemctl --user restart 'custom-gateway.service'");
       await cleanupScript(scriptPath);
@@ -93,27 +93,27 @@ describe("restart-helper", () => {
       process.getuid = () => 501;
 
       const { scriptPath, content } = await prepareAndReadScript({
-        OPENCLAW_PROFILE: "default",
+        FOXFANG_PROFILE: "default",
       });
       expect(scriptPath.endsWith(".sh")).toBe(true);
       expect(content).toContain("#!/bin/sh");
-      expect(content).toContain("launchctl kickstart -k 'gui/501/ai.openclaw.gateway'");
+      expect(content).toContain("launchctl kickstart -k 'gui/501/ai.foxfang.gateway'");
       // Should clear disabled state and fall back to bootstrap when kickstart fails.
-      expect(content).toContain("launchctl enable 'gui/501/ai.openclaw.gateway'");
+      expect(content).toContain("launchctl enable 'gui/501/ai.foxfang.gateway'");
       expect(content).toContain("launchctl bootstrap 'gui/501'");
       expect(content).toContain('rm -f "$0"');
       await cleanupScript(scriptPath);
     });
 
-    it("uses OPENCLAW_LAUNCHD_LABEL override on macOS", async () => {
+    it("uses FOXFANG_LAUNCHD_LABEL override on macOS", async () => {
       Object.defineProperty(process, "platform", { value: "darwin" });
       process.getuid = () => 501;
 
       const { scriptPath, content } = await prepareAndReadScript({
-        OPENCLAW_PROFILE: "default",
-        OPENCLAW_LAUNCHD_LABEL: "com.custom.openclaw",
+        FOXFANG_PROFILE: "default",
+        FOXFANG_LAUNCHD_LABEL: "com.custom.foxfang",
       });
-      expect(content).toContain("launchctl kickstart -k 'gui/501/com.custom.openclaw'");
+      expect(content).toContain("launchctl kickstart -k 'gui/501/com.custom.foxfang'");
       await cleanupScript(scriptPath);
     });
 
@@ -121,27 +121,27 @@ describe("restart-helper", () => {
       Object.defineProperty(process, "platform", { value: "win32" });
 
       const { scriptPath, content } = await prepareAndReadScript({
-        OPENCLAW_PROFILE: "default",
+        FOXFANG_PROFILE: "default",
       });
       expect(scriptPath.endsWith(".bat")).toBe(true);
       expect(content).toContain("@echo off");
-      expect(content).toContain('schtasks /End /TN "OpenClaw Gateway"');
-      expect(content).toContain('schtasks /Run /TN "OpenClaw Gateway"');
+      expect(content).toContain('schtasks /End /TN "FoxFang Gateway"');
+      expect(content).toContain('schtasks /Run /TN "FoxFang Gateway"');
       expectWindowsRestartWaitOrdering(content);
       // Batch self-cleanup
       expect(content).toContain('del "%~f0"');
       await cleanupScript(scriptPath);
     });
 
-    it("uses OPENCLAW_WINDOWS_TASK_NAME override on Windows", async () => {
+    it("uses FOXFANG_WINDOWS_TASK_NAME override on Windows", async () => {
       Object.defineProperty(process, "platform", { value: "win32" });
 
       const { scriptPath, content } = await prepareAndReadScript({
-        OPENCLAW_PROFILE: "default",
-        OPENCLAW_WINDOWS_TASK_NAME: "OpenClaw Gateway (custom)",
+        FOXFANG_PROFILE: "default",
+        FOXFANG_WINDOWS_TASK_NAME: "FoxFang Gateway (custom)",
       });
-      expect(content).toContain('schtasks /End /TN "OpenClaw Gateway (custom)"');
-      expect(content).toContain('schtasks /Run /TN "OpenClaw Gateway (custom)"');
+      expect(content).toContain('schtasks /End /TN "FoxFang Gateway (custom)"');
+      expect(content).toContain('schtasks /Run /TN "FoxFang Gateway (custom)"');
       expectWindowsRestartWaitOrdering(content);
       await cleanupScript(scriptPath);
     });
@@ -152,7 +152,7 @@ describe("restart-helper", () => {
 
       const { scriptPath, content } = await prepareAndReadScript(
         {
-          OPENCLAW_PROFILE: "default",
+          FOXFANG_PROFILE: "default",
         },
         customPort,
       );
@@ -167,9 +167,9 @@ describe("restart-helper", () => {
     it("uses custom profile in service names", async () => {
       Object.defineProperty(process, "platform", { value: "linux" });
       const { scriptPath, content } = await prepareAndReadScript({
-        OPENCLAW_PROFILE: "production",
+        FOXFANG_PROFILE: "production",
       });
-      expect(content).toContain("openclaw-gateway-production.service");
+      expect(content).toContain("foxfang-gateway-production.service");
       await cleanupScript(scriptPath);
     });
 
@@ -178,9 +178,9 @@ describe("restart-helper", () => {
       process.getuid = () => 502;
 
       const { scriptPath, content } = await prepareAndReadScript({
-        OPENCLAW_PROFILE: "staging",
+        FOXFANG_PROFILE: "staging",
       });
-      expect(content).toContain("gui/502/ai.openclaw.staging");
+      expect(content).toContain("gui/502/ai.foxfang.staging");
       await cleanupScript(scriptPath);
     });
 
@@ -188,9 +188,9 @@ describe("restart-helper", () => {
       Object.defineProperty(process, "platform", { value: "win32" });
 
       const { scriptPath, content } = await prepareAndReadScript({
-        OPENCLAW_PROFILE: "production",
+        FOXFANG_PROFILE: "production",
       });
-      expect(content).toContain('schtasks /End /TN "OpenClaw Gateway (production)"');
+      expect(content).toContain('schtasks /End /TN "FoxFang Gateway (production)"');
       expectWindowsRestartWaitOrdering(content);
       await cleanupScript(scriptPath);
     });
@@ -208,7 +208,7 @@ describe("restart-helper", () => {
         .mockRejectedValueOnce(new Error("simulated write failure"));
 
       const scriptPath = await prepareRestartScript({
-        OPENCLAW_PROFILE: "default",
+        FOXFANG_PROFILE: "default",
       });
 
       expect(scriptPath).toBeNull();
@@ -218,7 +218,7 @@ describe("restart-helper", () => {
     it("escapes single quotes in profile names for shell scripts", async () => {
       Object.defineProperty(process, "platform", { value: "linux" });
       const { scriptPath, content } = await prepareAndReadScript({
-        OPENCLAW_PROFILE: "it's-a-test",
+        FOXFANG_PROFILE: "it's-a-test",
       });
       // Single quotes should be escaped with '\'' pattern
       expect(content).not.toContain("it's");
@@ -232,7 +232,7 @@ describe("restart-helper", () => {
 
       const { scriptPath, content } = await prepareAndReadScript({
         HOME: "/Users/testuser",
-        OPENCLAW_PROFILE: "default",
+        FOXFANG_PROFILE: "default",
       });
       // The plist path must contain the resolved home dir, not literal $HOME
       expect(content).toMatch(/[\\/]Users[\\/]testuser[\\/]Library[\\/]LaunchAgents[\\/]/);
@@ -246,7 +246,7 @@ describe("restart-helper", () => {
 
       const { scriptPath, content } = await prepareAndReadScript({
         HOME: "/Users/envhome",
-        OPENCLAW_PROFILE: "default",
+        FOXFANG_PROFILE: "default",
       });
       expect(content).toMatch(/[\\/]Users[\\/]envhome[\\/]Library[\\/]LaunchAgents[\\/]/);
       await cleanupScript(scriptPath);
@@ -258,17 +258,17 @@ describe("restart-helper", () => {
 
       const { scriptPath, content } = await prepareAndReadScript({
         HOME: "/Users/testuser",
-        OPENCLAW_LAUNCHD_LABEL: "ai.openclaw.it's-a-test",
+        FOXFANG_LAUNCHD_LABEL: "ai.foxfang.it's-a-test",
       });
       // The plist path must also shell-escape the label to prevent injection
-      expect(content).toContain("ai.openclaw.it'\\''s-a-test.plist");
+      expect(content).toContain("ai.foxfang.it'\\''s-a-test.plist");
       await cleanupScript(scriptPath);
     });
 
     it("rejects unsafe batch profile names on Windows", async () => {
       Object.defineProperty(process, "platform", { value: "win32" });
       const scriptPath = await prepareRestartScript({
-        OPENCLAW_PROFILE: "test&whoami",
+        FOXFANG_PROFILE: "test&whoami",
       });
 
       expect(scriptPath).toBeNull();

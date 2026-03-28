@@ -39,16 +39,16 @@ export function registerSecurityCli(program: Command) {
       "after",
       () =>
         `\n${theme.heading("Examples:")}\n${formatHelpExamples([
-          ["openclaw security audit", "Run a local security audit."],
-          ["openclaw security audit --deep", "Include best-effort live Gateway probe checks."],
-          ["openclaw security audit --deep --token <token>", "Use explicit token for deep probe."],
+          ["foxfang security audit", "Run a local security audit."],
+          ["foxfang security audit --deep", "Include best-effort live Gateway probe checks."],
+          ["foxfang security audit --deep --token <token>", "Use explicit token for deep probe."],
           [
-            "openclaw security audit --deep --password <password>",
+            "foxfang security audit --deep --password <password>",
             "Use explicit password for deep probe.",
           ],
-          ["openclaw security audit --fix", "Apply safe remediations and file-permission fixes."],
-          ["openclaw security audit --json", "Output machine-readable JSON."],
-        ])}\n\n${theme.muted("Docs:")} ${formatDocsLink("/cli/security", "docs.openclaw.ai/cli/security")}\n`,
+          ["foxfang security audit --fix", "Apply safe remediations and file-permission fixes."],
+          ["foxfang security audit --json", "Output machine-readable JSON."],
+        ])}\n\n${theme.muted("Docs:")} ${formatDocsLink("/cli/security", "docs.foxfang.ai/cli/security")}\n`,
     );
 
   security
@@ -99,15 +99,15 @@ export function registerSecurityCli(program: Command) {
       const muted = (text: string) => (rich ? theme.muted(text) : text);
 
       const lines: string[] = [];
-      lines.push(heading("OpenClaw security audit"));
+      lines.push(heading("FoxFang security audit"));
       lines.push(muted(`Summary: ${formatSummary(report.summary)}`));
-      lines.push(muted(`Run deeper: ${formatCliCommand("openclaw security audit --deep")}`));
+      lines.push(muted(`Run deeper: ${formatCliCommand("foxfang security audit --deep")}`));
       for (const diagnostic of secretDiagnostics) {
         lines.push(muted(`[secrets] ${diagnostic}`));
       }
 
       if (opts.fix) {
-        lines.push(muted(`Fix: ${formatCliCommand("openclaw security audit --fix")}`));
+        lines.push(muted(`Fix: ${formatCliCommand("foxfang security audit --fix")}`));
         if (!fixResult) {
           lines.push(muted("Fixes: failed to apply (unexpected error)"));
         } else if (

@@ -1,5 +1,5 @@
-import { listCombinedAccountIds } from "openclaw/plugin-sdk/account-resolution";
-import type { OpenClawConfig } from "../runtime-api.js";
+import { listCombinedAccountIds } from "foxfang/plugin-sdk/account-resolution";
+import type { FoxFangConfig } from "../runtime-api.js";
 import { resolveTwitchToken, type TwitchTokenResolution } from "./token.js";
 import type { TwitchAccountConfig } from "./types.js";
 import { isAccountConfigured } from "./utils/twitch.js";
@@ -35,7 +35,7 @@ export function getAccountConfig(
     return null;
   }
 
-  const cfg = coreConfig as OpenClawConfig;
+  const cfg = coreConfig as FoxFangConfig;
   const twitch = cfg.channels?.twitch;
   // Access accounts via unknown to handle union type (single-account vs multi-account)
   const twitchRaw = twitch as Record<string, unknown> | undefined;
@@ -99,7 +99,7 @@ export function getAccountConfig(
  *
  * Includes both explicit accounts and implicit "default" from base-level config
  */
-export function listAccountIds(cfg: OpenClawConfig): string[] {
+export function listAccountIds(cfg: FoxFangConfig): string[] {
   const twitch = cfg.channels?.twitch;
   // Access accounts via unknown to handle union type (single-account vs multi-account)
   const twitchRaw = twitch as Record<string, unknown> | undefined;
@@ -119,7 +119,7 @@ export function listAccountIds(cfg: OpenClawConfig): string[] {
 }
 
 export function resolveTwitchAccountContext(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   accountId?: string | null,
 ): ResolvedTwitchAccountContext {
   const resolvedAccountId = accountId?.trim() || DEFAULT_ACCOUNT_ID;
@@ -135,7 +135,7 @@ export function resolveTwitchAccountContext(
 }
 
 export function resolveTwitchSnapshotAccountId(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   account: TwitchAccountConfig,
 ): string {
   const twitch = (cfg as Record<string, unknown>).channels as Record<string, unknown> | undefined;

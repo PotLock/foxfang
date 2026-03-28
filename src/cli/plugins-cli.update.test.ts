@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import {
   loadConfig,
   resetPluginsCliTestState,
@@ -30,7 +30,7 @@ describe("plugins cli update", () => {
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     const nextConfig = {
       hooks: {
         internal: {
@@ -43,7 +43,7 @@ describe("plugins cli update", () => {
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
 
     loadConfig.mockReturnValue(cfg);
     updateNpmInstalledPlugins.mockResolvedValue({
@@ -82,7 +82,7 @@ describe("plugins cli update", () => {
       plugins: {
         installs: {},
       },
-    } as OpenClawConfig);
+    } as FoxFangConfig);
 
     await expect(runPluginsCommand(["plugins", "update"])).rejects.toThrow("__exit__:1");
 
@@ -95,7 +95,7 @@ describe("plugins cli update", () => {
       plugins: {
         installs: {},
       },
-    } as OpenClawConfig);
+    } as FoxFangConfig);
 
     await runPluginsCommand(["plugins", "update", "--all"]);
 
@@ -108,15 +108,15 @@ describe("plugins cli update", () => {
     const config = {
       plugins: {
         installs: {
-          "openclaw-codex-app-server": {
+          "foxfang-codex-app-server": {
             source: "npm",
-            spec: "openclaw-codex-app-server",
-            installPath: "/tmp/openclaw-codex-app-server",
-            resolvedName: "openclaw-codex-app-server",
+            spec: "foxfang-codex-app-server",
+            installPath: "/tmp/foxfang-codex-app-server",
+            resolvedName: "foxfang-codex-app-server",
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     loadConfig.mockReturnValue(config);
     updateNpmInstalledPlugins.mockResolvedValue({
       config,
@@ -124,14 +124,14 @@ describe("plugins cli update", () => {
       outcomes: [],
     });
 
-    await runPluginsCommand(["plugins", "update", "openclaw-codex-app-server@beta"]);
+    await runPluginsCommand(["plugins", "update", "foxfang-codex-app-server@beta"]);
 
     expect(updateNpmInstalledPlugins).toHaveBeenCalledWith(
       expect.objectContaining({
         config,
-        pluginIds: ["openclaw-codex-app-server"],
+        pluginIds: ["foxfang-codex-app-server"],
         specOverrides: {
-          "openclaw-codex-app-server": "openclaw-codex-app-server@beta",
+          "foxfang-codex-app-server": "foxfang-codex-app-server@beta",
         },
       }),
     );
@@ -143,13 +143,13 @@ describe("plugins cli update", () => {
         installs: {
           "voice-call": {
             source: "npm",
-            spec: "@openclaw/voice-call",
+            spec: "@foxfang/voice-call",
             installPath: "/tmp/voice-call",
-            resolvedName: "@openclaw/voice-call",
+            resolvedName: "@foxfang/voice-call",
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     loadConfig.mockReturnValue(config);
     updateNpmInstalledPlugins.mockResolvedValue({
       config,
@@ -157,14 +157,14 @@ describe("plugins cli update", () => {
       outcomes: [],
     });
 
-    await runPluginsCommand(["plugins", "update", "@openclaw/voice-call@beta"]);
+    await runPluginsCommand(["plugins", "update", "@foxfang/voice-call@beta"]);
 
     expect(updateNpmInstalledPlugins).toHaveBeenCalledWith(
       expect.objectContaining({
         config,
         pluginIds: ["voice-call"],
         specOverrides: {
-          "voice-call": "@openclaw/voice-call@beta",
+          "voice-call": "@foxfang/voice-call@beta",
         },
       }),
     );
@@ -174,15 +174,15 @@ describe("plugins cli update", () => {
     const config = {
       plugins: {
         installs: {
-          "openclaw-codex-app-server": {
+          "foxfang-codex-app-server": {
             source: "npm",
-            spec: "openclaw-codex-app-server",
-            installPath: "/tmp/openclaw-codex-app-server",
-            resolvedName: "openclaw-codex-app-server",
+            spec: "foxfang-codex-app-server",
+            installPath: "/tmp/foxfang-codex-app-server",
+            resolvedName: "foxfang-codex-app-server",
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     loadConfig.mockReturnValue(config);
     updateNpmInstalledPlugins.mockResolvedValue({
       config,
@@ -190,14 +190,14 @@ describe("plugins cli update", () => {
       outcomes: [],
     });
 
-    await runPluginsCommand(["plugins", "update", "openclaw-codex-app-server@0.2.0-beta.4"]);
+    await runPluginsCommand(["plugins", "update", "foxfang-codex-app-server@0.2.0-beta.4"]);
 
     expect(updateNpmInstalledPlugins).toHaveBeenCalledWith(
       expect.objectContaining({
         config,
-        pluginIds: ["openclaw-codex-app-server"],
+        pluginIds: ["foxfang-codex-app-server"],
         specOverrides: {
-          "openclaw-codex-app-server": "openclaw-codex-app-server@0.2.0-beta.4",
+          "foxfang-codex-app-server": "foxfang-codex-app-server@0.2.0-beta.4",
         },
       }),
     );
@@ -207,15 +207,15 @@ describe("plugins cli update", () => {
     const config = {
       plugins: {
         installs: {
-          "openclaw-codex-app-server": {
+          "foxfang-codex-app-server": {
             source: "npm",
-            spec: "openclaw-codex-app-server@beta",
-            installPath: "/tmp/openclaw-codex-app-server",
-            resolvedName: "openclaw-codex-app-server",
+            spec: "foxfang-codex-app-server@beta",
+            installPath: "/tmp/foxfang-codex-app-server",
+            resolvedName: "foxfang-codex-app-server",
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     loadConfig.mockReturnValue(config);
     updateNpmInstalledPlugins.mockResolvedValue({
       config,
@@ -223,12 +223,12 @@ describe("plugins cli update", () => {
       outcomes: [],
     });
 
-    await runPluginsCommand(["plugins", "update", "openclaw-codex-app-server"]);
+    await runPluginsCommand(["plugins", "update", "foxfang-codex-app-server"]);
 
     expect(updateNpmInstalledPlugins).toHaveBeenCalledWith(
       expect.objectContaining({
         config,
-        pluginIds: ["openclaw-codex-app-server"],
+        pluginIds: ["foxfang-codex-app-server"],
       }),
     );
     expect(updateNpmInstalledPlugins).not.toHaveBeenCalledWith(
@@ -244,21 +244,21 @@ describe("plugins cli update", () => {
         installs: {
           alpha: {
             source: "npm",
-            spec: "@openclaw/alpha@1.0.0",
+            spec: "@foxfang/alpha@1.0.0",
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     const nextConfig = {
       plugins: {
         installs: {
           alpha: {
             source: "npm",
-            spec: "@openclaw/alpha@1.1.0",
+            spec: "@foxfang/alpha@1.1.0",
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     loadConfig.mockReturnValue(cfg);
     updateNpmInstalledPlugins.mockResolvedValue({
       outcomes: [{ status: "ok", message: "Updated alpha -> 1.1.0" }],

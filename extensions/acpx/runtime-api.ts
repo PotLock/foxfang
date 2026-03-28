@@ -1,9 +1,9 @@
-export type { AcpRuntimeErrorCode } from "openclaw/plugin-sdk/acp-runtime";
+export type { AcpRuntimeErrorCode } from "foxfang/plugin-sdk/acp-runtime";
 export {
   AcpRuntimeError,
   registerAcpRuntimeBackend,
   unregisterAcpRuntimeBackend,
-} from "openclaw/plugin-sdk/acp-runtime";
+} from "foxfang/plugin-sdk/acp-runtime";
 export type {
   AcpRuntime,
   AcpRuntimeCapabilities,
@@ -14,25 +14,25 @@ export type {
   AcpRuntimeStatus,
   AcpRuntimeTurnInput,
   AcpSessionUpdateTag,
-} from "openclaw/plugin-sdk/acp-runtime";
+} from "foxfang/plugin-sdk/acp-runtime";
 export type {
-  OpenClawPluginApi,
-  OpenClawPluginConfigSchema,
-  OpenClawPluginService,
-  OpenClawPluginServiceContext,
+  FoxFangPluginApi,
+  FoxFangPluginConfigSchema,
+  FoxFangPluginService,
+  FoxFangPluginServiceContext,
   PluginLogger,
-} from "openclaw/plugin-sdk/core";
+} from "foxfang/plugin-sdk/core";
 export type {
   WindowsSpawnProgram,
   WindowsSpawnProgramCandidate,
   WindowsSpawnResolution,
-} from "openclaw/plugin-sdk/windows-spawn";
+} from "foxfang/plugin-sdk/windows-spawn";
 export {
   applyWindowsSpawnProgramPolicy,
   materializeWindowsSpawnProgram,
   resolveWindowsSpawnProgramCandidate,
-} from "openclaw/plugin-sdk/windows-spawn";
+} from "foxfang/plugin-sdk/windows-spawn";
 export {
   listKnownProviderAuthEnvVarNames,
   omitEnvKeysCaseInsensitive,
-} from "openclaw/plugin-sdk/provider-env-vars";
+} from "foxfang/plugin-sdk/provider-env-vars";

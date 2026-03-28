@@ -4,8 +4,8 @@ import {
   definePluginEntry,
   handleBrowserGatewayRequest,
   registerBrowserCli,
-  type OpenClawPluginToolContext,
-  type OpenClawPluginToolFactory,
+  type FoxFangPluginToolContext,
+  type FoxFangPluginToolFactory,
 } from "./runtime-api.js";
 
 export default definePluginEntry({
@@ -13,12 +13,12 @@ export default definePluginEntry({
   name: "Browser",
   description: "Default browser tool plugin",
   register(api) {
-    api.registerTool(((ctx: OpenClawPluginToolContext) =>
+    api.registerTool(((ctx: FoxFangPluginToolContext) =>
       createBrowserTool({
         sandboxBridgeUrl: ctx.browser?.sandboxBridgeUrl,
         allowHostControl: ctx.browser?.allowHostControl,
         agentSessionKey: ctx.sessionKey,
-      })) as OpenClawPluginToolFactory);
+      })) as FoxFangPluginToolFactory);
     api.registerCli(({ program }) => registerBrowserCli(program), { commands: ["browser"] });
     api.registerGatewayMethod("browser.request", handleBrowserGatewayRequest, {
       scope: "operator.write",

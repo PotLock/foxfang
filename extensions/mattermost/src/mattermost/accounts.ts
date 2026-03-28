@@ -1,6 +1,6 @@
-import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "openclaw/plugin-sdk/account-id";
-import { resolveMergedAccountConfig } from "openclaw/plugin-sdk/account-resolution";
-import { createAccountListHelpers, type OpenClawConfig } from "../runtime-api.js";
+import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "foxfang/plugin-sdk/account-id";
+import { resolveMergedAccountConfig } from "foxfang/plugin-sdk/account-resolution";
+import { createAccountListHelpers, type FoxFangConfig } from "../runtime-api.js";
 import { normalizeResolvedSecretInputString, normalizeSecretInputString } from "../secret-input.js";
 import type {
   MattermostAccountConfig,
@@ -37,7 +37,7 @@ const {
 export { listMattermostAccountIds, resolveDefaultMattermostAccountId };
 
 function mergeMattermostAccountConfig(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   accountId: string,
 ): MattermostAccountConfig {
   return resolveMergedAccountConfig<MattermostAccountConfig>({
@@ -65,7 +65,7 @@ function resolveMattermostRequireMention(config: MattermostAccountConfig): boole
 }
 
 export function resolveMattermostAccount(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId?: string | null;
   allowUnresolvedSecretRef?: boolean;
 }): ResolvedMattermostAccount {
@@ -124,7 +124,7 @@ export function resolveMattermostReplyToMode(
   return account.config.replyToMode ?? "off";
 }
 
-export function listEnabledMattermostAccounts(cfg: OpenClawConfig): ResolvedMattermostAccount[] {
+export function listEnabledMattermostAccounts(cfg: FoxFangConfig): ResolvedMattermostAccount[] {
   return listMattermostAccountIds(cfg)
     .map((accountId) => resolveMattermostAccount({ cfg, accountId }))
     .filter((account) => account.enabled);

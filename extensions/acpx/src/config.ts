@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildPluginConfigSchema } from "openclaw/plugin-sdk/core";
-import { z } from "openclaw/plugin-sdk/zod";
-import type { OpenClawPluginConfigSchema } from "../runtime-api.js";
+import { buildPluginConfigSchema } from "foxfang/plugin-sdk/core";
+import { z } from "foxfang/plugin-sdk/zod";
+import type { FoxFangPluginConfigSchema } from "../runtime-api.js";
 
 export const ACPX_PERMISSION_MODES = ["approve-all", "approve-reads", "deny-all"] as const;
 export type AcpxPermissionMode = (typeof ACPX_PERMISSION_MODES)[number];
@@ -17,7 +17,7 @@ const ACPX_BIN_NAME = process.platform === "win32" ? "acpx.cmd" : "acpx";
 
 function isAcpxPluginRoot(dir: string): boolean {
   return (
-    fs.existsSync(path.join(dir, "openclaw.plugin.json")) &&
+    fs.existsSync(path.join(dir, "foxfang.plugin.json")) &&
     fs.existsSync(path.join(dir, "package.json"))
   );
 }
@@ -201,7 +201,7 @@ function resolveConfiguredCommand(params: { configured?: string; workspaceDir?: 
   return configured;
 }
 
-export function createAcpxPluginConfigSchema(): OpenClawPluginConfigSchema {
+export function createAcpxPluginConfigSchema(): FoxFangPluginConfigSchema {
   return buildPluginConfigSchema(AcpxPluginConfigSchema);
 }
 

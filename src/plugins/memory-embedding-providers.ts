@@ -1,5 +1,5 @@
 import type { EmbeddingInput } from "../../packages/memory-host-sdk/src/host/embedding-inputs.js";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import type { SecretInput } from "../config/types.secrets.js";
 
 export type MemoryEmbeddingBatchChunk = {
@@ -33,7 +33,7 @@ export type MemoryEmbeddingProvider = {
 };
 
 export type MemoryEmbeddingProviderCreateOptions = {
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   agentDir?: string;
   remote?: {
     baseUrl?: string;
@@ -72,7 +72,7 @@ export type RegisteredMemoryEmbeddingProvider = {
   ownerPluginId?: string;
 };
 
-const MEMORY_EMBEDDING_PROVIDERS_KEY = Symbol.for("openclaw.memoryEmbeddingProviders");
+const MEMORY_EMBEDDING_PROVIDERS_KEY = Symbol.for("foxfang.memoryEmbeddingProviders");
 
 function getMemoryEmbeddingProviders(): Map<string, RegisteredMemoryEmbeddingProvider> {
   const globalStore = globalThis as Record<PropertyKey, unknown>;

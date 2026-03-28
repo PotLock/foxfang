@@ -12,8 +12,8 @@ import { buildAgentMainSessionKey, normalizeAgentId } from "../routing/session-k
 import { normalizeMessageChannel } from "../utils/message-channel.js";
 import { loadGatewayModelCatalog } from "./server-model-catalog.js";
 
-export const OPENCLAW_MODEL_ID = "openclaw";
-export const OPENCLAW_DEFAULT_MODEL_ID = "openclaw/default";
+export const FOXFANG_MODEL_ID = "foxfang";
+export const FOXFANG_DEFAULT_MODEL_ID = "foxfang/default";
 
 export function getHeader(req: IncomingMessage, name: string): string | undefined {
   const raw = req.headers[name.toLowerCase()];
@@ -37,8 +37,8 @@ export function getBearerToken(req: IncomingMessage): string | undefined {
 
 export function resolveAgentIdFromHeader(req: IncomingMessage): string | undefined {
   const raw =
-    getHeader(req, "x-openclaw-agent-id")?.trim() ||
-    getHeader(req, "x-openclaw-agent")?.trim() ||
+    getHeader(req, "x-foxfang-agent-id")?.trim() ||
+    getHeader(req, "x-foxfang-agent")?.trim() ||
     "";
   if (!raw) {
     return undefined;
@@ -55,12 +55,12 @@ export function resolveAgentIdFromModel(
     return undefined;
   }
   const lowered = raw.toLowerCase();
-  if (lowered === OPENCLAW_MODEL_ID || lowered === OPENCLAW_DEFAULT_MODEL_ID) {
+  if (lowered === FOXFANG_MODEL_ID || lowered === FOXFANG_DEFAULT_MODEL_ID) {
     return resolveDefaultAgentId(cfg);
   }
 
   const m =
-    raw.match(/^openclaw[:/](?<agentId>[a-z0-9][a-z0-9_-]{0,63})$/i) ??
+    raw.match(/^foxfang[:/](?<agentId>[a-z0-9][a-z0-9_-]{0,63})$/i) ??
     raw.match(/^agent:(?<agentId>[a-z0-9][a-z0-9_-]{0,63})$/i);
   const agentId = m?.groups?.agentId;
   if (!agentId) {
@@ -77,11 +77,11 @@ export async function resolveOpenAiCompatModelOverride(params: {
   const requestModel = params.model?.trim();
   if (requestModel && !resolveAgentIdFromModel(requestModel)) {
     return {
-      errorMessage: "Invalid `model`. Use `openclaw` or `openclaw/<agentId>`.",
+      errorMessage: "Invalid `model`. Use `foxfang` or `foxfang/<agentId>`.",
     };
   }
 
-  const raw = getHeader(params.req, "x-openclaw-model")?.trim();
+  const raw = getHeader(params.req, "x-foxfang-model")?.trim();
   if (!raw) {
     return {};
   }
@@ -91,7 +91,7 @@ export async function resolveOpenAiCompatModelOverride(params: {
   const defaultProvider = defaultModelRef.provider;
   const parsed = parseModelRef(raw, defaultProvider);
   if (!parsed) {
-    return { errorMessage: "Invalid `x-openclaw-model`." };
+    return { errorMessage: "Invalid `x-foxfang-model`." };
   }
 
   const catalog = await loadGatewayModelCatalog();
@@ -131,7 +131,7 @@ export function resolveSessionKey(params: {
   user?: string | undefined;
   prefix: string;
 }): string {
-  const explicit = getHeader(params.req, "x-openclaw-session-key")?.trim();
+  const explicit = getHeader(params.req, "x-foxfang-session-key")?.trim();
   if (explicit) {
     return explicit;
   }
@@ -158,7 +158,7 @@ export function resolveGatewayRequestContext(params: {
   });
 
   const messageChannel = params.useMessageChannelHeader
-    ? (normalizeMessageChannel(getHeader(params.req, "x-openclaw-message-channel")) ??
+    ? (normalizeMessageChannel(getHeader(params.req, "x-foxfang-message-channel")) ??
       params.defaultMessageChannel)
     : params.defaultMessageChannel;
 

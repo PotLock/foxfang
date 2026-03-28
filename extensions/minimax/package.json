@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/minimax-provider",
+  "name": "@foxfang/minimax-provider",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw MiniMax provider and OAuth plugin",
+  "description": "FoxFang MiniMax provider and OAuth plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

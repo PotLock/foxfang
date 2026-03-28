@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/amazon-bedrock-provider",
+  "name": "@foxfang/amazon-bedrock-provider",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw Amazon Bedrock provider plugin",
+  "description": "FoxFang Amazon Bedrock provider plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

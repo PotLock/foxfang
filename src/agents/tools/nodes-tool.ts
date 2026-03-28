@@ -16,7 +16,7 @@ import {
   writeScreenRecordToFile,
 } from "../../cli/nodes-screen.js";
 import { parseDurationMs } from "../../cli/parse-duration.js";
-import type { OpenClawConfig } from "../../config/config.js";
+import type { FoxFangConfig } from "../../config/config.js";
 import type { OperatorScope } from "../../gateway/method-scopes.js";
 import { NODE_SYSTEM_RUN_COMMANDS } from "../../infra/node-commands.js";
 import { parsePreparedSystemRunPayload } from "../../infra/system-run-approval-context.js";
@@ -187,7 +187,7 @@ export function createNodesTool(options?: {
   agentAccountId?: string;
   currentChannelId?: string;
   currentThreadTs?: string | number;
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   modelHasVision?: boolean;
   allowMediaInvokeCommands?: boolean;
 }): AnyAgentTool {

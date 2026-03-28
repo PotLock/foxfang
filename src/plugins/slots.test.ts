@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import { applyExclusiveSlotSelection } from "./slots.js";
 import type { PluginKind } from "./types.js";
 
 describe("applyExclusiveSlotSelection", () => {
-  const createMemoryConfig = (plugins?: OpenClawConfig["plugins"]): OpenClawConfig => ({
+  const createMemoryConfig = (plugins?: FoxFangConfig["plugins"]): FoxFangConfig => ({
     plugins: {
       ...plugins,
       entries: {
@@ -17,7 +17,7 @@ describe("applyExclusiveSlotSelection", () => {
     },
   });
 
-  const runMemorySelection = (config: OpenClawConfig, selectedId = "memory") =>
+  const runMemorySelection = (config: FoxFangConfig, selectedId = "memory") =>
     applyExclusiveSlotSelection({
       config,
       selectedId,
@@ -76,7 +76,7 @@ describe("applyExclusiveSlotSelection", () => {
   }
 
   function expectUnchangedSelectionCase(params: {
-    config: OpenClawConfig;
+    config: FoxFangConfig;
     selectedId: string;
     selectedKind?: PluginKind;
     registry?: { plugins: ReadonlyArray<{ id: string; kind?: PluginKind }> };
@@ -97,7 +97,7 @@ describe("applyExclusiveSlotSelection", () => {
   }
 
   function expectChangedSelectionCase(params: {
-    config: OpenClawConfig;
+    config: FoxFangConfig;
     selectedId?: string;
     expectedDisabled?: boolean;
     warningChecks: {
@@ -172,7 +172,7 @@ describe("applyExclusiveSlotSelection", () => {
     },
     {
       name: "skips changes when no exclusive slot applies",
-      config: {} as OpenClawConfig,
+      config: {} as FoxFangConfig,
       selectedId: "custom",
     },
   ] as const)("$name", ({ config, selectedId, selectedKind, registry }) => {

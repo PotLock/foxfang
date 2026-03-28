@@ -1,7 +1,7 @@
 {
-  "name": "@openclaw/msteams",
+  "name": "@foxfang/msteams",
   "version": "2026.3.27",
-  "description": "OpenClaw Microsoft Teams channel plugin",
+  "description": "FoxFang Microsoft Teams channel plugin",
   "type": "module",
   "dependencies": {
     "@microsoft/teams.api": "2.0.6",
@@ -9,17 +9,17 @@
     "express": "^5.2.1"
   },
   "devDependencies": {
-    "openclaw": "workspace:*"
+    "foxfang": "workspace:*"
   },
   "peerDependencies": {
-    "openclaw": ">=2026.3.27"
+    "foxfang": ">=2026.3.27"
   },
   "peerDependenciesMeta": {
-    "openclaw": {
+    "foxfang": {
       "optional": true
     }
   },
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ],
@@ -37,7 +37,7 @@
       "order": 60
     },
     "install": {
-      "npmSpec": "@openclaw/msteams",
+      "npmSpec": "@foxfang/msteams",
       "localPath": "extensions/msteams",
       "defaultChoice": "npm",
       "minHostVersion": ">=2026.3.27"

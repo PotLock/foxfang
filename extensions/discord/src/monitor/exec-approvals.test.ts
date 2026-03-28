@@ -7,7 +7,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearSessionStoreCacheForTest } from "../../../../src/config/sessions.js";
 import type { DiscordExecApprovalConfig } from "../../../../src/config/types.discord.js";
 
-const STORE_PATH = path.join(os.tmpdir(), "openclaw-exec-approvals-test.json");
+const STORE_PATH = path.join(os.tmpdir(), "foxfang-exec-approvals-test.json");
 
 const writeStore = (store: Record<string, unknown>) => {
   fs.writeFileSync(STORE_PATH, `${JSON.stringify(store, null, 2)}\n`, "utf8");
@@ -32,8 +32,8 @@ beforeEach(() => {
     }) => {
       const configToken = params.config?.gateway?.auth?.token;
       const configPassword = params.config?.gateway?.auth?.password;
-      const envToken = params.env.OPENCLAW_GATEWAY_TOKEN;
-      const envPassword = params.env.OPENCLAW_GATEWAY_PASSWORD;
+      const envToken = params.env.FOXFANG_GATEWAY_TOKEN;
+      const envPassword = params.env.FOXFANG_GATEWAY_PASSWORD;
       return { token: envToken ?? configToken, password: envPassword ?? configPassword };
     },
   );
@@ -69,8 +69,8 @@ vi.mock("../send.shared.js", async (importOriginal) => {
   };
 });
 
-vi.mock("openclaw/plugin-sdk/gateway-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/gateway-runtime")>();
+vi.mock("foxfang/plugin-sdk/gateway-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/gateway-runtime")>();
   type CreateOperatorApprovalsGatewayClientParams = Parameters<
     typeof actual.createOperatorApprovalsGatewayClient
   >[0];
@@ -98,7 +98,7 @@ vi.mock("openclaw/plugin-sdk/gateway-runtime", async (importOriginal) => {
       params: CreateOperatorApprovalsGatewayClientParams,
     ) => {
       mockCreateOperatorApprovalsGatewayClient(params);
-      const envUrl = process.env.OPENCLAW_GATEWAY_URL?.trim();
+      const envUrl = process.env.FOXFANG_GATEWAY_URL?.trim();
       const gatewayUrl = params.gatewayUrl?.trim() || envUrl || "ws://127.0.0.1:18789";
       const urlOverrideSource = params.gatewayUrl?.trim() ? "cli" : envUrl ? "env" : undefined;
       const auth = await mockResolveGatewayConnectionAuth({
@@ -139,7 +139,7 @@ vi.mock("../../../../src/gateway/operator-approvals-client.js", () => ({
     onClose?: unknown;
   }) => {
     mockCreateOperatorApprovalsGatewayClient(params);
-    const envUrl = process.env.OPENCLAW_GATEWAY_URL?.trim();
+    const envUrl = process.env.FOXFANG_GATEWAY_URL?.trim();
     const gatewayUrl = params.gatewayUrl?.trim() || envUrl || "ws://127.0.0.1:18789";
     const urlOverrideSource = params.gatewayUrl?.trim() ? "cli" : envUrl ? "env" : undefined;
     const auth = await mockResolveGatewayConnectionAuth({
@@ -215,8 +215,8 @@ vi.mock("../client.js", () => ({
   }),
 }));
 
-vi.mock("openclaw/plugin-sdk/text-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/text-runtime")>();
+vi.mock("foxfang/plugin-sdk/text-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/text-runtime")>();
   return {
     ...actual,
     logDebug: vi.fn(),
@@ -254,7 +254,7 @@ function createTestingDeps() {
       onClose?: unknown;
     }) => {
       mockCreateOperatorApprovalsGatewayClient(params);
-      const envUrl = process.env.OPENCLAW_GATEWAY_URL?.trim();
+      const envUrl = process.env.FOXFANG_GATEWAY_URL?.trim();
       const gatewayUrl = params.gatewayUrl?.trim() || envUrl || "ws://127.0.0.1:18789";
       const urlOverrideSource = params.gatewayUrl?.trim() ? "cli" : envUrl ? "env" : undefined;
       const auth = await mockResolveGatewayConnectionAuth({
@@ -1115,8 +1115,8 @@ describe("DiscordExecApprovalHandler gateway auth", () => {
     });
   });
 
-  it("prefers OPENCLAW_GATEWAY_TOKEN when config token is missing", async () => {
-    vi.stubEnv("OPENCLAW_GATEWAY_TOKEN", "env-gateway-token");
+  it("prefers FOXFANG_GATEWAY_TOKEN when config token is missing", async () => {
+    vi.stubEnv("FOXFANG_GATEWAY_TOKEN", "env-gateway-token");
     const handler = new DiscordExecApprovalHandler({
       token: "discord-bot-token",
       accountId: "default",
@@ -1311,9 +1311,9 @@ describe("DiscordExecApprovalHandler gateway auth resolution", () => {
   });
 
   it("passes env URL overrides to shared gateway auth resolver", async () => {
-    const previousGatewayUrl = process.env.OPENCLAW_GATEWAY_URL;
+    const previousGatewayUrl = process.env.FOXFANG_GATEWAY_URL;
     try {
-      process.env.OPENCLAW_GATEWAY_URL = "wss://gateway-from-env.example/ws";
+      process.env.FOXFANG_GATEWAY_URL = "wss://gateway-from-env.example/ws";
       const handler = new DiscordExecApprovalHandler({
         token: "test-token",
         accountId: "default",
@@ -1331,9 +1331,9 @@ describe("DiscordExecApprovalHandler gateway auth resolution", () => {
       await handler.stop();
     } finally {
       if (typeof previousGatewayUrl === "string") {
-        process.env.OPENCLAW_GATEWAY_URL = previousGatewayUrl;
+        process.env.FOXFANG_GATEWAY_URL = previousGatewayUrl;
       } else {
-        delete process.env.OPENCLAW_GATEWAY_URL;
+        delete process.env.FOXFANG_GATEWAY_URL;
       }
     }
   });

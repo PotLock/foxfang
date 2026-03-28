@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/opencode-provider",
+  "name": "@foxfang/opencode-provider",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw OpenCode Zen provider plugin",
+  "description": "FoxFang OpenCode Zen provider plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

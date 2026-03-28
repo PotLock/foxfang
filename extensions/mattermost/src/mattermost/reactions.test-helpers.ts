@@ -1,8 +1,8 @@
 import { expect, vi } from "vitest";
-import type { OpenClawConfig } from "../../runtime-api.js";
+import type { FoxFangConfig } from "../../runtime-api.js";
 import type { MattermostFetch } from "./client.js";
 
-export function createMattermostTestConfig(): OpenClawConfig {
+export function createMattermostTestConfig(): FoxFangConfig {
   return {
     channels: {
       mattermost: {

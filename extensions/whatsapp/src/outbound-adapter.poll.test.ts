@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../src/config/config.js";
 
 const hoisted = vi.hoisted(() => ({
   sendPollWhatsApp: vi.fn(async () => ({ messageId: "poll-1", toJid: "1555@s.whatsapp.net" })),
@@ -24,7 +24,7 @@ describe("whatsappOutbound sendPoll", () => {
   });
 
   it("threads cfg through poll send options", async () => {
-    const cfg = { marker: "resolved-cfg" } as OpenClawConfig;
+    const cfg = { marker: "resolved-cfg" } as FoxFangConfig;
     const poll = {
       question: "Lunch?",
       options: ["Pizza", "Sushi"],

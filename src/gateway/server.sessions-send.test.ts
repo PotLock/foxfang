@@ -12,7 +12,7 @@ import {
   testState,
 } from "./test-helpers.js";
 
-const { createOpenClawTools } = await import("../agents/openclaw-tools.js");
+const { createFoxFangTools } = await import("../agents/foxfang-tools.js");
 
 installGatewayTestHooks({ scope: "suite" });
 
@@ -21,7 +21,7 @@ let gatewayPort: number;
 const gatewayToken = "test-token";
 let envSnapshot: ReturnType<typeof captureEnv>;
 
-type SessionSendTool = ReturnType<typeof createOpenClawTools>[number];
+type SessionSendTool = ReturnType<typeof createFoxFangTools>[number];
 const SESSION_SEND_E2E_TIMEOUT_MS = 10_000;
 let cachedSessionsSendTool: SessionSendTool | null = null;
 
@@ -29,7 +29,7 @@ function getSessionsSendTool(): SessionSendTool {
   if (cachedSessionsSendTool) {
     return cachedSessionsSendTool;
   }
-  const tool = createOpenClawTools().find((candidate) => candidate.name === "sessions_send");
+  const tool = createFoxFangTools().find((candidate) => candidate.name === "sessions_send");
   if (!tool) {
     throw new Error("missing sessions_send tool");
   }
@@ -76,11 +76,11 @@ async function emitLifecycleAssistantReply(params: {
 }
 
 beforeAll(async () => {
-  envSnapshot = captureEnv(["OPENCLAW_GATEWAY_PORT", "OPENCLAW_GATEWAY_TOKEN"]);
+  envSnapshot = captureEnv(["FOXFANG_GATEWAY_PORT", "FOXFANG_GATEWAY_TOKEN"]);
   gatewayPort = await getFreePort();
   testState.gatewayAuth = { mode: "token", token: gatewayToken };
-  process.env.OPENCLAW_GATEWAY_PORT = String(gatewayPort);
-  process.env.OPENCLAW_GATEWAY_TOKEN = gatewayToken;
+  process.env.FOXFANG_GATEWAY_PORT = String(gatewayPort);
+  process.env.FOXFANG_GATEWAY_TOKEN = gatewayToken;
   const { approveDevicePairing, requestDevicePairing } = await import("../infra/device-pairing.js");
   const { loadOrCreateDeviceIdentity, publicKeyRawBase64UrlFromPem } =
     await import("../infra/device-identity.js");
@@ -88,7 +88,7 @@ beforeAll(async () => {
   const pending = await requestDevicePairing({
     deviceId: identity.deviceId,
     publicKey: publicKeyRawBase64UrlFromPem(identity.publicKeyPem),
-    clientId: "openclaw-cli",
+    clientId: "foxfang-cli",
     clientMode: "cli",
     role: "operator",
     scopes: ["operator.admin", "operator.read", "operator.write", "operator.approvals"],
@@ -158,9 +158,9 @@ describe("sessions_send label lookup", () => {
     { timeout: SESSION_SEND_E2E_TIMEOUT_MS },
     async () => {
       // This is an operator feature; enable broader session tool targeting for this test.
-      const configPath = process.env.OPENCLAW_CONFIG_PATH;
+      const configPath = process.env.FOXFANG_CONFIG_PATH;
       if (!configPath) {
-        throw new Error("OPENCLAW_CONFIG_PATH missing in gateway test environment");
+        throw new Error("FOXFANG_CONFIG_PATH missing in gateway test environment");
       }
       await fs.mkdir(path.dirname(configPath), { recursive: true });
       await fs.writeFile(
@@ -186,7 +186,7 @@ describe("sessions_send label lookup", () => {
         timeoutMs: 5000,
       });
 
-      const tool = createOpenClawTools({
+      const tool = createFoxFangTools({
         config: {
           tools: {
             sessions: {

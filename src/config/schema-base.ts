@@ -3,7 +3,7 @@ import type { ConfigUiHints } from "./schema.hints.js";
 import { buildBaseHints, mapSensitivePaths } from "./schema.hints.js";
 import { asSchemaObject, cloneSchema } from "./schema.shared.js";
 import { applyDerivedTags } from "./schema.tags.js";
-import { OpenClawSchema } from "./zod-schema.js";
+import { FoxFangSchema } from "./zod-schema.js";
 
 type ConfigSchema = Record<string, unknown>;
 
@@ -56,14 +56,14 @@ function computeBaseConfigSchemaStablePayload(): BaseConfigSchemaStablePayload {
       version: baseConfigSchemaStablePayload.version,
     };
   }
-  const schema = OpenClawSchema.toJSONSchema({
+  const schema = FoxFangSchema.toJSONSchema({
     target: "draft-07",
     unrepresentable: "any",
   });
-  schema.title = "OpenClawConfig";
+  schema.title = "FoxFangConfig";
   const stablePayload = {
     schema: stripChannelSchema(schema),
-    uiHints: applyDerivedTags(mapSensitivePaths(OpenClawSchema, "", buildBaseHints())),
+    uiHints: applyDerivedTags(mapSensitivePaths(FoxFangSchema, "", buildBaseHints())),
     version: VERSION,
   } satisfies BaseConfigSchemaStablePayload;
   baseConfigSchemaStablePayload = stablePayload;

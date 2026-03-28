@@ -16,7 +16,7 @@ for the first time.
 
 ## What bootstrapping does
 
-On the first agent run, OpenClaw bootstraps the workspace (default
+On the first agent run, FoxFang bootstraps the workspace (default
 `~/.foxfang/workspace`):
 
 - Seeds `AGENTS.md`, `BOOTSTRAP.md`, `IDENTITY.md`, `USER.md`.

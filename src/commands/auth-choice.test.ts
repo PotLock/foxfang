@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import type { OAuthCredentials } from "@mariozechner/pi-ai";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveAgentDir } from "../agents/agent-scope.js";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import { resolveAgentModelPrimaryValue } from "../config/model-input.js";
 import type { ModelProviderConfig } from "../config/types.models.js";
 import { GOOGLE_GEMINI_DEFAULT_MODEL } from "../plugin-sdk/google.js";
@@ -20,7 +20,7 @@ import {
   createExitThrowingRuntime,
   createWizardPrompter,
   readAuthProfilesForAgent,
-  requireOpenClawAgentDir,
+  requireFoxFangAgentDir,
   setupAuthTestEnv,
 } from "./test-wizard-helpers.js";
 
@@ -66,7 +66,7 @@ function normalizeText(value: unknown): string {
 function providerConfigPatch(
   providerId: string,
   patch: Record<string, unknown>,
-): Partial<OpenClawConfig> {
+): Partial<FoxFangConfig> {
   const providers: Record<string, ModelProviderConfig> = {
     [providerId]: patch as ModelProviderConfig,
   };
@@ -91,7 +91,7 @@ function createApiKeyProvider(params: {
   expectedProviders?: string[];
   noteMessage?: string;
   noteTitle?: string;
-  applyConfig?: Partial<OpenClawConfig>;
+  applyConfig?: Partial<FoxFangConfig>;
 }): ProviderPlugin {
   return {
     id: params.providerId,
@@ -111,7 +111,7 @@ function createApiKeyProvider(params: {
         ...(params.expectedProviders ? { expectedProviders: params.expectedProviders } : {}),
         ...(params.noteMessage ? { noteMessage: params.noteMessage } : {}),
         ...(params.noteTitle ? { noteTitle: params.noteTitle } : {}),
-        ...(params.applyConfig ? { applyConfig: () => params.applyConfig as OpenClawConfig } : {}),
+        ...(params.applyConfig ? { applyConfig: () => params.applyConfig as FoxFangConfig } : {}),
         wizard: {
           choiceId: params.choiceId,
           choiceLabel: params.label,
@@ -196,7 +196,7 @@ function createDefaultProviderPlugins() {
             credential: buildApiKeyCredential("zai", token),
           },
         ],
-        configPatch: providerConfigPatch("zai", { baseUrl }) as OpenClawConfig,
+        configPatch: providerConfigPatch("zai", { baseUrl }) as FoxFangConfig,
         defaultModel: `zai/${modelId}`,
       };
     },
@@ -569,8 +569,8 @@ function createDefaultProviderPlugins() {
 
 describe("applyAuthChoice", () => {
   const lifecycle = createAuthTestLifecycle([
-    "OPENCLAW_STATE_DIR",
-    "OPENCLAW_AGENT_DIR",
+    "FOXFANG_STATE_DIR",
+    "FOXFANG_AGENT_DIR",
     "PI_CODING_AGENT_DIR",
     "ANTHROPIC_API_KEY",
     "OPENROUTER_API_KEY",
@@ -597,7 +597,7 @@ describe("applyAuthChoice", () => {
     if (activeStateDir) {
       await fs.rm(activeStateDir, { recursive: true, force: true });
     }
-    const env = await setupAuthTestEnv("openclaw-auth-");
+    const env = await setupAuthTestEnv("foxfang-auth-");
     activeStateDir = env.stateDir;
     lifecycle.setStateDir(env.stateDir);
   }
@@ -630,7 +630,7 @@ describe("applyAuthChoice", () => {
   async function readAuthProfiles() {
     return await readAuthProfilesForAgent<{
       profiles?: Record<string, StoredAuthProfile>;
-    }>(requireOpenClawAgentDir());
+    }>(requireFoxFangAgentDir());
   }
   async function readAuthProfile(profileId: string) {
     return (await readAuthProfiles()).profiles?.[profileId];
@@ -1365,7 +1365,7 @@ describe("applyAuthChoice", () => {
           providers: {
             filemain: {
               source: "file",
-              path: "/tmp/openclaw-missing-secrets.json",
+              path: "/tmp/foxfang-missing-secrets.json",
               mode: "json",
             },
           },
@@ -1638,7 +1638,7 @@ describe("applyAuthChoice", () => {
     await setupTempState();
     process.env.LITELLM_API_KEY = "sk-litellm-test"; // pragma: allowlist secret
 
-    const authProfilePath = authProfilePathForAgent(requireOpenClawAgentDir());
+    const authProfilePath = authProfilePathForAgent(requireFoxFangAgentDir());
     await fs.writeFile(
       authProfilePath,
       JSON.stringify(

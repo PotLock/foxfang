@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import { isRecord } from "../utils.js";
 import {
@@ -6,7 +6,7 @@ import {
   resolvePluginSnapshotCacheTtlMs,
   shouldUsePluginSnapshotCache,
 } from "./cache-controls.js";
-import { loadOpenClawPlugins, resolveRuntimePluginRegistry } from "./loader.js";
+import { loadFoxFangPlugins, resolveRuntimePluginRegistry } from "./loader.js";
 import type { PluginLoadOptions } from "./loader.js";
 import { createPluginLoaderLogger } from "./logger.js";
 import { loadPluginManifestRegistry, type PluginManifestRecord } from "./manifest-registry.js";
@@ -22,13 +22,13 @@ type WebSearchProviderSnapshotCacheEntry = {
   providers: PluginWebSearchProviderEntry[];
 };
 let webSearchProviderSnapshotCache = new WeakMap<
-  OpenClawConfig,
+  FoxFangConfig,
   WeakMap<NodeJS.ProcessEnv, Map<string, WebSearchProviderSnapshotCacheEntry>>
 >();
 
 function resetWebSearchProviderSnapshotCacheForTests() {
   webSearchProviderSnapshotCache = new WeakMap<
-    OpenClawConfig,
+    FoxFangConfig,
     WeakMap<NodeJS.ProcessEnv, Map<string, WebSearchProviderSnapshotCacheEntry>>
   >();
 }
@@ -37,7 +37,7 @@ export const __testing = {
   resetWebSearchProviderSnapshotCacheForTests,
 } as const;
 function buildWebSearchSnapshotCacheKey(params: {
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   workspaceDir?: string;
   bundledAllowlistCompat?: boolean;
   onlyPluginIds?: readonly string[];
@@ -125,7 +125,7 @@ function resolveWebSearchLoadOptions(params: {
 }
 
 function mapRegistryWebSearchProviders(params: {
-  registry: ReturnType<typeof loadOpenClawPlugins>;
+  registry: ReturnType<typeof loadFoxFangPlugins>;
   onlyPluginIds?: readonly string[];
 }): PluginWebSearchProviderEntry[] {
   const onlyPluginIdSet =
@@ -170,7 +170,7 @@ export function resolvePluginWebSearchProviders(params: {
   }
   const loadOptions = resolveWebSearchLoadOptions(params);
   const resolved = mapRegistryWebSearchProviders({
-    registry: loadOpenClawPlugins(loadOptions),
+    registry: loadFoxFangPlugins(loadOptions),
   });
   if (cacheOwnerConfig && shouldMemoizeSnapshot) {
     const ttlMs = resolvePluginSnapshotCacheTtlMs(env);

@@ -48,9 +48,9 @@ async function startServer(port: number, opts?: { openAiChatCompletionsEnabled?:
 }
 
 async function writeGatewayConfig(config: Record<string, unknown>) {
-  const configPath = process.env.OPENCLAW_CONFIG_PATH;
+  const configPath = process.env.FOXFANG_CONFIG_PATH;
   if (!configPath) {
-    throw new Error("OPENCLAW_CONFIG_PATH is required for gateway config tests");
+    throw new Error("FOXFANG_CONFIG_PATH is required for gateway config tests");
   }
   await fs.mkdir(path.dirname(configPath), { recursive: true });
   await fs.writeFile(configPath, JSON.stringify(config, null, 2), "utf-8");
@@ -76,7 +76,7 @@ async function expectChatCompletionsDisabled(
   const server = await start(port);
   try {
     const res = await postChatCompletions(port, {
-      model: "openclaw",
+      model: "foxfang",
       messages: [{ role: "user", content: "hi" }],
     });
     expect(res.status).toBe(404);
@@ -151,7 +151,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
     const expectInvalidRequestNoDispatch = async (messages: unknown[]) => {
       agentCommand.mockClear();
       const res = await postChatCompletions(port, {
-        model: "openclaw",
+        model: "foxfang",
         messages,
       });
       expect(res.status).toBe(400);
@@ -164,7 +164,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
     const postSyncUserMessage = async (message: string) => {
       const res = await postChatCompletions(port, {
         stream: false,
-        model: "openclaw",
+        model: "foxfang",
         messages: [{ role: "user", content: message }],
       });
       expect(res.status).toBe(200);
@@ -193,8 +193,8 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
 
       {
         await expectAgentSessionKeyMatch({
-          body: { model: "openclaw", messages: [{ role: "user", content: "hi" }] },
-          headers: { "x-openclaw-agent-id": "beta" },
+          body: { model: "foxfang", messages: [{ role: "user", content: "hi" }] },
+          headers: { "x-foxfang-agent-id": "beta" },
           matcher: /^agent:beta:/,
         });
       }
@@ -202,7 +202,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
       {
         await expectAgentSessionKeyMatch({
           body: {
-            model: "openclaw/beta",
+            model: "foxfang/beta",
             messages: [{ role: "user", content: "hi" }],
           },
           matcher: /^agent:beta:/,
@@ -212,7 +212,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
       {
         await expectAgentSessionKeyMatch({
           body: {
-            model: "openclaw/default",
+            model: "foxfang/default",
             messages: [{ role: "user", content: "hi" }],
           },
           matcher: /^agent:main:/,
@@ -223,10 +223,10 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
         mockAgentOnce([{ text: "hello" }]);
         const res = await postChatCompletions(
           port,
-          { model: "openclaw", messages: [{ role: "user", content: "hi" }] },
+          { model: "foxfang", messages: [{ role: "user", content: "hi" }] },
           {
-            "x-openclaw-agent-id": "beta",
-            "x-openclaw-session-key": "agent:beta:openai:custom",
+            "x-foxfang-agent-id": "beta",
+            "x-foxfang-session-key": "agent:beta:openai:custom",
           },
         );
         expect(res.status).toBe(200);
@@ -242,7 +242,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
         mockAgentOnce([{ text: "hello" }]);
         const res = await postChatCompletions(port, {
           user: "alice",
-          model: "openclaw",
+          model: "foxfang",
           messages: [{ role: "user", content: "hi" }],
         });
         expect(res.status).toBe(200);
@@ -259,11 +259,11 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
         const res = await postChatCompletions(
           port,
           {
-            model: "openclaw",
+            model: "foxfang",
             messages: [{ role: "user", content: "hi" }],
           },
           {
-            "x-openclaw-model": "openai/gpt-5.4",
+            "x-foxfang-model": "openai/gpt-5.4",
           },
         );
         expect(res.status).toBe(200);
@@ -287,11 +287,11 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
         const res = await postChatCompletions(
           port,
           {
-            model: "openclaw",
+            model: "foxfang",
             messages: [{ role: "user", content: "hi" }],
           },
           {
-            "x-openclaw-model": "gpt-5.4",
+            "x-foxfang-model": "gpt-5.4",
           },
         );
         expect(res.status).toBe(200);
@@ -311,7 +311,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
         const json = (await res.json()) as { error?: { type?: string; message?: string } };
         expect(json.error?.type).toBe("invalid_request_error");
         expect(json.error?.message).toBe(
-          "Invalid `model`. Use `openclaw` or `openclaw/<agentId>`.",
+          "Invalid `model`. Use `foxfang` or `foxfang/<agentId>`.",
         );
         expect(agentCommand).toHaveBeenCalledTimes(0);
       }
@@ -321,22 +321,22 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
         const res = await postChatCompletions(
           port,
           {
-            model: "openclaw",
+            model: "foxfang",
             messages: [{ role: "user", content: "hi" }],
           },
-          { "x-openclaw-model": "openai/" },
+          { "x-foxfang-model": "openai/" },
         );
         expect(res.status).toBe(400);
         const json = (await res.json()) as { error?: { type?: string; message?: string } };
         expect(json.error?.type).toBe("invalid_request_error");
-        expect(json.error?.message).toBe("Invalid `x-openclaw-model`.");
+        expect(json.error?.message).toBe("Invalid `x-foxfang-model`.");
         expect(agentCommand).toHaveBeenCalledTimes(0);
       }
 
       {
         mockAgentOnce([{ text: "hello" }]);
         const res = await postChatCompletions(port, {
-          model: "openclaw",
+          model: "foxfang",
           messages: [
             {
               role: "user",
@@ -358,7 +358,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
         const imageData = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAA";
         mockAgentOnce([{ text: "looks good" }]);
         const res = await postChatCompletions(port, {
-          model: "openclaw",
+          model: "foxfang",
           messages: [
             {
               role: "user",
@@ -386,7 +386,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
         const imageData = "QUJDRA==";
         mockAgentOnce([{ text: "supports data-uri params" }]);
         const res = await postChatCompletions(port, {
-          model: "openclaw",
+          model: "foxfang",
           messages: [
             {
               role: "user",
@@ -426,7 +426,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
       {
         mockAgentOnce([{ text: "I can see the image" }]);
         const res = await postChatCompletions(port, {
-          model: "openclaw",
+          model: "foxfang",
           messages: [
             {
               role: "user",
@@ -452,7 +452,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
       {
         mockAgentOnce([{ text: "follow up answer" }]);
         const res = await postChatCompletions(port, {
-          model: "openclaw",
+          model: "foxfang",
           messages: [
             {
               role: "user",
@@ -475,7 +475,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
       {
         mockAgentOnce([{ text: "latest image only" }]);
         const res = await postChatCompletions(port, {
-          model: "openclaw",
+          model: "foxfang",
           messages: [
             {
               role: "user",
@@ -507,7 +507,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
         const largeMessage = "x".repeat(1_200_000);
         mockAgentOnce([{ text: "accepted" }]);
         const res = await postChatCompletions(port, {
-          model: "openclaw",
+          model: "foxfang",
           messages: [{ role: "user", content: largeMessage }],
         });
         expect(res.status).toBe(200);
@@ -544,7 +544,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
       {
         mockAgentOnce([{ text: "I am Claude" }]);
         const res = await postChatCompletions(port, {
-          model: "openclaw",
+          model: "foxfang",
           messages: [
             { role: "system", content: "You are a helpful assistant." },
             { role: "user", content: "Hello, who are you?" },
@@ -565,7 +565,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
       {
         mockAgentOnce([{ text: "hello" }]);
         const res = await postChatCompletions(port, {
-          model: "openclaw",
+          model: "foxfang",
           messages: [
             { role: "system", content: "You are a helpful assistant." },
             { role: "user", content: "Hello" },
@@ -583,7 +583,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
       {
         mockAgentOnce([{ text: "hello" }]);
         const res = await postChatCompletions(port, {
-          model: "openclaw",
+          model: "foxfang",
           messages: [
             { role: "developer", content: "You are a helpful assistant." },
             { role: "user", content: "Hello" },
@@ -599,7 +599,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
       {
         mockAgentOnce([{ text: "ok" }]);
         const res = await postChatCompletions(port, {
-          model: "openclaw",
+          model: "foxfang",
           messages: [
             { role: "system", content: "You are a helpful assistant." },
             { role: "user", content: "What's the weather?" },
@@ -620,7 +620,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
       {
         mockAgentOnce([{ text: "tool follow-up ok" }]);
         const res = await postChatCompletions(port, {
-          model: "openclaw",
+          model: "foxfang",
           messages: [
             {
               role: "user",
@@ -663,12 +663,12 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
         const json = await postSyncUserMessage("hi");
         const choice0 = (json.choices as Array<Record<string, unknown>>)[0] ?? {};
         const msg = (choice0.message as Record<string, unknown> | undefined) ?? {};
-        expect(msg.content).toBe("No response from OpenClaw.");
+        expect(msg.content).toBe("No response from FoxFang.");
       }
 
       {
         const res = await postChatCompletions(port, {
-          model: "openclaw",
+          model: "foxfang",
           messages: [{ role: "system", content: "yo" }],
         });
         expect(res.status).toBe(400);
@@ -696,7 +696,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
           authorization: "Bearer wrong",
         };
         const body = {
-          model: "openclaw",
+          model: "foxfang",
           messages: [{ role: "user", content: "hi" }],
         };
 
@@ -740,7 +740,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
 
         const res = await postChatCompletions(port, {
           stream: true,
-          model: "openclaw",
+          model: "foxfang",
           messages: [{ role: "user", content: "hi" }],
         });
         expect(res.status).toBe(200);
@@ -774,7 +774,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
 
         const repeatedRes = await postChatCompletions(port, {
           stream: true,
-          model: "openclaw",
+          model: "foxfang",
           messages: [{ role: "user", content: "hi" }],
         });
         expect(repeatedRes.status).toBe(200);
@@ -799,7 +799,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
 
         const fallbackRes = await postChatCompletions(port, {
           stream: true,
-          model: "openclaw",
+          model: "foxfang",
           messages: [{ role: "user", content: "hi" }],
         });
         expect(fallbackRes.status).toBe(200);
@@ -814,7 +814,7 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
 
         const errorRes = await postChatCompletions(port, {
           stream: true,
-          model: "openclaw",
+          model: "foxfang",
           messages: [{ role: "user", content: "hi" }],
         });
         expect(errorRes.status).toBe(200);

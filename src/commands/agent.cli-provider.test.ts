@@ -9,7 +9,7 @@ import { FailoverError } from "../agents/failover-error.js";
 import { loadModelCatalog } from "../agents/model-catalog.js";
 import * as modelSelectionModule from "../agents/model-selection.js";
 import { runEmbeddedPiAgent } from "../agents/pi-embedded.js";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import * as configModule from "../config/config.js";
 import { clearSessionStoreCacheForTest } from "../config/sessions.js";
 import { resetAgentEventsForTest, resetAgentRunContextForTest } from "../infra/agent-events.js";
@@ -36,10 +36,10 @@ vi.mock("../logging/subsystem.js", () => {
 });
 
 vi.mock("../agents/workspace.js", () => ({
-  DEFAULT_AGENT_WORKSPACE_DIR: "/tmp/openclaw-workspace",
+  DEFAULT_AGENT_WORKSPACE_DIR: "/tmp/foxfang-workspace",
   DEFAULT_AGENTS_FILENAME: "AGENTS.md",
   DEFAULT_IDENTITY_FILENAME: "IDENTITY.md",
-  resolveDefaultAgentWorkspaceDir: () => "/tmp/openclaw-workspace",
+  resolveDefaultAgentWorkspaceDir: () => "/tmp/foxfang-workspace",
   ensureAgentWorkspace: vi.fn(async ({ dir }: { dir: string }) => ({ dir })),
 }));
 
@@ -73,25 +73,25 @@ const readConfigFileSnapshotForWriteSpy = vi.spyOn(configModule, "readConfigFile
 const runCliAgentSpy = vi.spyOn(cliRunnerModule, "runCliAgent");
 
 async function withTempHome<T>(fn: (home: string) => Promise<T>): Promise<T> {
-  return withTempHomeBase(fn, { prefix: "openclaw-agent-cli-" });
+  return withTempHomeBase(fn, { prefix: "foxfang-agent-cli-" });
 }
 
 function mockConfig(
   home: string,
   storePath: string,
-  agentOverrides?: Partial<NonNullable<NonNullable<OpenClawConfig["agents"]>["defaults"]>>,
+  agentOverrides?: Partial<NonNullable<NonNullable<FoxFangConfig["agents"]>["defaults"]>>,
 ) {
   const cfg = {
     agents: {
       defaults: {
         model: { primary: "anthropic/claude-opus-4-5" },
         models: { "anthropic/claude-opus-4-5": {} },
-        workspace: path.join(home, "openclaw"),
+        workspace: path.join(home, "foxfang"),
         ...agentOverrides,
       },
     },
     session: { store: storePath, mainKey: "main" },
-  } as OpenClawConfig;
+  } as FoxFangConfig;
   configSpy.mockReturnValue(cfg);
   return cfg;
 }
@@ -137,7 +137,7 @@ beforeEach(() => {
   vi.mocked(loadModelCatalog).mockResolvedValue([]);
   vi.mocked(modelSelectionModule.isCliProvider).mockImplementation(() => false);
   readConfigFileSnapshotForWriteSpy.mockResolvedValue({
-    snapshot: { valid: false, resolved: {} as OpenClawConfig },
+    snapshot: { valid: false, resolved: {} as FoxFangConfig },
     writeOptions: {},
   } as Awaited<ReturnType<typeof configModule.readConfigFileSnapshotForWrite>>);
 });

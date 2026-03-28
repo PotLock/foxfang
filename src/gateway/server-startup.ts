@@ -1,6 +1,6 @@
 import { getAcpSessionManager } from "../acp/control-plane/manager.js";
 import { ACP_SESSION_IDENTITY_RENDERER_VERSION } from "../acp/runtime/session-identifiers.js";
-import { resolveOpenClawAgentDir } from "../agents/agent-paths.js";
+import { resolveFoxFangAgentDir } from "../agents/agent-paths.js";
 import { DEFAULT_MODEL, DEFAULT_PROVIDER } from "../agents/defaults.js";
 import { loadModelCatalog } from "../agents/model-catalog.js";
 import {
@@ -8,7 +8,7 @@ import {
   resolveConfiguredModelRef,
   resolveHooksGmailModel,
 } from "../agents/model-selection.js";
-import { ensureOpenClawModelsJson } from "../agents/models-config.js";
+import { ensureFoxFangModelsJson } from "../agents/models-config.js";
 import { resolveModelAsync } from "../agents/pi-embedded-runner/model.js";
 import { resolveAgentSessionDirs } from "../agents/session-dirs.js";
 import { cleanStaleLockFiles } from "../agents/session-write-lock.js";
@@ -24,7 +24,7 @@ import {
 } from "../hooks/internal-hooks.js";
 import { loadInternalHooks } from "../hooks/loader.js";
 import { isTruthyEnvValue } from "../infra/env.js";
-import type { loadOpenClawPlugins } from "../plugins/loader.js";
+import type { loadFoxFangPlugins } from "../plugins/loader.js";
 import { type PluginServicesHandle, startPluginServices } from "../plugins/services.js";
 import {
   scheduleRestartSentinelWake,
@@ -47,9 +47,9 @@ async function prewarmConfiguredPrimaryModel(params: {
     defaultProvider: DEFAULT_PROVIDER,
     defaultModel: DEFAULT_MODEL,
   });
-  const agentDir = resolveOpenClawAgentDir();
+  const agentDir = resolveFoxFangAgentDir();
   try {
-    await ensureOpenClawModelsJson(params.cfg, agentDir);
+    await ensureFoxFangModelsJson(params.cfg, agentDir);
     const resolved = await resolveModelAsync(provider, model, agentDir, params.cfg, {
       retryTransientProviderRuntimeMiss: true,
     });
@@ -63,7 +63,7 @@ async function prewarmConfiguredPrimaryModel(params: {
 
 export async function startGatewaySidecars(params: {
   cfg: ReturnType<typeof loadConfig>;
-  pluginRegistry: ReturnType<typeof loadOpenClawPlugins>;
+  pluginRegistry: ReturnType<typeof loadFoxFangPlugins>;
   defaultWorkspaceDir: string;
   deps: CliDeps;
   startChannels: () => Promise<void>;
@@ -144,10 +144,10 @@ export async function startGatewaySidecars(params: {
   }
 
   // Launch configured channels so gateway replies via the surface the message came from.
-  // Tests can opt out via OPENCLAW_SKIP_CHANNELS (or legacy OPENCLAW_SKIP_PROVIDERS).
+  // Tests can opt out via FOXFANG_SKIP_CHANNELS (or legacy FOXFANG_SKIP_PROVIDERS).
   const skipChannels =
-    isTruthyEnvValue(process.env.OPENCLAW_SKIP_CHANNELS) ||
-    isTruthyEnvValue(process.env.OPENCLAW_SKIP_PROVIDERS);
+    isTruthyEnvValue(process.env.FOXFANG_SKIP_CHANNELS) ||
+    isTruthyEnvValue(process.env.FOXFANG_SKIP_PROVIDERS);
   if (!skipChannels) {
     try {
       await prewarmConfiguredPrimaryModel({
@@ -160,7 +160,7 @@ export async function startGatewaySidecars(params: {
     }
   } else {
     params.logChannels.info(
-      "skipping channel start (OPENCLAW_SKIP_CHANNELS=1 or OPENCLAW_SKIP_PROVIDERS=1)",
+      "skipping channel start (FOXFANG_SKIP_CHANNELS=1 or FOXFANG_SKIP_PROVIDERS=1)",
     );
   }
 

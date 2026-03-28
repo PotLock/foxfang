@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { resolveApiKeyForProvider, resolveEnvApiKey } from "../../src/agents/model-auth.js";
-import type { OpenClawConfig } from "../../src/config/config.js";
+import type { FoxFangConfig } from "../../src/config/config.js";
 import { resolveAgentModelPrimaryValue } from "../../src/config/model-input.js";
 import {
   buildKilocodeModelDefinition,
@@ -20,7 +20,7 @@ import {
   KILOCODE_DEFAULT_MODEL_REF,
 } from "./onboard.js";
 
-const emptyCfg: OpenClawConfig = {};
+const emptyCfg: FoxFangConfig = {};
 const KILOCODE_MODEL_IDS = ["kilo/auto"];
 
 describe("Kilo Gateway provider config", () => {
@@ -104,7 +104,7 @@ describe("Kilo Gateway provider config", () => {
     });
 
     it("preserves existing alias if already set", () => {
-      const cfg: OpenClawConfig = {
+      const cfg: FoxFangConfig = {
         agents: {
           defaults: {
             models: {
@@ -119,7 +119,7 @@ describe("Kilo Gateway provider config", () => {
     });
 
     it("does not change the default model selection", () => {
-      const cfg: OpenClawConfig = {
+      const cfg: FoxFangConfig = {
         agents: {
           defaults: {
             model: { primary: "openai/gpt-5" },
@@ -175,7 +175,7 @@ describe("Kilo Gateway provider config", () => {
     });
 
     it("resolves the kilocode api key via resolveApiKeyForProvider", async () => {
-      const agentDir = mkdtempSync(join(tmpdir(), "openclaw-test-"));
+      const agentDir = mkdtempSync(join(tmpdir(), "foxfang-test-"));
       const envSnapshot = captureEnv(["KILOCODE_API_KEY"]);
       process.env.KILOCODE_API_KEY = "kilo-provider-test-key";
 

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../src/config/types.openclaw.js";
+import type { FoxFangConfig } from "../../src/config/types.foxfang.js";
 import { createTestPluginApi } from "../../test/helpers/extensions/plugin-api.js";
 import { getAccessTokenResultAsync } from "./cli.js";
 import plugin from "./index.js";
@@ -29,9 +29,9 @@ vi.mock("node:child_process", async () => {
   };
 });
 
-vi.mock("openclaw/plugin-sdk/provider-auth", async () => {
-  const actual = await vi.importActual<typeof import("openclaw/plugin-sdk/provider-auth")>(
-    "openclaw/plugin-sdk/provider-auth",
+vi.mock("foxfang/plugin-sdk/provider-auth", async () => {
+  const actual = await vi.importActual<typeof import("foxfang/plugin-sdk/provider-auth")>(
+    "foxfang/plugin-sdk/provider-auth",
   );
   return {
     ...actual,
@@ -121,7 +121,7 @@ function buildFoundryConfig(params?: {
         },
       },
     },
-  } satisfies OpenClawConfig;
+  } satisfies FoxFangConfig;
 }
 
 function buildEntraProfileStore(
@@ -360,7 +360,7 @@ describe("microsoft-foundry plugin", () => {
 
   it("keeps other configured Foundry models when switching the selected model", async () => {
     const provider = registerProvider();
-    const config: OpenClawConfig = {
+    const config: FoxFangConfig = {
       auth: {
         profiles: {
           "microsoft-foundry:default": {
@@ -482,7 +482,7 @@ describe("microsoft-foundry plugin", () => {
 
   it("keeps persisted response-mode routing for custom deployment aliases", async () => {
     const provider = registerProvider();
-    const config: OpenClawConfig = {
+    const config: FoxFangConfig = {
       auth: {
         profiles: {
           "microsoft-foundry:entra": {

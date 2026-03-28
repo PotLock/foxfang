@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../src/config/config.js";
 import * as directoryLive from "./directory-live.js";
 import {
   resolveDiscordGroupRequireMention,
@@ -72,7 +72,7 @@ describe("resolveDiscordChannelId", () => {
 });
 
 describe("resolveDiscordTarget", () => {
-  const cfg = { channels: { discord: {} } } as OpenClawConfig;
+  const cfg = { channels: { discord: {} } } as FoxFangConfig;
 
   beforeEach(() => {
     vi.restoreAllMocks();

@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
 import {
   DEFAULT_CACHE_TTL_MINUTES,
   markdownToText,
@@ -8,8 +8,8 @@ import {
   resolveCacheTtlMs,
   truncateText,
   writeCache,
-} from "openclaw/plugin-sdk/provider-web-search";
-import { wrapExternalContent, wrapWebContent } from "openclaw/plugin-sdk/security-runtime";
+} from "foxfang/plugin-sdk/provider-web-search";
+import { wrapExternalContent, wrapWebContent } from "foxfang/plugin-sdk/security-runtime";
 import {
   resolveFirecrawlApiKey,
   resolveFirecrawlBaseUrl,
@@ -40,7 +40,7 @@ type FirecrawlSearchItem = {
 };
 
 export type FirecrawlSearchParams = {
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   query: string;
   count?: number;
   timeoutSeconds?: number;
@@ -50,7 +50,7 @@ export type FirecrawlSearchParams = {
 };
 
 export type FirecrawlScrapeParams = {
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   url: string;
   extractMode: "markdown" | "text";
   maxChars?: number;

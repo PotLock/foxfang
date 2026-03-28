@@ -5,12 +5,12 @@ export type {
   ChannelMessageActionName,
   ChannelMeta,
   ChannelOutboundAdapter,
-  OpenClawConfig as ClawdbotConfig,
-  OpenClawConfig,
-  OpenClawPluginApi,
+  FoxFangConfig as ClawdbotConfig,
+  FoxFangConfig,
+  FoxFangPluginApi,
   PluginRuntime,
   RuntimeEnv,
-} from "openclaw/plugin-sdk/feishu";
+} from "foxfang/plugin-sdk/feishu";
 export {
   DEFAULT_ACCOUNT_ID,
   PAIRING_APPROVED_MESSAGE,
@@ -18,10 +18,10 @@ export {
   buildProbeChannelStatusSummary,
   createActionGate,
   createDefaultChannelRuntimeState,
-} from "openclaw/plugin-sdk/feishu";
-export * from "openclaw/plugin-sdk/feishu";
+} from "foxfang/plugin-sdk/feishu";
+export * from "foxfang/plugin-sdk/feishu";
 export {
   isRequestBodyLimitError,
   readRequestBodyWithLimit,
   requestBodyErrorToText,
-} from "openclaw/plugin-sdk/webhook-ingress";
+} from "foxfang/plugin-sdk/webhook-ingress";

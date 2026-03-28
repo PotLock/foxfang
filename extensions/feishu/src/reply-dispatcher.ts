@@ -2,7 +2,7 @@ import {
   resolveSendableOutboundReplyParts,
   resolveTextChunksWithFallback,
   sendMediaWithLeadingCaption,
-} from "openclaw/plugin-sdk/reply-payload";
+} from "foxfang/plugin-sdk/reply-payload";
 import {
   createChannelReplyPipeline,
   createReplyPrefixContext,

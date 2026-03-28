@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { resolveAgentWorkspaceDir, resolveDefaultAgentId } from "../agents/agent-scope.js";
-import { createOpenClawTools } from "../agents/openclaw-tools.js";
+import { createFoxFangTools } from "../agents/foxfang-tools.js";
 import { runBeforeToolCallHook } from "../agents/pi-tools.before-tool-call.js";
 import { resolveToolLoopDetectionConfig } from "../agents/pi-tools.js";
 import {
@@ -211,11 +211,11 @@ export async function handleToolsInvokeHttpRequest(
 
   // Resolve message channel/account hints (optional headers) for policy inheritance.
   const messageChannel = normalizeMessageChannel(
-    getHeader(req, "x-openclaw-message-channel") ?? "",
+    getHeader(req, "x-foxfang-message-channel") ?? "",
   );
-  const accountId = getHeader(req, "x-openclaw-account-id")?.trim() || undefined;
-  const agentTo = getHeader(req, "x-openclaw-message-to")?.trim() || undefined;
-  const agentThreadId = getHeader(req, "x-openclaw-thread-id")?.trim() || undefined;
+  const accountId = getHeader(req, "x-foxfang-account-id")?.trim() || undefined;
+  const agentTo = getHeader(req, "x-foxfang-message-to")?.trim() || undefined;
+  const agentThreadId = getHeader(req, "x-foxfang-thread-id")?.trim() || undefined;
 
   const {
     agentId,
@@ -248,7 +248,7 @@ export async function handleToolsInvokeHttpRequest(
   const workspaceDir = resolveAgentWorkspaceDir(cfg, agentId ?? resolveDefaultAgentId(cfg));
 
   // Build tool list (core + plugin tools).
-  const allTools = createOpenClawTools({
+  const allTools = createFoxFangTools({
     agentSessionKey: sessionKey,
     agentChannel: messageChannel ?? undefined,
     agentAccountId: accountId,

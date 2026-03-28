@@ -19,7 +19,7 @@ import {
   resolveWhatsAppGroupRequireMention,
   resolveWhatsAppGroupToolPolicy,
 } from "./group-policy.js";
-import type { OpenClawConfig } from "./runtime-api.js";
+import type { FoxFangConfig } from "./runtime-api.js";
 
 const hoisted = vi.hoisted(() => ({
   sendPollWhatsApp: vi.fn(async () => ({ messageId: "wa-poll-1", toJid: "1555@s.whatsapp.net" })),
@@ -28,7 +28,7 @@ const hoisted = vi.hoisted(() => ({
   listWhatsAppAccountIds: vi.fn(() => [] as string[]),
   resolveDefaultWhatsAppAccountId: vi.fn(() => DEFAULT_ACCOUNT_ID),
   resolveWhatsAppAuthDir: vi.fn(() => ({
-    authDir: "/tmp/openclaw-whatsapp-test",
+    authDir: "/tmp/foxfang-whatsapp-test",
   })),
 }));
 
@@ -49,9 +49,9 @@ vi.mock("./login.js", () => ({
   loginWeb: hoisted.loginWeb,
 }));
 
-vi.mock("openclaw/plugin-sdk/setup", async () => {
-  const actual = await vi.importActual<typeof import("openclaw/plugin-sdk/setup")>(
-    "openclaw/plugin-sdk/setup",
+vi.mock("foxfang/plugin-sdk/setup", async () => {
+  const actual = await vi.importActual<typeof import("foxfang/plugin-sdk/setup")>(
+    "foxfang/plugin-sdk/setup",
   );
   return {
     ...actual,
@@ -209,7 +209,7 @@ describe("whatsapp directory", () => {
           },
         },
       },
-    } as unknown as OpenClawConfig;
+    } as unknown as FoxFangConfig;
 
     const directory = expectDirectorySurface(whatsappPlugin.directory);
 
@@ -259,7 +259,7 @@ describe("whatsapp setup wizard", () => {
     hoisted.resolveDefaultWhatsAppAccountId.mockReset();
     hoisted.resolveDefaultWhatsAppAccountId.mockReturnValue(DEFAULT_ACCOUNT_ID);
     hoisted.resolveWhatsAppAuthDir.mockReset();
-    hoisted.resolveWhatsAppAuthDir.mockReturnValue({ authDir: "/tmp/openclaw-whatsapp-test" });
+    hoisted.resolveWhatsAppAuthDir.mockReturnValue({ authDir: "/tmp/foxfang-whatsapp-test" });
   });
 
   it("applies owner allowlist when forceAllowFrom is enabled", async () => {
@@ -376,7 +376,7 @@ describe("whatsapp setup wizard", () => {
 
     expect(hoisted.loginWeb).not.toHaveBeenCalled();
     expect(harness.note).not.toHaveBeenCalledWith(
-      expect.stringContaining("openclaw channels login"),
+      expect.stringContaining("foxfang channels login"),
       "WhatsApp",
     );
   });
@@ -392,7 +392,7 @@ describe("whatsapp setup wizard", () => {
     });
 
     expect(harness.note).toHaveBeenCalledWith(
-      expect.stringContaining("openclaw channels login"),
+      expect.stringContaining("foxfang channels login"),
       "WhatsApp",
     );
   });

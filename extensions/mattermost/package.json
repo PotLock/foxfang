@@ -1,24 +1,24 @@
 {
-  "name": "@openclaw/mattermost",
+  "name": "@foxfang/mattermost",
   "version": "2026.3.27",
-  "description": "OpenClaw Mattermost channel plugin",
+  "description": "FoxFang Mattermost channel plugin",
   "type": "module",
   "dependencies": {
     "@sinclair/typebox": "0.34.48",
     "ws": "^8.20.0"
   },
   "devDependencies": {
-    "openclaw": "workspace:*"
+    "foxfang": "workspace:*"
   },
   "peerDependencies": {
-    "openclaw": ">=2026.3.27"
+    "foxfang": ">=2026.3.27"
   },
   "peerDependenciesMeta": {
-    "openclaw": {
+    "foxfang": {
       "optional": true
     }
   },
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ],
@@ -33,7 +33,7 @@
       "order": 65
     },
     "install": {
-      "npmSpec": "@openclaw/mattermost",
+      "npmSpec": "@foxfang/mattermost",
       "localPath": "extensions/mattermost",
       "defaultChoice": "npm",
       "minHostVersion": ">=2026.3.27"

@@ -84,7 +84,7 @@ describe("doctor matrix provider helpers", () => {
   });
 
   it("warns on stale custom Matrix plugin paths", async () => {
-    const missingPath = path.join(tmpdir(), "openclaw-matrix-missing-provider-test");
+    const missingPath = path.join(tmpdir(), "foxfang-matrix-missing-provider-test");
     await fs.rm(missingPath, { recursive: true, force: true });
 
     const warnings = await collectMatrixInstallPathWarnings({
@@ -101,8 +101,8 @@ describe("doctor matrix provider helpers", () => {
 
     expect(warnings[0]).toContain("custom path that no longer exists");
     expect(warnings[0]).toContain(missingPath);
-    expect(warnings[1]).toContain("openclaw plugins install @openclaw/matrix");
-    expect(warnings[2]).toContain("openclaw plugins install ./extensions/matrix");
+    expect(warnings[1]).toContain("foxfang plugins install @foxfang/matrix");
+    expect(warnings[2]).toContain("foxfang plugins install ./extensions/matrix");
   });
 
   it("summarizes matrix repair messaging", async () => {
@@ -141,7 +141,7 @@ describe("doctor matrix provider helpers", () => {
   });
 
   it("removes stale Matrix plugin config when install path is missing", async () => {
-    const missingPath = path.join(tmpdir(), "openclaw-matrix-stale-cleanup-test-" + Date.now());
+    const missingPath = path.join(tmpdir(), "foxfang-matrix-stale-cleanup-test-" + Date.now());
     await fs.rm(missingPath, { recursive: true, force: true });
 
     const cfg = {

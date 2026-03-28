@@ -1,1 +1,1 @@
-export * from "openclaw/plugin-sdk/speech-core";
+export * from "foxfang/plugin-sdk/speech-core";

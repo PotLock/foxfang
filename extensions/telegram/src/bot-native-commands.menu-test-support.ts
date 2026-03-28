@@ -1,7 +1,7 @@
-import type { RuntimeEnv } from "openclaw/plugin-sdk/runtime-env";
+import type { RuntimeEnv } from "foxfang/plugin-sdk/runtime-env";
 import { expect, vi } from "vitest";
 import type { SkillCommandSpec } from "../../../src/agents/skills.js";
-import type { OpenClawConfig } from "../runtime-api.js";
+import type { FoxFangConfig } from "../runtime-api.js";
 import type { TelegramBotDeps } from "./bot-deps.js";
 import {
   createNativeCommandTestParams as createBaseNativeCommandTestParams,
@@ -23,7 +23,7 @@ type CreateCommandBotResult = {
 
 const skillCommandMocks = vi.hoisted(() => ({
   listSkillCommandsForAgents: vi.fn<
-    (params: { cfg: OpenClawConfig; agentIds?: string[] }) => SkillCommandSpec[]
+    (params: { cfg: FoxFangConfig; agentIds?: string[] }) => SkillCommandSpec[]
   >(() => []),
 }));
 
@@ -34,8 +34,8 @@ const deliveryMocks = vi.hoisted(() => ({
 export const listSkillCommandsForAgents = skillCommandMocks.listSkillCommandsForAgents;
 export const deliverReplies = deliveryMocks.deliverReplies;
 
-vi.mock("openclaw/plugin-sdk/command-auth", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/command-auth")>();
+vi.mock("foxfang/plugin-sdk/command-auth", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/command-auth")>();
   return {
     ...actual,
     listSkillCommandsForAgents,
@@ -83,7 +83,7 @@ export function createCommandBot(): CreateCommandBotResult {
 }
 
 export function createNativeCommandTestParams(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   params: Partial<RegisterTelegramNativeCommandsParams> = {},
 ): RegisterTelegramNativeCommandsParams {
   const dispatchResult: Awaited<

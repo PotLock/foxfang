@@ -1,9 +1,9 @@
 import { loadGeneratedBundledPluginEntries } from "../generated/bundled-plugin-entries.generated.js";
-import type { OpenClawPluginDefinition } from "./types.js";
+import type { FoxFangPluginDefinition } from "./types.js";
 
-type BundledRegistrablePlugin = OpenClawPluginDefinition & {
+type BundledRegistrablePlugin = FoxFangPluginDefinition & {
   id: string;
-  register: NonNullable<OpenClawPluginDefinition["register"]>;
+  register: NonNullable<FoxFangPluginDefinition["register"]>;
 };
 
 export const BUNDLED_PLUGIN_ENTRIES =

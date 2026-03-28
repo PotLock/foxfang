@@ -1,7 +1,7 @@
-import type { OpenClawConfig } from "../../config/config.js";
+import type { FoxFangConfig } from "../../config/config.js";
 
 export function buildEmbeddedMessageActionDiscoveryInput(params: {
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   channel: string;
   currentChannelId?: string | null;
   currentThreadTs?: string | null;

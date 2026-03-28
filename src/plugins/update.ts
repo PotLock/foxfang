@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import {
   expectedIntegrityForUpdate,
   readInstalledPackageVersion,
@@ -32,7 +32,7 @@ export type PluginUpdateOutcome = {
 };
 
 export type PluginUpdateSummary = {
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   changed: boolean;
   outcomes: PluginUpdateOutcome[];
 };
@@ -55,7 +55,7 @@ export type PluginChannelSyncSummary = {
 };
 
 export type PluginChannelSyncResult = {
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   changed: boolean;
   summary: PluginChannelSyncSummary;
 };
@@ -171,7 +171,7 @@ function replacePluginIdInList(
   return next;
 }
 
-function migratePluginConfigId(cfg: OpenClawConfig, fromId: string, toId: string): OpenClawConfig {
+function migratePluginConfigId(cfg: FoxFangConfig, fromId: string, toId: string): FoxFangConfig {
   if (fromId === toId) {
     return cfg;
   }
@@ -253,7 +253,7 @@ function createPluginUpdateIntegrityDriftHandler(params: {
 }
 
 export async function updateNpmInstalledPlugins(params: {
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   logger?: PluginUpdateLogger;
   pluginIds?: string[];
   skipIds?: Set<string>;
@@ -594,7 +594,7 @@ export async function updateNpmInstalledPlugins(params: {
 }
 
 export async function syncPluginsForUpdateChannel(params: {
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   channel: UpdateChannel;
   workspaceDir?: string;
   env?: NodeJS.ProcessEnv;

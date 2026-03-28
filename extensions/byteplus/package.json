@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/byteplus-provider",
+  "name": "@foxfang/byteplus-provider",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw BytePlus provider plugin",
+  "description": "FoxFang BytePlus provider plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

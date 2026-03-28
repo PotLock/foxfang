@@ -1,24 +1,24 @@
-import { createScopedDmSecurityResolver } from "openclaw/plugin-sdk/channel-config-helpers";
-import { createAccountStatusSink } from "openclaw/plugin-sdk/channel-lifecycle";
-import { createPairingPrefixStripper } from "openclaw/plugin-sdk/channel-pairing";
+import { createScopedDmSecurityResolver } from "foxfang/plugin-sdk/channel-config-helpers";
+import { createAccountStatusSink } from "foxfang/plugin-sdk/channel-lifecycle";
+import { createPairingPrefixStripper } from "foxfang/plugin-sdk/channel-pairing";
 import {
   createEmptyChannelResult,
   createRawChannelSendResultAdapter,
-} from "openclaw/plugin-sdk/channel-send-result";
-import { createStaticReplyToModeResolver } from "openclaw/plugin-sdk/conversation-runtime";
-import { createChatChannelPlugin } from "openclaw/plugin-sdk/core";
-import { buildPassiveProbedChannelStatusSummary } from "openclaw/plugin-sdk/extension-shared";
+} from "foxfang/plugin-sdk/channel-send-result";
+import { createStaticReplyToModeResolver } from "foxfang/plugin-sdk/conversation-runtime";
+import { createChatChannelPlugin } from "foxfang/plugin-sdk/core";
+import { buildPassiveProbedChannelStatusSummary } from "foxfang/plugin-sdk/extension-shared";
 import {
   createAsyncComputedAccountStatusAdapter,
   createDefaultChannelRuntimeState,
-} from "openclaw/plugin-sdk/status-helpers";
+} from "foxfang/plugin-sdk/status-helpers";
 import type {
   ChannelAccountSnapshot,
   ChannelDirectoryEntry,
   ChannelGroupContext,
   ChannelMessageActionAdapter,
   ChannelPlugin,
-  OpenClawConfig,
+  FoxFangConfig,
   GroupToolPolicyConfig,
 } from "../runtime-api.js";
 import {
@@ -100,11 +100,11 @@ function resolveZalouserQrProfile(accountId?: string | null): string {
   return normalized;
 }
 
-function resolveZalouserOutboundChunkMode(cfg: OpenClawConfig, accountId?: string) {
+function resolveZalouserOutboundChunkMode(cfg: FoxFangConfig, accountId?: string) {
   return getZalouserRuntime().channel.text.resolveChunkMode(cfg, "zalouser", accountId);
 }
 
-function resolveZalouserOutboundTextChunkLimit(cfg: OpenClawConfig, accountId?: string) {
+function resolveZalouserOutboundTextChunkLimit(cfg: FoxFangConfig, accountId?: string) {
   return getZalouserRuntime().channel.text.resolveTextChunkLimit(cfg, "zalouser", accountId, {
     fallbackLimit: ZALOUSER_TEXT_CHUNK_LIMIT,
   });

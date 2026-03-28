@@ -1,16 +1,16 @@
 import { Command } from "commander";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 
 const mocks = vi.hoisted(() => ({
   memoryRegister: vi.fn(),
   otherRegister: vi.fn(),
-  loadOpenClawPlugins: vi.fn(),
+  loadFoxFangPlugins: vi.fn(),
   applyPluginAutoEnable: vi.fn(),
 }));
 
 vi.mock("./loader.js", () => ({
-  loadOpenClawPlugins: (...args: unknown[]) => mocks.loadOpenClawPlugins(...args),
+  loadFoxFangPlugins: (...args: unknown[]) => mocks.loadFoxFangPlugins(...args),
 }));
 
 vi.mock("../config/plugin-auto-enable.js", () => ({
@@ -46,8 +46,8 @@ function createCliRegistry() {
   };
 }
 
-function expectPluginLoaderConfig(config: OpenClawConfig) {
-  expect(mocks.loadOpenClawPlugins).toHaveBeenCalledWith(
+function expectPluginLoaderConfig(config: FoxFangConfig) {
+  expect(mocks.loadFoxFangPlugins).toHaveBeenCalledWith(
     expect.objectContaining({
       config,
     }),
@@ -58,7 +58,7 @@ function createAutoEnabledCliFixture() {
   const rawConfig = {
     plugins: {},
     channels: { demo: { enabled: true } },
-  } as OpenClawConfig;
+  } as FoxFangConfig;
   const autoEnabledConfig = {
     ...rawConfig,
     plugins: {
@@ -66,13 +66,13 @@ function createAutoEnabledCliFixture() {
         demo: { enabled: true },
       },
     },
-  } as OpenClawConfig;
+  } as FoxFangConfig;
   return { rawConfig, autoEnabledConfig };
 }
 
 function expectAutoEnabledCliLoad(params: {
-  rawConfig: OpenClawConfig;
-  autoEnabledConfig: OpenClawConfig;
+  rawConfig: FoxFangConfig;
+  autoEnabledConfig: FoxFangConfig;
 }) {
   expect(mocks.applyPluginAutoEnable).toHaveBeenCalledWith({
     config: params.rawConfig,
@@ -81,7 +81,7 @@ function expectAutoEnabledCliLoad(params: {
   expectPluginLoaderConfig(params.autoEnabledConfig);
 }
 
-function expectCliRegistrarCalledWithConfig(config: OpenClawConfig) {
+function expectCliRegistrarCalledWithConfig(config: FoxFangConfig) {
   expect(mocks.memoryRegister).toHaveBeenCalledWith(
     expect.objectContaining({
       config,
@@ -91,7 +91,7 @@ function expectCliRegistrarCalledWithConfig(config: OpenClawConfig) {
 
 function runRegisterPluginCliCommands(params: {
   existingCommandName?: string;
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   env?: NodeJS.ProcessEnv;
 }) {
   const program = createProgram(params.existingCommandName);
@@ -103,8 +103,8 @@ describe("registerPluginCliCommands", () => {
   beforeEach(() => {
     mocks.memoryRegister.mockClear();
     mocks.otherRegister.mockClear();
-    mocks.loadOpenClawPlugins.mockReset();
-    mocks.loadOpenClawPlugins.mockReturnValue(createCliRegistry());
+    mocks.loadFoxFangPlugins.mockReset();
+    mocks.loadFoxFangPlugins.mockReturnValue(createCliRegistry());
     mocks.applyPluginAutoEnable.mockReset();
     mocks.applyPluginAutoEnable.mockImplementation(({ config }) => ({ config, changes: [] }));
   });
@@ -112,7 +112,7 @@ describe("registerPluginCliCommands", () => {
   it("skips plugin CLI registrars when commands already exist", () => {
     runRegisterPluginCliCommands({
       existingCommandName: "memory",
-      config: {} as OpenClawConfig,
+      config: {} as FoxFangConfig,
     });
 
     expect(mocks.memoryRegister).not.toHaveBeenCalled();
@@ -120,14 +120,14 @@ describe("registerPluginCliCommands", () => {
   });
 
   it("forwards an explicit env to plugin loading", () => {
-    const env = { OPENCLAW_HOME: "/srv/openclaw-home" } as NodeJS.ProcessEnv;
+    const env = { FOXFANG_HOME: "/srv/foxfang-home" } as NodeJS.ProcessEnv;
 
     runRegisterPluginCliCommands({
-      config: {} as OpenClawConfig,
+      config: {} as FoxFangConfig,
       env,
     });
 
-    expect(mocks.loadOpenClawPlugins).toHaveBeenCalledWith(
+    expect(mocks.loadFoxFangPlugins).toHaveBeenCalledWith(
       expect.objectContaining({
         env,
       }),

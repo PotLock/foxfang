@@ -1,20 +1,20 @@
 {
-  "name": "@openclaw/nextcloud-talk",
+  "name": "@foxfang/nextcloud-talk",
   "version": "2026.3.27",
-  "description": "OpenClaw Nextcloud Talk channel plugin",
+  "description": "FoxFang Nextcloud Talk channel plugin",
   "type": "module",
   "devDependencies": {
-    "openclaw": "workspace:*"
+    "foxfang": "workspace:*"
   },
   "peerDependencies": {
-    "openclaw": ">=2026.3.27"
+    "foxfang": ">=2026.3.27"
   },
   "peerDependenciesMeta": {
-    "openclaw": {
+    "foxfang": {
       "optional": true
     }
   },
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ],
@@ -34,7 +34,7 @@
       "quickstartAllowFrom": true
     },
     "install": {
-      "npmSpec": "@openclaw/nextcloud-talk",
+      "npmSpec": "@foxfang/nextcloud-talk",
       "localPath": "extensions/nextcloud-talk",
       "defaultChoice": "npm",
       "minHostVersion": ">=2026.3.27"

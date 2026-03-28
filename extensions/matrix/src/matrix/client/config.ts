@@ -1,7 +1,7 @@
 import {
   coerceSecretRef,
   resolveConfiguredSecretInputString,
-} from "openclaw/plugin-sdk/config-runtime";
+} from "foxfang/plugin-sdk/config-runtime";
 import {
   requiresExplicitMatrixDefaultAccount,
   resolveMatrixDefaultOrOnlyAccountId,
@@ -758,7 +758,7 @@ export async function resolveMatrixAuth(params?: {
     identifier: { type: "m.id.user", user: resolved.userId },
     password,
     device_id: resolved.deviceId,
-    initial_device_display_name: resolved.deviceName ?? "OpenClaw Gateway",
+    initial_device_display_name: resolved.deviceName ?? "FoxFang Gateway",
   })) as {
     access_token?: string;
     user_id?: string;

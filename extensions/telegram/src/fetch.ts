@@ -1,12 +1,12 @@
 import * as dns from "node:dns";
-import type { TelegramNetworkConfig } from "openclaw/plugin-sdk/config-runtime";
+import type { TelegramNetworkConfig } from "foxfang/plugin-sdk/config-runtime";
 import {
   createPinnedLookup,
   hasEnvHttpProxyConfigured,
   resolveFetch,
   type PinnedDispatcherPolicy,
-} from "openclaw/plugin-sdk/fetch-runtime";
-import { createSubsystemLogger } from "openclaw/plugin-sdk/runtime-env";
+} from "foxfang/plugin-sdk/fetch-runtime";
+import { createSubsystemLogger } from "foxfang/plugin-sdk/runtime-env";
 import { Agent, EnvHttpProxyAgent, ProxyAgent, fetch as undiciFetch } from "undici";
 import {
   resolveTelegramAutoSelectFamilyDecision,

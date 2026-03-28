@@ -7,9 +7,9 @@ import {
   ReplyRuntimeConfigSchemaShape,
   ToolPolicySchema,
   requireOpenAllowFrom,
-} from "openclaw/plugin-sdk/channel-config-schema";
-import { requireChannelOpenAllowFrom } from "openclaw/plugin-sdk/extension-shared";
-import { z } from "openclaw/plugin-sdk/zod";
+} from "foxfang/plugin-sdk/channel-config-schema";
+import { requireChannelOpenAllowFrom } from "foxfang/plugin-sdk/extension-shared";
+import { z } from "foxfang/plugin-sdk/zod";
 import { buildSecretInputSchema } from "./secret-input.js";
 
 export const NextcloudTalkRoomSchema = z

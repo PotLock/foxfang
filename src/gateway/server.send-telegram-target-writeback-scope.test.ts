@@ -6,7 +6,7 @@ import {
   clearConfigCache,
   loadConfig,
   writeConfigFile,
-  type OpenClawConfig,
+  type FoxFangConfig,
 } from "../config/config.js";
 import { loadCronStore, saveCronStore } from "../cron/store.js";
 import type { CronStoreFile } from "../cron/types.js";
@@ -67,7 +67,7 @@ async function withTelegramGatewayWritebackFixture(
   }) => Promise<void>,
 ): Promise<void> {
   const previousRegistry = getActivePluginRegistry() ?? createEmptyPluginRegistry();
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "openclaw-telegram-writeback-"));
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "foxfang-telegram-writeback-"));
   const cronStorePath = path.join(tempDir, "cron", "jobs.json");
   const getChatMock = vi.fn();
   const sendMessageMock = vi.fn();
@@ -152,7 +152,7 @@ async function withTelegramGatewayWritebackFixture(
       agents: {
         defaults: {
           model: "gpt-5.4",
-          workspace: path.join(process.env.HOME ?? ".", "openclaw"),
+          workspace: path.join(process.env.HOME ?? ".", "foxfang"),
         },
       },
       channels: {
@@ -164,7 +164,7 @@ async function withTelegramGatewayWritebackFixture(
       cron: {
         store: cronStorePath,
       },
-    } satisfies OpenClawConfig);
+    } satisfies FoxFangConfig);
     clearConfigCache();
 
     await run({

@@ -11,7 +11,7 @@ import { createDefaultDeps } from "../cli/deps.js";
 import { isRestartEnabled } from "../config/commands.js";
 import {
   type ConfigFileSnapshot,
-  type OpenClawConfig,
+  type FoxFangConfig,
   applyConfigOverrides,
   isNixMode,
   loadConfig,
@@ -35,7 +35,7 @@ import { createExecApprovalForwarder } from "../infra/exec-approval-forwarder.js
 import { onHeartbeatEvent } from "../infra/heartbeat-events.js";
 import { startHeartbeatRunner, type HeartbeatRunner } from "../infra/heartbeat-runner.js";
 import { getMachineDisplayName } from "../infra/machine-name.js";
-import { ensureOpenClawCliOnPath } from "../infra/path-env.js";
+import { ensureFoxFangCliOnPath } from "../infra/path-env.js";
 import {
   detectPluginInstallPathIssue,
   formatPluginInstallPathIssue,
@@ -131,7 +131,7 @@ import { createReadinessChecker } from "./server/readiness.js";
 import { loadGatewayTlsRuntime } from "./server/tls.js";
 import { resolveSessionKeyForTranscriptFile } from "./session-transcript-key.js";
 import {
-  attachOpenClawTranscriptMeta,
+  attachFoxFangTranscriptMeta,
   loadGatewaySessionRow,
   loadSessionEntry,
   readSessionMessages,
@@ -145,7 +145,7 @@ import { maybeSeedControlUiAllowedOriginsAtStartup } from "./startup-control-ui-
 
 export { __resetModelCatalogCacheForTest } from "./server-model-catalog.js";
 
-ensureOpenClawCliOnPath();
+ensureFoxFangCliOnPath();
 
 const MAX_MEDIA_TTL_HOURS = 24 * 7;
 
@@ -196,7 +196,7 @@ function createGatewayAuthRateLimiters(rateLimitConfig: AuthRateLimitConfig | un
 }
 
 function logGatewayAuthSurfaceDiagnostics(prepared: {
-  sourceConfig: OpenClawConfig;
+  sourceConfig: FoxFangConfig;
   warnings: Array<{ code: string; path: string; message: string }>;
 }): void {
   const states = evaluateGatewayAuthSurfaceStates({
@@ -225,9 +225,9 @@ function logGatewayAuthSurfaceDiagnostics(prepared: {
 }
 
 function applyGatewayAuthOverridesForStartupPreflight(
-  config: OpenClawConfig,
+  config: FoxFangConfig,
   overrides: Pick<GatewayServerOptions, "auth" | "tailscale">,
-): OpenClawConfig {
+): FoxFangConfig {
   if (!overrides.auth && !overrides.tailscale) {
     return config;
   }
@@ -253,7 +253,7 @@ function assertValidGatewayStartupConfigSnapshot(
       ? formatConfigIssueLines(snapshot.issues, "", { normalizeRoot: true }).join("\n")
       : "Unknown validation issue.";
   const doctorHint = options.includeDoctorHint
-    ? `\nRun "${formatCliCommand("openclaw doctor")}" to repair, then retry.`
+    ? `\nRun "${formatCliCommand("foxfang doctor")}" to repair, then retry.`
     : "";
   throw new Error(`Invalid config at ${snapshot.path}.\n${issues}${doctorHint}`);
 }
@@ -262,13 +262,13 @@ async function prepareGatewayStartupConfig(params: {
   configSnapshot: ConfigFileSnapshot;
   // Keep startup auth/runtime behavior aligned with loadConfig(), which applies
   // runtime overrides beyond the raw on-disk snapshot.
-  runtimeConfig: OpenClawConfig;
+  runtimeConfig: FoxFangConfig;
   authOverride?: GatewayServerOptions["auth"];
   tailscaleOverride?: GatewayServerOptions["tailscale"];
   activateRuntimeSecrets: (
-    config: OpenClawConfig,
+    config: FoxFangConfig,
     options: { reason: "startup"; activate: boolean },
-  ) => Promise<{ config: OpenClawConfig }>;
+  ) => Promise<{ config: FoxFangConfig }>;
 }): Promise<Awaited<ReturnType<typeof ensureGatewayStartupAuth>>> {
   assertValidGatewayStartupConfigSnapshot(params.configSnapshot);
 
@@ -368,16 +368,16 @@ export async function startGatewayServer(
   opts: GatewayServerOptions = {},
 ): Promise<GatewayServer> {
   const minimalTestGateway =
-    process.env.VITEST === "1" && process.env.OPENCLAW_TEST_MINIMAL_GATEWAY === "1";
+    process.env.VITEST === "1" && process.env.FOXFANG_TEST_MINIMAL_GATEWAY === "1";
 
   // Ensure all default port derivations (browser/canvas) see the actual runtime port.
-  process.env.OPENCLAW_GATEWAY_PORT = String(port);
+  process.env.FOXFANG_GATEWAY_PORT = String(port);
   logAcceptedEnvOption({
-    key: "OPENCLAW_RAW_STREAM",
+    key: "FOXFANG_RAW_STREAM",
     description: "raw stream logging enabled",
   });
   logAcceptedEnvOption({
-    key: "OPENCLAW_RAW_STREAM_PATH",
+    key: "FOXFANG_RAW_STREAM_PATH",
     description: "raw stream log path override",
   });
 
@@ -430,7 +430,7 @@ export async function startGatewayServer(
   const emitSecretsStateEvent = (
     code: "SECRETS_RELOADER_DEGRADED" | "SECRETS_RELOADER_RECOVERED",
     message: string,
-    cfg: OpenClawConfig,
+    cfg: FoxFangConfig,
   ) => {
     enqueueSystemEvent(`[${code}] ${message}`, {
       sessionKey: resolveMainSessionKey(cfg),
@@ -447,7 +447,7 @@ export async function startGatewayServer(
     return await run;
   };
   const activateRuntimeSecrets = async (
-    config: OpenClawConfig,
+    config: FoxFangConfig,
     params: { reason: "startup" | "reload" | "restart-check"; activate: boolean },
   ) =>
     await runWithSecretsActivationLock(async () => {
@@ -492,7 +492,7 @@ export async function startGatewayServer(
       }
     });
 
-  let cfgAtStart: OpenClawConfig;
+  let cfgAtStart: FoxFangConfig;
   const startupRuntimeConfig = applyConfigOverrides(configSnapshot.config);
   const authBootstrap = await prepareGatewayStartupConfig({
     configSnapshot,
@@ -509,7 +509,7 @@ export async function startGatewayServer(
       );
     } else {
       log.warn(
-        "Gateway auth token was missing. Generated a runtime token for this startup without changing config; restart will generate a different token. Persist one with `openclaw config set gateway.auth.mode token` and `openclaw config set gateway.auth.token <token>`.",
+        "Gateway auth token was missing. Generated a runtime token for this startup without changing config; restart will generate a different token. Persist one with `foxfang config set gateway.auth.mode token` and `foxfang config set gateway.auth.token <token>`.",
       );
     }
   }
@@ -541,8 +541,8 @@ export async function startGatewayServer(
     const lines = formatPluginInstallPathIssue({
       issue: matrixInstallPathIssue,
       pluginLabel: "Matrix",
-      defaultInstallCommand: "openclaw plugins install @openclaw/matrix",
-      repoInstallCommand: "openclaw plugins install ./extensions/matrix",
+      defaultInstallCommand: "foxfang plugins install @foxfang/matrix",
+      repoInstallCommand: "foxfang plugins install ./extensions/matrix",
       formatCommand: formatCliCommand,
     });
     log.warn(
@@ -994,7 +994,7 @@ export async function startGatewayServer(
                 runtimeMs: sessionRow.runtimeMs,
               }
             : {};
-          const message = attachOpenClawTranscriptMeta(update.message, {
+          const message = attachFoxFangTranscriptMeta(update.message, {
             ...(typeof update.messageId === "string" ? { id: update.messageId } : {}),
             ...(typeof messageSeq === "number" ? { seq: messageSeq } : {}),
           });

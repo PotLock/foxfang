@@ -1,5 +1,5 @@
-import { DEFAULT_ACCOUNT_ID } from "openclaw/plugin-sdk/account-id";
-import { type ChannelSetupDmPolicy } from "openclaw/plugin-sdk/setup";
+import { DEFAULT_ACCOUNT_ID } from "foxfang/plugin-sdk/account-id";
+import { type ChannelSetupDmPolicy } from "foxfang/plugin-sdk/setup";
 import { requiresExplicitMatrixDefaultAccount } from "./account-selection.js";
 import { listMatrixDirectoryGroupsLive } from "./directory-live.js";
 import {
@@ -453,7 +453,7 @@ async function runMatrixConfigure(params: {
   const deviceName = String(
     await params.prompter.text({
       message: "Matrix device name (optional)",
-      initialValue: existing.deviceName ?? "OpenClaw Gateway",
+      initialValue: existing.deviceName ?? "FoxFang Gateway",
     }),
   ).trim();
 

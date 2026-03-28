@@ -8,8 +8,8 @@ import {
   type ChannelSetupAdapter,
   type ChannelSetupInput,
   type ChannelSetupWizard,
-  type OpenClawConfig,
-} from "openclaw/plugin-sdk/setup";
+  type FoxFangConfig,
+} from "foxfang/plugin-sdk/setup";
 import { buildTlonAccountFields } from "./account-fields.js";
 import { normalizeShip } from "./targets.js";
 import { listTlonAccountIds, resolveTlonAccount, type TlonResolvedAccount } from "./types.js";
@@ -35,9 +35,9 @@ function isConfigured(account: TlonResolvedAccount): boolean {
 }
 
 type TlonSetupWizardBaseParams = {
-  resolveConfigured: (params: { cfg: OpenClawConfig }) => boolean | Promise<boolean>;
+  resolveConfigured: (params: { cfg: FoxFangConfig }) => boolean | Promise<boolean>;
   resolveStatusLines?: (params: {
-    cfg: OpenClawConfig;
+    cfg: FoxFangConfig;
     configured: boolean;
   }) => string[] | Promise<string[]>;
   finalize: NonNullable<ChannelSetupWizard["finalize"]>;
@@ -122,23 +122,23 @@ export function createTlonSetupWizardBase(params: TlonSetupWizardBaseParams): Ch
   };
 }
 
-export async function resolveTlonSetupConfigured(cfg: OpenClawConfig): Promise<boolean> {
+export async function resolveTlonSetupConfigured(cfg: FoxFangConfig): Promise<boolean> {
   const accountIds = listTlonAccountIds(cfg);
   return accountIds.length > 0
     ? accountIds.some((accountId) => isConfigured(resolveTlonAccount(cfg, accountId)))
     : isConfigured(resolveTlonAccount(cfg, DEFAULT_ACCOUNT_ID));
 }
 
-export async function resolveTlonSetupStatusLines(cfg: OpenClawConfig): Promise<string[]> {
+export async function resolveTlonSetupStatusLines(cfg: FoxFangConfig): Promise<string[]> {
   const configured = await resolveTlonSetupConfigured(cfg);
   return [`Tlon: ${configured ? "configured" : "needs setup"}`];
 }
 
 export function applyTlonSetupConfig(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId: string;
   input: TlonSetupInput;
-}): OpenClawConfig {
+}): FoxFangConfig {
   const { cfg, accountId, input } = params;
   const useDefault = accountId === DEFAULT_ACCOUNT_ID;
   const namedConfig = prepareScopedSetupConfig({

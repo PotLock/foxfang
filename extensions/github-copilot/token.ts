@@ -1,1 +1,1 @@
-export * from "openclaw/plugin-sdk/github-copilot-token";
+export * from "foxfang/plugin-sdk/github-copilot-token";

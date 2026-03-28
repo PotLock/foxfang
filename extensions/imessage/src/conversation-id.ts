@@ -2,7 +2,7 @@ import {
   matchIMessageAcpConversation,
   normalizeIMessageAcpConversationId,
   resolveIMessageConversationIdFromTarget,
-} from "openclaw/plugin-sdk/imessage-core";
+} from "foxfang/plugin-sdk/imessage-core";
 import { normalizeIMessageHandle } from "./targets.js";
 
 export {

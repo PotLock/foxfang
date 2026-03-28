@@ -4,8 +4,8 @@ const ensureConfiguredBindingRouteReadyMock = vi.hoisted(() => vi.fn());
 const recordInboundSessionMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const resolveTelegramConversationRouteMock = vi.hoisted(() => vi.fn());
 
-vi.mock("openclaw/plugin-sdk/conversation-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/conversation-runtime")>();
+vi.mock("foxfang/plugin-sdk/conversation-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/conversation-runtime")>();
   return {
     ...actual,
     ensureConfiguredBindingRouteReady: (...args: unknown[]) =>
@@ -153,7 +153,7 @@ describe("buildTelegramMessageContext ACP configured bindings", () => {
     const ctx = await buildTelegramMessageContextForTest({
       accountId: "work",
       message: {
-        chat: { id: -1001234567890, type: "supergroup", title: "OpenClaw", is_forum: true },
+        chat: { id: -1001234567890, type: "supergroup", title: "FoxFang", is_forum: true },
         message_thread_id: 42,
         text: "hello",
       },
@@ -173,7 +173,7 @@ describe("buildTelegramMessageContext ACP configured bindings", () => {
     const ctx = await buildTelegramMessageContextForTest({
       accountId: "work",
       message: {
-        chat: { id: -1001234567890, type: "supergroup", title: "OpenClaw", is_forum: true },
+        chat: { id: -1001234567890, type: "supergroup", title: "FoxFang", is_forum: true },
         message_thread_id: 42,
         text: "hello",
       },
@@ -192,7 +192,7 @@ describe("buildTelegramMessageContext ACP configured bindings", () => {
     const ctx = await buildTelegramMessageContextForTest({
       accountId: "work",
       message: {
-        chat: { id: -1001234567890, type: "supergroup", title: "OpenClaw", is_forum: true },
+        chat: { id: -1001234567890, type: "supergroup", title: "FoxFang", is_forum: true },
         message_thread_id: 42,
         text: "/new",
       },
@@ -220,7 +220,7 @@ describe("buildTelegramMessageContext ACP configured bindings", () => {
     const ctx = await buildTelegramMessageContextForTest({
       accountId: "work",
       message: {
-        chat: { id: -1001234567890, type: "supergroup", title: "OpenClaw", is_forum: true },
+        chat: { id: -1001234567890, type: "supergroup", title: "FoxFang", is_forum: true },
         message_thread_id: 42,
         text: "hello",
       },

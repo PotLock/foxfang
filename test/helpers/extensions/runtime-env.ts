@@ -1,4 +1,4 @@
-import type { OutputRuntimeEnv } from "openclaw/plugin-sdk/runtime";
+import type { OutputRuntimeEnv } from "foxfang/plugin-sdk/runtime";
 import { vi } from "vitest";
 
 export function createRuntimeEnv<TRuntime = OutputRuntimeEnv>(options?: {

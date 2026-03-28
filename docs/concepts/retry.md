@@ -38,7 +38,7 @@ title: "Retry Policy"
 
 ## Configuration
 
-Set retry policy per provider in `~/.foxfang/openclaw.json`:
+Set retry policy per provider in `~/.foxfang/foxfang.json`:
 
 ```json5
 {

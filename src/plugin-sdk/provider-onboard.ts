@@ -1,7 +1,7 @@
 // Keep provider onboarding helpers dependency-light so bundled provider plugins
 // do not pull heavyweight runtime graphs at activation time.
 
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import type { AgentModelEntryConfig } from "../config/types.agent-defaults.js";
 import type {
   ModelApi,
@@ -16,7 +16,7 @@ type NormalizedModelRef = {
   model: string;
 };
 
-export type { OpenClawConfig, ModelApi, ModelDefinitionConfig, ModelProviderConfig };
+export type { FoxFangConfig, ModelApi, ModelDefinitionConfig, ModelProviderConfig };
 
 export type AgentModelAliasEntry =
   | string
@@ -26,8 +26,8 @@ export type AgentModelAliasEntry =
     };
 
 export type ProviderOnboardPresetAppliers<TArgs extends unknown[]> = {
-  applyProviderConfig: (cfg: OpenClawConfig, ...args: TArgs) => OpenClawConfig;
-  applyConfig: (cfg: OpenClawConfig, ...args: TArgs) => OpenClawConfig;
+  applyProviderConfig: (cfg: FoxFangConfig, ...args: TArgs) => FoxFangConfig;
+  applyConfig: (cfg: FoxFangConfig, ...args: TArgs) => FoxFangConfig;
 };
 
 function normalizeProviderId(provider: string): string {
@@ -131,7 +131,7 @@ type ProviderModelMergeState = {
 };
 
 function resolveProviderModelMergeState(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   providerId: string,
 ): ProviderModelMergeState {
   const providers = { ...cfg.models?.providers } as Record<string, ModelProviderConfig>;
@@ -171,7 +171,7 @@ function buildProviderConfig(params: {
 }
 
 function applyProviderConfigWithMergedModels(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   params: {
     agentModels: Record<string, AgentModelEntryConfig>;
     providerId: string;
@@ -181,7 +181,7 @@ function applyProviderConfigWithMergedModels(
     mergedModels: ModelDefinitionConfig[];
     fallbackModels: ModelDefinitionConfig[];
   },
-): OpenClawConfig {
+): FoxFangConfig {
   params.providerState.providers[params.providerId] = buildProviderConfig({
     existingProvider: params.providerState.existingProvider,
     api: params.api,
@@ -202,10 +202,10 @@ function createProviderPresetAppliers<
   },
 >(params: {
   resolveParams: (
-    cfg: OpenClawConfig,
+    cfg: FoxFangConfig,
     ...args: TArgs
   ) => Omit<TParams, "primaryModelRef"> | null | undefined;
-  applyPreset: (cfg: OpenClawConfig, preset: TParams) => OpenClawConfig;
+  applyPreset: (cfg: FoxFangConfig, preset: TParams) => FoxFangConfig;
   primaryModelRef: string;
 }): ProviderOnboardPresetAppliers<TArgs> {
   return {
@@ -242,12 +242,12 @@ export function withAgentModelAliases(
 }
 
 export function applyOnboardAuthAgentModelsAndProviders(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   params: {
     agentModels: Record<string, AgentModelEntryConfig>;
     providers: Record<string, ModelProviderConfig>;
   },
-): OpenClawConfig {
+): FoxFangConfig {
   return {
     ...cfg,
     agents: {
@@ -265,9 +265,9 @@ export function applyOnboardAuthAgentModelsAndProviders(
 }
 
 export function applyAgentDefaultModelPrimary(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   primary: string,
-): OpenClawConfig {
+): FoxFangConfig {
   const existingFallbacks = extractAgentDefaultModelFallbacks(cfg.agents?.defaults?.model);
   return {
     ...cfg,
@@ -285,7 +285,7 @@ export function applyAgentDefaultModelPrimary(
 }
 
 export function applyProviderConfigWithDefaultModels(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   params: {
     agentModels: Record<string, AgentModelEntryConfig>;
     providerId: string;
@@ -294,7 +294,7 @@ export function applyProviderConfigWithDefaultModels(
     defaultModels: ModelDefinitionConfig[];
     defaultModelId?: string;
   },
-): OpenClawConfig {
+): FoxFangConfig {
   const providerState = resolveProviderModelMergeState(cfg, params.providerId);
   const defaultModels = params.defaultModels;
   const defaultModelId = params.defaultModelId ?? defaultModels[0]?.id;
@@ -319,7 +319,7 @@ export function applyProviderConfigWithDefaultModels(
 }
 
 export function applyProviderConfigWithDefaultModel(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   params: {
     agentModels: Record<string, AgentModelEntryConfig>;
     providerId: string;
@@ -328,7 +328,7 @@ export function applyProviderConfigWithDefaultModel(
     defaultModel: ModelDefinitionConfig;
     defaultModelId?: string;
   },
-): OpenClawConfig {
+): FoxFangConfig {
   return applyProviderConfigWithDefaultModels(cfg, {
     agentModels: params.agentModels,
     providerId: params.providerId,
@@ -340,7 +340,7 @@ export function applyProviderConfigWithDefaultModel(
 }
 
 export function applyProviderConfigWithDefaultModelPreset(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   params: {
     providerId: string;
     api: ModelApi;
@@ -350,7 +350,7 @@ export function applyProviderConfigWithDefaultModelPreset(
     aliases?: readonly AgentModelAliasEntry[];
     primaryModelRef?: string;
   },
-): OpenClawConfig {
+): FoxFangConfig {
   const next = applyProviderConfigWithDefaultModel(cfg, {
     agentModels: withAgentModelAliases(cfg.agents?.defaults?.models, params.aliases ?? []),
     providerId: params.providerId,
@@ -366,7 +366,7 @@ export function applyProviderConfigWithDefaultModelPreset(
 
 export function createDefaultModelPresetAppliers<TArgs extends unknown[]>(params: {
   resolveParams: (
-    cfg: OpenClawConfig,
+    cfg: FoxFangConfig,
     ...args: TArgs
   ) =>
     | Omit<Parameters<typeof applyProviderConfigWithDefaultModelPreset>[1], "primaryModelRef">
@@ -382,7 +382,7 @@ export function createDefaultModelPresetAppliers<TArgs extends unknown[]>(params
 }
 
 export function applyProviderConfigWithDefaultModelsPreset(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   params: {
     providerId: string;
     api: ModelApi;
@@ -392,7 +392,7 @@ export function applyProviderConfigWithDefaultModelsPreset(
     aliases?: readonly AgentModelAliasEntry[];
     primaryModelRef?: string;
   },
-): OpenClawConfig {
+): FoxFangConfig {
   const next = applyProviderConfigWithDefaultModels(cfg, {
     agentModels: withAgentModelAliases(cfg.agents?.defaults?.models, params.aliases ?? []),
     providerId: params.providerId,
@@ -408,7 +408,7 @@ export function applyProviderConfigWithDefaultModelsPreset(
 
 export function createDefaultModelsPresetAppliers<TArgs extends unknown[]>(params: {
   resolveParams: (
-    cfg: OpenClawConfig,
+    cfg: FoxFangConfig,
     ...args: TArgs
   ) =>
     | Omit<Parameters<typeof applyProviderConfigWithDefaultModelsPreset>[1], "primaryModelRef">
@@ -424,7 +424,7 @@ export function createDefaultModelsPresetAppliers<TArgs extends unknown[]>(param
 }
 
 export function applyProviderConfigWithModelCatalog(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   params: {
     agentModels: Record<string, AgentModelEntryConfig>;
     providerId: string;
@@ -432,7 +432,7 @@ export function applyProviderConfigWithModelCatalog(
     baseUrl: string;
     catalogModels: ModelDefinitionConfig[];
   },
-): OpenClawConfig {
+): FoxFangConfig {
   const providerState = resolveProviderModelMergeState(cfg, params.providerId);
   const catalogModels = params.catalogModels;
   const mergedModels =
@@ -456,7 +456,7 @@ export function applyProviderConfigWithModelCatalog(
 }
 
 export function applyProviderConfigWithModelCatalogPreset(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   params: {
     providerId: string;
     api: ModelApi;
@@ -465,7 +465,7 @@ export function applyProviderConfigWithModelCatalogPreset(
     aliases?: readonly AgentModelAliasEntry[];
     primaryModelRef?: string;
   },
-): OpenClawConfig {
+): FoxFangConfig {
   const next = applyProviderConfigWithModelCatalog(cfg, {
     agentModels: withAgentModelAliases(cfg.agents?.defaults?.models, params.aliases ?? []),
     providerId: params.providerId,
@@ -480,7 +480,7 @@ export function applyProviderConfigWithModelCatalogPreset(
 
 export function createModelCatalogPresetAppliers<TArgs extends unknown[]>(params: {
   resolveParams: (
-    cfg: OpenClawConfig,
+    cfg: FoxFangConfig,
     ...args: TArgs
   ) =>
     | Omit<Parameters<typeof applyProviderConfigWithModelCatalogPreset>[1], "primaryModelRef">
@@ -496,10 +496,10 @@ export function createModelCatalogPresetAppliers<TArgs extends unknown[]>(params
 }
 
 export function ensureModelAllowlistEntry(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   modelRef: string;
   defaultProvider?: string;
-}): OpenClawConfig {
+}): FoxFangConfig {
   const rawModelRef = params.modelRef.trim();
   if (!rawModelRef) {
     return params.cfg;

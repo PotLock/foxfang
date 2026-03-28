@@ -4,7 +4,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { stageBundledPluginRuntime } from "../../scripts/stage-bundled-plugin-runtime.mjs";
-import { discoverOpenClawPlugins } from "./discovery.js";
+import { discoverFoxFangPlugins } from "./discovery.js";
 import { loadPluginManifestRegistry } from "./manifest-registry.js";
 
 const tempDirs: string[] = [];
@@ -76,7 +76,7 @@ afterEach(() => {
 
 describe("stageBundledPluginRuntime", () => {
   it("stages bundled dist plugins as runtime wrappers and links staged dist node_modules", () => {
-    const repoRoot = makeRepoRoot("openclaw-stage-bundled-runtime-");
+    const repoRoot = makeRepoRoot("foxfang-stage-bundled-runtime-");
     const distPluginDir = createDistPluginDir(repoRoot, "diffs");
     fs.mkdirSync(path.join(repoRoot, "dist"), { recursive: true });
     fs.mkdirSync(path.join(distPluginDir, "node_modules", "@pierre", "diffs"), {
@@ -103,7 +103,7 @@ describe("stageBundledPluginRuntime", () => {
   });
 
   it("writes wrappers that forward plugin entry imports into canonical dist files", async () => {
-    const repoRoot = makeRepoRoot("openclaw-stage-bundled-runtime-chunks-");
+    const repoRoot = makeRepoRoot("foxfang-stage-bundled-runtime-chunks-");
     createDistPluginDir(repoRoot, "diffs");
     setupRepoFiles(repoRoot, {
       "dist/chunk-abc.js": "export const value = 1;\n",
@@ -125,7 +125,7 @@ describe("stageBundledPluginRuntime", () => {
   });
 
   it("stages root runtime sidecars that bundled plugin boundaries resolve directly", () => {
-    const repoRoot = makeRepoRoot("openclaw-stage-bundled-runtime-sidecars-");
+    const repoRoot = makeRepoRoot("foxfang-stage-bundled-runtime-sidecars-");
     createDistPluginDir(repoRoot, "whatsapp");
     setupRepoFiles(repoRoot, {
       "dist/extensions/whatsapp/index.js": "export default {};\n",
@@ -150,7 +150,7 @@ describe("stageBundledPluginRuntime", () => {
   });
 
   it("keeps plugin command registration on the canonical dist graph when loaded from dist-runtime", async () => {
-    const repoRoot = makeRepoRoot("openclaw-stage-bundled-runtime-commands-");
+    const repoRoot = makeRepoRoot("foxfang-stage-bundled-runtime-commands-");
     const distPluginDir = path.join(repoRoot, "dist", "extensions", "demo");
     const distCommandsDir = path.join(repoRoot, "dist", "plugins");
     fs.mkdirSync(distPluginDir, { recursive: true });
@@ -159,7 +159,7 @@ describe("stageBundledPluginRuntime", () => {
     fs.writeFileSync(
       path.join(distCommandsDir, "commands.js"),
       [
-        "const registry = globalThis.__openclawTestPluginCommands ??= new Map();",
+        "const registry = globalThis.__foxfangTestPluginCommands ??= new Map();",
         "export function registerPluginCommand(pluginId, command) {",
         "  registry.set(`/${command.name.toLowerCase()}`, { ...command, pluginId });",
         "}",
@@ -257,15 +257,15 @@ describe("stageBundledPluginRuntime", () => {
   });
 
   it("copies package metadata files but symlinks other non-js plugin artifacts into the runtime overlay", () => {
-    const repoRoot = makeRepoRoot("openclaw-stage-bundled-runtime-assets-");
+    const repoRoot = makeRepoRoot("foxfang-stage-bundled-runtime-assets-");
     createDistPluginDir(repoRoot, "diffs");
     setupRepoFiles(repoRoot, {
       "dist/extensions/diffs/package.json": JSON.stringify(
-        { name: "@openclaw/diffs", openclaw: { extensions: ["./index.js"] } },
+        { name: "@foxfang/diffs", foxfang: { extensions: ["./index.js"] } },
         null,
         2,
       ),
-      "dist/extensions/diffs/openclaw.plugin.json": "{}\n",
+      "dist/extensions/diffs/foxfang.plugin.json": "{}\n",
       "dist/extensions/diffs/assets/info.txt": "ok\n",
     });
 
@@ -274,7 +274,7 @@ describe("stageBundledPluginRuntime", () => {
     expectRuntimeArtifactText({
       repoRoot,
       pluginId: "diffs",
-      relativePath: "openclaw.plugin.json",
+      relativePath: "foxfang.plugin.json",
       expectedText: "{}\n",
       symbolicLink: false,
     });
@@ -297,14 +297,14 @@ describe("stageBundledPluginRuntime", () => {
   });
 
   it("preserves package metadata needed for bundled plugin discovery from dist-runtime", () => {
-    const repoRoot = makeRepoRoot("openclaw-stage-bundled-runtime-discovery-");
+    const repoRoot = makeRepoRoot("foxfang-stage-bundled-runtime-discovery-");
     const runtimeExtensionsDir = path.join(repoRoot, "dist-runtime", "extensions");
     createDistPluginDir(repoRoot, "demo");
     setupRepoFiles(repoRoot, {
       "dist/extensions/demo/package.json": JSON.stringify(
         {
-          name: "@openclaw/demo",
-          openclaw: {
+          name: "@foxfang/demo",
+          foxfang: {
             extensions: ["./main.js"],
             setupEntry: "./setup.js",
             startup: {
@@ -315,7 +315,7 @@ describe("stageBundledPluginRuntime", () => {
         null,
         2,
       ),
-      "dist/extensions/demo/openclaw.plugin.json": JSON.stringify(
+      "dist/extensions/demo/foxfang.plugin.json": JSON.stringify(
         {
           id: "demo",
           channels: ["demo"],
@@ -332,9 +332,9 @@ describe("stageBundledPluginRuntime", () => {
 
     const env = {
       ...process.env,
-      OPENCLAW_BUNDLED_PLUGINS_DIR: runtimeExtensionsDir,
+      FOXFANG_BUNDLED_PLUGINS_DIR: runtimeExtensionsDir,
     };
-    const discovery = discoverOpenClawPlugins({
+    const discovery = discoverFoxFangPlugins({
       env,
       cache: false,
     });
@@ -365,7 +365,7 @@ describe("stageBundledPluginRuntime", () => {
   });
 
   it("removes stale runtime plugin directories that are no longer in dist", () => {
-    const repoRoot = makeRepoRoot("openclaw-stage-bundled-runtime-stale-");
+    const repoRoot = makeRepoRoot("foxfang-stage-bundled-runtime-stale-");
     const staleRuntimeDir = path.join(repoRoot, "dist-runtime", "extensions", "stale");
     fs.mkdirSync(staleRuntimeDir, { recursive: true });
     fs.writeFileSync(path.join(staleRuntimeDir, "index.js"), "stale\n", "utf8");
@@ -377,7 +377,7 @@ describe("stageBundledPluginRuntime", () => {
   });
 
   it("removes dist-runtime when the built bundled plugin tree is absent", () => {
-    const repoRoot = makeRepoRoot("openclaw-stage-bundled-runtime-missing-");
+    const repoRoot = makeRepoRoot("foxfang-stage-bundled-runtime-missing-");
     const runtimeRoot = path.join(repoRoot, "dist-runtime", "extensions", "diffs");
     fs.mkdirSync(runtimeRoot, { recursive: true });
 
@@ -387,7 +387,7 @@ describe("stageBundledPluginRuntime", () => {
   });
 
   it("tolerates EEXIST when an identical runtime symlink is materialized concurrently", () => {
-    const repoRoot = makeRepoRoot("openclaw-stage-bundled-runtime-eexist-");
+    const repoRoot = makeRepoRoot("foxfang-stage-bundled-runtime-eexist-");
     createDistPluginDir(repoRoot, "feishu");
     setupRepoFiles(repoRoot, {
       "dist/extensions/feishu/index.js": "export default {}\n",

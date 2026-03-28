@@ -1,4 +1,4 @@
-import * as conversationRuntime from "openclaw/plugin-sdk/conversation-runtime";
+import * as conversationRuntime from "foxfang/plugin-sdk/conversation-runtime";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createConfiguredBindingConversationRuntimeModuleMock } from "../../../../test/helpers/extensions/configured-binding-runtime.js";
 
@@ -147,7 +147,7 @@ function createBasePreflightParams(overrides?: Record<string, unknown>) {
       discordConfig: {
         allowBots: true,
       } as NonNullable<
-        import("../../../../src/config/config.js").OpenClawConfig["channels"]
+        import("../../../../src/config/config.js").FoxFangConfig["channels"]
       >["discord"],
       data: createGuildEvent({
         channelId: CHANNEL_ID,
@@ -161,7 +161,7 @@ function createBasePreflightParams(overrides?: Record<string, unknown>) {
     discordConfig: {
       allowBots: true,
     } as NonNullable<
-      import("../../../../src/config/config.js").OpenClawConfig["channels"]
+      import("../../../../src/config/config.js").FoxFangConfig["channels"]
     >["discord"],
     ...overrides,
   } satisfies Parameters<typeof preflightDiscordMessage>[0];

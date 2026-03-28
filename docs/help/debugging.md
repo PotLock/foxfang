@@ -16,13 +16,13 @@ provider mixes reasoning into normal text.
 
 Use `/debug` in chat to set **runtime-only** config overrides (memory, not disk).
 `/debug` is disabled by default; enable with `commands.debug: true`.
-This is handy when you need to toggle obscure settings without editing `openclaw.json`.
+This is handy when you need to toggle obscure settings without editing `foxfang.json`.
 
 Examples:
 
 ```
 /debug show
-/debug set messages.responsePrefix="[openclaw]"
+/debug set messages.responsePrefix="[foxfang]"
 /debug unset messages.responsePrefix
 /debug reset
 ```
@@ -44,7 +44,7 @@ node scripts/watch-node.mjs gateway --force
 ```
 
 The watcher restarts on build-relevant files under `src/`, extension source files,
-extension `package.json` and `openclaw.plugin.json` metadata, `tsconfig.json`,
+extension `package.json` and `foxfang.plugin.json` metadata, `tsconfig.json`,
 `package.json`, and `tsdown.config.ts`. Extension metadata changes restart the
 gateway without forcing a `tsdown` rebuild; source and config changes still
 rebuild `dist` first.
@@ -66,18 +66,18 @@ Recommended flow (dev profile + dev bootstrap):
 
 ```bash
 pnpm gateway:dev
-OPENCLAW_PROFILE=dev openclaw tui
+FOXFANG_PROFILE=dev foxfang tui
 ```
 
-If you don’t have a global install yet, run the CLI via `pnpm openclaw ...`.
+If you don’t have a global install yet, run the CLI via `pnpm foxfang ...`.
 
 What this does:
 
 1. **Profile isolation** (global `--dev`)
-   - `OPENCLAW_PROFILE=dev`
-   - `OPENCLAW_STATE_DIR=~/.foxfang-dev`
-   - `OPENCLAW_CONFIG_PATH=~/.foxfang-dev/openclaw.json`
-   - `OPENCLAW_GATEWAY_PORT=19001` (browser/canvas shift accordingly)
+   - `FOXFANG_PROFILE=dev`
+   - `FOXFANG_STATE_DIR=~/.foxfang-dev`
+   - `FOXFANG_CONFIG_PATH=~/.foxfang-dev/foxfang.json`
+   - `FOXFANG_GATEWAY_PORT=19001` (browser/canvas shift accordingly)
 
 2. **Dev bootstrap** (`gateway --dev`)
    - Writes a minimal config if missing (`gateway.mode=local`, bind loopback).
@@ -86,7 +86,7 @@ What this does:
    - Seeds the workspace files if missing:
      `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, `USER.md`, `HEARTBEAT.md`.
    - Default identity: **C3‑PO** (protocol droid).
-   - Skips channel providers in dev mode (`OPENCLAW_SKIP_CHANNELS=1`).
+   - Skips channel providers in dev mode (`FOXFANG_SKIP_CHANNELS=1`).
 
 Reset flow (fresh start):
 
@@ -98,7 +98,7 @@ Note: `--dev` is a **global** profile flag and gets eaten by some runners.
 If you need to spell it out, use the env var form:
 
 ```bash
-OPENCLAW_PROFILE=dev openclaw gateway --dev --reset
+FOXFANG_PROFILE=dev foxfang gateway --dev --reset
 ```
 
 `--reset` wipes config, credentials, sessions, and the dev workspace (using
@@ -107,12 +107,12 @@ OPENCLAW_PROFILE=dev openclaw gateway --dev --reset
 Tip: if a non‑dev gateway is already running (launchd/systemd), stop it first:
 
 ```bash
-openclaw gateway stop
+foxfang gateway stop
 ```
 
-## Raw stream logging (OpenClaw)
+## Raw stream logging (FoxFang)
 
-OpenClaw can log the **raw assistant stream** before any filtering/formatting.
+FoxFang can log the **raw assistant stream** before any filtering/formatting.
 This is the best way to see whether reasoning is arriving as plain text deltas
 (or as separate thinking blocks).
 
@@ -131,8 +131,8 @@ pnpm gateway:watch --raw-stream --raw-stream-path ~/.foxfang/logs/raw-stream.jso
 Equivalent env vars:
 
 ```bash
-OPENCLAW_RAW_STREAM=1
-OPENCLAW_RAW_STREAM_PATH=~/.foxfang/logs/raw-stream.jsonl
+FOXFANG_RAW_STREAM=1
+FOXFANG_RAW_STREAM_PATH=~/.foxfang/logs/raw-stream.jsonl
 ```
 
 Default file:

@@ -13,9 +13,9 @@ describe("resolveVitestIsolation", () => {
   });
 
   it("restores isolate mode when explicitly requested", () => {
-    expect(resolveVitestIsolation({ OPENCLAW_TEST_ISOLATE: "1" })).toBe(true);
-    expect(resolveVitestIsolation({ OPENCLAW_TEST_NO_ISOLATE: "0" })).toBe(true);
-    expect(resolveVitestIsolation({ OPENCLAW_TEST_NO_ISOLATE: "false" })).toBe(true);
+    expect(resolveVitestIsolation({ FOXFANG_TEST_ISOLATE: "1" })).toBe(true);
+    expect(resolveVitestIsolation({ FOXFANG_TEST_NO_ISOLATE: "0" })).toBe(true);
+    expect(resolveVitestIsolation({ FOXFANG_TEST_NO_ISOLATE: "false" })).toBe(true);
   });
 });
 
@@ -57,8 +57,8 @@ describe("scoped vitest configs", () => {
     expect(defaultChannelsConfig.test?.pool).toBe("forks");
   });
 
-  it("loads channel include overrides from OPENCLAW_VITEST_INCLUDE_FILE", () => {
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "openclaw-vitest-channels-"));
+  it("loads channel include overrides from FOXFANG_VITEST_INCLUDE_FILE", () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "foxfang-vitest-channels-"));
     try {
       const includeFile = path.join(tempDir, "include.json");
       fs.writeFileSync(
@@ -70,7 +70,7 @@ describe("scoped vitest configs", () => {
       );
 
       const config = createChannelsVitestConfig({
-        OPENCLAW_VITEST_INCLUDE_FILE: includeFile,
+        FOXFANG_VITEST_INCLUDE_FILE: includeFile,
       });
 
       expect(config.test?.include).toEqual([

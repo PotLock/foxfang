@@ -2,7 +2,7 @@ import { ChannelType } from "discord-api-types/v10";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { NativeCommandSpec } from "../../../../src/auto-reply/commands-registry.js";
 import * as dispatcherModule from "../../../../src/auto-reply/reply/provider-dispatcher.js";
-import type { OpenClawConfig } from "../../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../../src/config/config.js";
 import type { DiscordAccountConfig } from "../../../../src/config/types.discord.js";
 import * as pluginCommandsModule from "../../../../src/plugins/commands.js";
 import { __testing as nativeCommandTesting, createDiscordNativeCommand } from "./native-command.js";
@@ -25,7 +25,7 @@ function createInteraction(params?: { userId?: string }): MockCommandInteraction
   });
 }
 
-function createConfig(): OpenClawConfig {
+function createConfig(): FoxFangConfig {
   return {
     commands: {
       allowFrom: {
@@ -47,10 +47,10 @@ function createConfig(): OpenClawConfig {
         },
       },
     },
-  } as OpenClawConfig;
+  } as FoxFangConfig;
 }
 
-function createCommand(cfg: OpenClawConfig, discordConfig?: DiscordAccountConfig) {
+function createCommand(cfg: FoxFangConfig, discordConfig?: DiscordAccountConfig) {
   const commandSpec: NativeCommandSpec = {
     name: "status",
     description: "Status",
@@ -76,14 +76,14 @@ function createDispatchSpy() {
     },
   } as never);
   nativeCommandTesting.setDispatchReplyWithDispatcher(
-    dispatcherModule.dispatchReplyWithDispatcher as typeof import("openclaw/plugin-sdk/reply-runtime").dispatchReplyWithDispatcher,
+    dispatcherModule.dispatchReplyWithDispatcher as typeof import("foxfang/plugin-sdk/reply-runtime").dispatchReplyWithDispatcher,
   );
   return dispatchSpy;
 }
 
 async function runGuildSlashCommand(params?: {
   userId?: string;
-  mutateConfig?: (cfg: OpenClawConfig) => void;
+  mutateConfig?: (cfg: FoxFangConfig) => void;
   runtimeDiscordConfig?: DiscordAccountConfig;
 }) {
   const cfg = createConfig();
@@ -115,7 +115,7 @@ describe("Discord native slash commands with commands.allowFrom", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     nativeCommandTesting.setDispatchReplyWithDispatcher(
-      dispatcherModule.dispatchReplyWithDispatcher as typeof import("openclaw/plugin-sdk/reply-runtime").dispatchReplyWithDispatcher,
+      dispatcherModule.dispatchReplyWithDispatcher as typeof import("foxfang/plugin-sdk/reply-runtime").dispatchReplyWithDispatcher,
     );
   });
 

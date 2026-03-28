@@ -1,5 +1,5 @@
-import { hasOutboundReplyContent } from "openclaw/plugin-sdk/reply-payload";
-import type { OpenClawConfig } from "../../config/config.js";
+import { hasOutboundReplyContent } from "foxfang/plugin-sdk/reply-payload";
+import type { FoxFangConfig } from "../../config/config.js";
 import type { TtsAutoMode } from "../../config/types.tts.js";
 import { logVerbose } from "../../globals.js";
 import { runMessageAction } from "../../infra/outbound/message-action-runner.js";
@@ -73,7 +73,7 @@ export type AcpDispatchDeliveryCoordinator = {
 };
 
 export function createAcpDispatchDeliveryCoordinator(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   ctx: FinalizedMsgContext;
   dispatcher: ReplyDispatcher;
   inboundAudio: boolean;

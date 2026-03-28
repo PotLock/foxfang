@@ -8,24 +8,24 @@ import {
 describe("parseCliContainerArgs", () => {
   it("extracts a root --container flag before the command", () => {
     expect(
-      parseCliContainerArgs(["node", "openclaw", "--container", "demo", "status", "--deep"]),
+      parseCliContainerArgs(["node", "foxfang", "--container", "demo", "status", "--deep"]),
     ).toEqual({
       ok: true,
       container: "demo",
-      argv: ["node", "openclaw", "status", "--deep"],
+      argv: ["node", "foxfang", "status", "--deep"],
     });
   });
 
   it("accepts the equals form", () => {
-    expect(parseCliContainerArgs(["node", "openclaw", "--container=demo", "health"])).toEqual({
+    expect(parseCliContainerArgs(["node", "foxfang", "--container=demo", "health"])).toEqual({
       ok: true,
       container: "demo",
-      argv: ["node", "openclaw", "health"],
+      argv: ["node", "foxfang", "health"],
     });
   });
 
   it("rejects a missing container value", () => {
-    expect(parseCliContainerArgs(["node", "openclaw", "--container"])).toEqual({
+    expect(parseCliContainerArgs(["node", "foxfang", "--container"])).toEqual({
       ok: false,
       error: "--container requires a value",
     });
@@ -33,7 +33,7 @@ describe("parseCliContainerArgs", () => {
 
   it("does not consume an adjacent flag as the container value", () => {
     expect(
-      parseCliContainerArgs(["node", "openclaw", "--container", "--no-color", "status"]),
+      parseCliContainerArgs(["node", "foxfang", "--container", "--no-color", "status"]),
     ).toEqual({
       ok: false,
       error: "--container requires a value",
@@ -41,20 +41,20 @@ describe("parseCliContainerArgs", () => {
   });
 
   it("leaves argv unchanged when the flag is absent", () => {
-    expect(parseCliContainerArgs(["node", "openclaw", "status"])).toEqual({
+    expect(parseCliContainerArgs(["node", "foxfang", "status"])).toEqual({
       ok: true,
       container: null,
-      argv: ["node", "openclaw", "status"],
+      argv: ["node", "foxfang", "status"],
     });
   });
 
   it("extracts --container after the command like other root options", () => {
     expect(
-      parseCliContainerArgs(["node", "openclaw", "status", "--container", "demo", "--deep"]),
+      parseCliContainerArgs(["node", "foxfang", "status", "--container", "demo", "--deep"]),
     ).toEqual({
       ok: true,
       container: "demo",
-      argv: ["node", "openclaw", "status", "--deep"],
+      argv: ["node", "foxfang", "status", "--deep"],
     });
   });
 
@@ -62,7 +62,7 @@ describe("parseCliContainerArgs", () => {
     expect(
       parseCliContainerArgs([
         "node",
-        "openclaw",
+        "foxfang",
         "nodes",
         "run",
         "--",
@@ -77,7 +77,7 @@ describe("parseCliContainerArgs", () => {
       container: null,
       argv: [
         "node",
-        "openclaw",
+        "foxfang",
         "nodes",
         "run",
         "--",
@@ -92,14 +92,14 @@ describe("parseCliContainerArgs", () => {
 });
 
 describe("resolveCliContainerTarget", () => {
-  it("uses argv first and falls back to OPENCLAW_CONTAINER", () => {
+  it("uses argv first and falls back to FOXFANG_CONTAINER", () => {
     expect(
-      resolveCliContainerTarget(["node", "openclaw", "--container", "demo", "status"], {}),
+      resolveCliContainerTarget(["node", "foxfang", "--container", "demo", "status"], {}),
     ).toBe("demo");
-    expect(resolveCliContainerTarget(["node", "openclaw", "status"], {})).toBeNull();
+    expect(resolveCliContainerTarget(["node", "foxfang", "status"], {})).toBeNull();
     expect(
-      resolveCliContainerTarget(["node", "openclaw", "status"], {
-        OPENCLAW_CONTAINER: "demo",
+      resolveCliContainerTarget(["node", "foxfang", "status"], {
+        FOXFANG_CONTAINER: "demo",
       } as NodeJS.ProcessEnv),
     ).toBe("demo");
   });
@@ -107,13 +107,13 @@ describe("resolveCliContainerTarget", () => {
 
 describe("maybeRunCliInContainer", () => {
   it("passes through when no container target is provided", () => {
-    expect(maybeRunCliInContainer(["node", "openclaw", "status"], { env: {} })).toEqual({
+    expect(maybeRunCliInContainer(["node", "foxfang", "status"], { env: {} })).toEqual({
       handled: false,
-      argv: ["node", "openclaw", "status"],
+      argv: ["node", "foxfang", "status"],
     });
   });
 
-  it("uses OPENCLAW_CONTAINER when the flag is absent", () => {
+  it("uses FOXFANG_CONTAINER when the flag is absent", () => {
     const spawnSync = vi
       .fn()
       .mockReturnValueOnce({
@@ -130,8 +130,8 @@ describe("maybeRunCliInContainer", () => {
       });
 
     expect(
-      maybeRunCliInContainer(["node", "openclaw", "status"], {
-        env: { OPENCLAW_CONTAINER: "demo" } as NodeJS.ProcessEnv,
+      maybeRunCliInContainer(["node", "foxfang", "status"], {
+        env: { FOXFANG_CONTAINER: "demo" } as NodeJS.ProcessEnv,
         spawnSync,
       }),
     ).toEqual({
@@ -146,17 +146,17 @@ describe("maybeRunCliInContainer", () => {
         "exec",
         "-i",
         "--env",
-        "OPENCLAW_CONTAINER_HINT=demo",
+        "FOXFANG_CONTAINER_HINT=demo",
         "--env",
-        "OPENCLAW_CLI_CONTAINER_BYPASS=1",
+        "FOXFANG_CLI_CONTAINER_BYPASS=1",
         "demo",
-        "openclaw",
+        "foxfang",
         "status",
       ],
       {
         stdio: "inherit",
         env: {
-          OPENCLAW_CONTAINER: "",
+          FOXFANG_CONTAINER: "",
         },
       },
     );
@@ -178,14 +178,14 @@ describe("maybeRunCliInContainer", () => {
         stdout: "",
       });
 
-    maybeRunCliInContainer(["node", "openclaw", "status"], {
+    maybeRunCliInContainer(["node", "foxfang", "status"], {
       env: {
-        OPENCLAW_CONTAINER: "demo",
-        OPENCLAW_PROFILE: "work",
-        OPENCLAW_GATEWAY_PORT: "19001",
-        OPENCLAW_GATEWAY_URL: "ws://127.0.0.1:18789",
-        OPENCLAW_GATEWAY_TOKEN: "token",
-        OPENCLAW_GATEWAY_PASSWORD: "password",
+        FOXFANG_CONTAINER: "demo",
+        FOXFANG_PROFILE: "work",
+        FOXFANG_GATEWAY_PORT: "19001",
+        FOXFANG_GATEWAY_URL: "ws://127.0.0.1:18789",
+        FOXFANG_GATEWAY_TOKEN: "token",
+        FOXFANG_GATEWAY_PASSWORD: "password",
       } as NodeJS.ProcessEnv,
       spawnSync,
     });
@@ -197,17 +197,17 @@ describe("maybeRunCliInContainer", () => {
         "exec",
         "-i",
         "--env",
-        "OPENCLAW_CONTAINER_HINT=demo",
+        "FOXFANG_CONTAINER_HINT=demo",
         "--env",
-        "OPENCLAW_CLI_CONTAINER_BYPASS=1",
+        "FOXFANG_CLI_CONTAINER_BYPASS=1",
         "demo",
-        "openclaw",
+        "foxfang",
         "status",
       ],
       {
         stdio: "inherit",
         env: {
-          OPENCLAW_CONTAINER: "",
+          FOXFANG_CONTAINER: "",
         },
       },
     );
@@ -230,7 +230,7 @@ describe("maybeRunCliInContainer", () => {
       });
 
     expect(
-      maybeRunCliInContainer(["node", "openclaw", "--container", "demo", "status"], {
+      maybeRunCliInContainer(["node", "foxfang", "--container", "demo", "status"], {
         env: {},
         spawnSync,
       }),
@@ -252,16 +252,16 @@ describe("maybeRunCliInContainer", () => {
         "exec",
         "-i",
         "--env",
-        "OPENCLAW_CONTAINER_HINT=demo",
+        "FOXFANG_CONTAINER_HINT=demo",
         "--env",
-        "OPENCLAW_CLI_CONTAINER_BYPASS=1",
+        "FOXFANG_CLI_CONTAINER_BYPASS=1",
         "demo",
-        "openclaw",
+        "foxfang",
         "status",
       ],
       {
         stdio: "inherit",
-        env: { OPENCLAW_CONTAINER: "" },
+        env: { FOXFANG_CONTAINER: "" },
       },
     );
   });
@@ -283,8 +283,8 @@ describe("maybeRunCliInContainer", () => {
       });
 
     expect(
-      maybeRunCliInContainer(["node", "openclaw", "--container", "demo", "health"], {
-        env: { USER: "openclaw" } as NodeJS.ProcessEnv,
+      maybeRunCliInContainer(["node", "foxfang", "--container", "demo", "health"], {
+        env: { USER: "foxfang" } as NodeJS.ProcessEnv,
         spawnSync,
       }),
     ).toEqual({
@@ -305,16 +305,16 @@ describe("maybeRunCliInContainer", () => {
         "exec",
         "-i",
         "-e",
-        "OPENCLAW_CONTAINER_HINT=demo",
+        "FOXFANG_CONTAINER_HINT=demo",
         "-e",
-        "OPENCLAW_CLI_CONTAINER_BYPASS=1",
+        "FOXFANG_CLI_CONTAINER_BYPASS=1",
         "demo",
-        "openclaw",
+        "foxfang",
         "health",
       ],
       {
         stdio: "inherit",
-        env: { USER: "openclaw", OPENCLAW_CONTAINER: "" },
+        env: { USER: "foxfang", FOXFANG_CONTAINER: "" },
       },
     );
   });
@@ -340,7 +340,7 @@ describe("maybeRunCliInContainer", () => {
       });
 
     expect(
-      maybeRunCliInContainer(["node", "openclaw", "--container", "demo", "status"], {
+      maybeRunCliInContainer(["node", "foxfang", "--container", "demo", "status"], {
         env: { USER: "somalley" } as NodeJS.ProcessEnv,
         spawnSync,
       }),
@@ -368,16 +368,16 @@ describe("maybeRunCliInContainer", () => {
         "exec",
         "-i",
         "-e",
-        "OPENCLAW_CONTAINER_HINT=demo",
+        "FOXFANG_CONTAINER_HINT=demo",
         "-e",
-        "OPENCLAW_CLI_CONTAINER_BYPASS=1",
+        "FOXFANG_CLI_CONTAINER_BYPASS=1",
         "demo",
-        "openclaw",
+        "foxfang",
         "status",
       ],
       {
         stdio: "inherit",
-        env: { USER: "somalley", OPENCLAW_CONTAINER: "" },
+        env: { USER: "somalley", FOXFANG_CONTAINER: "" },
       },
     );
     expect(spawnSync).toHaveBeenCalledTimes(3);
@@ -396,7 +396,7 @@ describe("maybeRunCliInContainer", () => {
       });
 
     expect(() =>
-      maybeRunCliInContainer(["node", "openclaw", "--container", "demo", "status"], {
+      maybeRunCliInContainer(["node", "foxfang", "--container", "demo", "status"], {
         env: { USER: "somalley" } as NodeJS.ProcessEnv,
         spawnSync,
       }),
@@ -434,7 +434,7 @@ describe("maybeRunCliInContainer", () => {
       });
 
     expect(() =>
-      maybeRunCliInContainer(["node", "openclaw", "--container", "demo", "status"], {
+      maybeRunCliInContainer(["node", "foxfang", "--container", "demo", "status"], {
         env: { USER: "somalley" } as NodeJS.ProcessEnv,
         spawnSync,
       }),
@@ -459,7 +459,7 @@ describe("maybeRunCliInContainer", () => {
         stdout: "",
       });
 
-    maybeRunCliInContainer(["node", "openclaw", "--container", "demo", "setup"], {
+    maybeRunCliInContainer(["node", "foxfang", "--container", "demo", "setup"], {
       env: {},
       spawnSync,
       stdinIsTTY: true,
@@ -474,21 +474,21 @@ describe("maybeRunCliInContainer", () => {
         "-i",
         "-t",
         "--env",
-        "OPENCLAW_CONTAINER_HINT=demo",
+        "FOXFANG_CONTAINER_HINT=demo",
         "--env",
-        "OPENCLAW_CLI_CONTAINER_BYPASS=1",
+        "FOXFANG_CLI_CONTAINER_BYPASS=1",
         "demo",
-        "openclaw",
+        "foxfang",
         "setup",
       ],
       {
         stdio: "inherit",
-        env: { OPENCLAW_CONTAINER: "" },
+        env: { FOXFANG_CONTAINER: "" },
       },
     );
   });
 
-  it("prefers --container over OPENCLAW_CONTAINER", () => {
+  it("prefers --container over FOXFANG_CONTAINER", () => {
     const spawnSync = vi
       .fn()
       .mockReturnValueOnce({
@@ -505,8 +505,8 @@ describe("maybeRunCliInContainer", () => {
       });
 
     expect(
-      maybeRunCliInContainer(["node", "openclaw", "--container", "flag-demo", "health"], {
-        env: { OPENCLAW_CONTAINER: "env-demo" } as NodeJS.ProcessEnv,
+      maybeRunCliInContainer(["node", "foxfang", "--container", "flag-demo", "health"], {
+        env: { FOXFANG_CONTAINER: "env-demo" } as NodeJS.ProcessEnv,
         spawnSync,
       }),
     ).toEqual({
@@ -529,7 +529,7 @@ describe("maybeRunCliInContainer", () => {
     });
 
     expect(() =>
-      maybeRunCliInContainer(["node", "openclaw", "--container", "demo", "status"], {
+      maybeRunCliInContainer(["node", "foxfang", "--container", "demo", "status"], {
         env: {},
         spawnSync,
       }),
@@ -538,12 +538,12 @@ describe("maybeRunCliInContainer", () => {
 
   it("skips recursion when the bypass env is set", () => {
     expect(
-      maybeRunCliInContainer(["node", "openclaw", "--container", "demo", "status"], {
-        env: { OPENCLAW_CLI_CONTAINER_BYPASS: "1" } as NodeJS.ProcessEnv,
+      maybeRunCliInContainer(["node", "foxfang", "--container", "demo", "status"], {
+        env: { FOXFANG_CLI_CONTAINER_BYPASS: "1" } as NodeJS.ProcessEnv,
       }),
     ).toEqual({
       handled: false,
-      argv: ["node", "openclaw", "--container", "demo", "status"],
+      argv: ["node", "foxfang", "--container", "demo", "status"],
     });
   });
 
@@ -554,12 +554,12 @@ describe("maybeRunCliInContainer", () => {
     });
 
     expect(() =>
-      maybeRunCliInContainer(["node", "openclaw", "--container", "demo", "update"], {
+      maybeRunCliInContainer(["node", "foxfang", "--container", "demo", "update"], {
         env: {},
         spawnSync,
       }),
     ).toThrow(
-      "openclaw update is not supported with --container; rebuild or restart the container image instead.",
+      "foxfang update is not supported with --container; rebuild or restart the container image instead.",
     );
     expect(spawnSync).not.toHaveBeenCalled();
   });
@@ -571,12 +571,12 @@ describe("maybeRunCliInContainer", () => {
     });
 
     expect(() =>
-      maybeRunCliInContainer(["node", "openclaw", "--container", "demo", "--no-color", "update"], {
+      maybeRunCliInContainer(["node", "foxfang", "--container", "demo", "--no-color", "update"], {
         env: {},
         spawnSync,
       }),
     ).toThrow(
-      "openclaw update is not supported with --container; rebuild or restart the container image instead.",
+      "foxfang update is not supported with --container; rebuild or restart the container image instead.",
     );
     expect(spawnSync).not.toHaveBeenCalled();
   });
@@ -588,12 +588,12 @@ describe("maybeRunCliInContainer", () => {
     });
 
     expect(() =>
-      maybeRunCliInContainer(["node", "openclaw", "--container", "demo", "--update"], {
+      maybeRunCliInContainer(["node", "foxfang", "--container", "demo", "--update"], {
         env: {},
         spawnSync,
       }),
     ).toThrow(
-      "openclaw update is not supported with --container; rebuild or restart the container image instead.",
+      "foxfang update is not supported with --container; rebuild or restart the container image instead.",
     );
     expect(spawnSync).not.toHaveBeenCalled();
   });

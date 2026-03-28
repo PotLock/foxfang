@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import type { PluginInstallRecord } from "../config/types.plugins.js";
 import { resolvePluginInstallDir } from "./install.js";
 import { defaultSlotIdForKey } from "./slots.js";
@@ -18,7 +18,7 @@ export type UninstallActions = {
 export type UninstallPluginResult =
   | {
       ok: true;
-      config: OpenClawConfig;
+      config: FoxFangConfig;
       pluginId: string;
       actions: UninstallActions;
       warnings: string[];
@@ -89,10 +89,10 @@ export function resolveUninstallChannelConfigKeys(
  * and owned channel config.
  */
 export function removePluginFromConfig(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   pluginId: string,
   opts?: { channelIds?: string[] },
-): { config: OpenClawConfig; actions: Omit<UninstallActions, "directory"> } {
+): { config: FoxFangConfig; actions: Omit<UninstallActions, "directory"> } {
   const actions: Omit<UninstallActions, "directory"> = {
     entry: false,
     install: false,
@@ -201,17 +201,17 @@ export function removePluginFromConfig(
     }
   }
 
-  const config: OpenClawConfig = {
+  const config: FoxFangConfig = {
     ...cfg,
     plugins: Object.keys(cleanedPlugins).length > 0 ? cleanedPlugins : undefined,
-    channels: channels as OpenClawConfig["channels"],
+    channels: channels as FoxFangConfig["channels"],
   };
 
   return { config, actions };
 }
 
 export type UninstallPluginParams = {
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   pluginId: string;
   channelIds?: string[];
   deleteFiles?: boolean;

@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../src/config/config.js";
 import { STATE_DIR } from "../../../src/config/paths.js";
 import { TELEGRAM_COMMAND_NAME_PATTERN } from "../../../src/config/telegram-custom-commands.js";
 import type { TelegramAccountConfig } from "../../../src/config/types.js";
@@ -31,7 +31,7 @@ describe("registerTelegramNativeCommands", () => {
   });
 
   it("scopes skill commands when account binding exists", () => {
-    const cfg: OpenClawConfig = {
+    const cfg: FoxFangConfig = {
       agents: {
         list: [{ id: "main", default: true }, { id: "butler" }],
       },
@@ -52,7 +52,7 @@ describe("registerTelegramNativeCommands", () => {
   });
 
   it("scopes skill commands to default agent without a matching binding (#15599)", () => {
-    const cfg: OpenClawConfig = {
+    const cfg: FoxFangConfig = {
       agents: {
         list: [{ id: "main", default: true }, { id: "butler" }],
       },
@@ -67,7 +67,7 @@ describe("registerTelegramNativeCommands", () => {
   });
 
   it("truncates Telegram command registration to 100 commands", async () => {
-    const cfg: OpenClawConfig = {
+    const cfg: FoxFangConfig = {
       commands: { native: false },
     };
     const customCommands = Array.from({ length: 120 }, (_, index) => ({
@@ -167,7 +167,7 @@ describe("registerTelegramNativeCommands", () => {
   it("passes agent-scoped media roots for plugin command replies with media", async () => {
     const commandHandlers = new Map<string, (ctx: unknown) => Promise<void>>();
     const sendMessage = vi.fn().mockResolvedValue(undefined);
-    const cfg: OpenClawConfig = {
+    const cfg: FoxFangConfig = {
       agents: {
         list: [{ id: "main", default: true }, { id: "work" }],
       },
@@ -211,7 +211,7 @@ describe("registerTelegramNativeCommands", () => {
     expect(firstDeliverRepliesCall?.[0]).toEqual(
       expect.objectContaining({
         mediaLocalRoots: expect.arrayContaining([
-          expect.stringMatching(/[\\/]\.openclaw[\\/]workspace-work$/),
+          expect.stringMatching(/[\\/]\.foxfang[\\/]workspace-work$/),
         ]),
       }),
     );
@@ -220,7 +220,7 @@ describe("registerTelegramNativeCommands", () => {
 
   it("sends plugin command error replies silently when silentErrorReplies is enabled", async () => {
     const commandHandlers = new Map<string, (ctx: unknown) => Promise<void>>();
-    const cfg: OpenClawConfig = {
+    const cfg: FoxFangConfig = {
       channels: {
         telegram: {
           silentErrorReplies: true,

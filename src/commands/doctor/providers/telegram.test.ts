@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../../config/config.js";
+import type { FoxFangConfig } from "../../../config/config.js";
 import type { TelegramNetworkConfig } from "../../../config/types.telegram.js";
 
 const resolveCommandSecretRefsViaGatewayMock = vi.hoisted(() => vi.fn());
@@ -46,20 +46,20 @@ describe("doctor telegram provider warnings", () => {
       targetStatesByPath: {},
       hadUnresolvedTargets: false,
     }));
-    listTelegramAccountIdsMock.mockReset().mockImplementation((cfg: OpenClawConfig) => {
+    listTelegramAccountIdsMock.mockReset().mockImplementation((cfg: FoxFangConfig) => {
       const telegram = cfg.channels?.telegram;
       const accountIds = Object.keys(telegram?.accounts ?? {});
       return accountIds.length > 0 ? ["default", ...accountIds] : ["default"];
     });
     inspectTelegramAccountMock
       .mockReset()
-      .mockImplementation((_params: { cfg: OpenClawConfig; accountId: string }) => ({
+      .mockImplementation((_params: { cfg: FoxFangConfig; accountId: string }) => ({
         enabled: true,
         tokenStatus: "configured",
       }));
     resolveTelegramAccountMock
       .mockReset()
-      .mockImplementation((params: { cfg: OpenClawConfig; accountId?: string | null }) => {
+      .mockImplementation((params: { cfg: FoxFangConfig; accountId?: string | null }) => {
         const accountId = params.accountId?.trim() || "default";
         const telegram = params.cfg.channels?.telegram ?? {};
         const account =
@@ -203,12 +203,12 @@ describe("doctor telegram provider warnings", () => {
   it("formats allowFrom username warnings", () => {
     const warnings = collectTelegramAllowFromUsernameWarnings({
       hits: [{ path: "channels.telegram.allowFrom", entry: "@top" }],
-      doctorFixCommand: "openclaw doctor --fix",
+      doctorFixCommand: "foxfang doctor --fix",
     });
 
     expect(warnings).toEqual([
       expect.stringContaining("Telegram allowFrom contains 1 non-numeric entries"),
-      expect.stringContaining('Run "openclaw doctor --fix"'),
+      expect.stringContaining('Run "foxfang doctor --fix"'),
     ]);
   });
 
@@ -317,7 +317,7 @@ describe("doctor telegram provider warnings", () => {
           allowFrom: ["@testuser"],
         },
       },
-    } as unknown as OpenClawConfig);
+    } as unknown as FoxFangConfig);
 
     const cfg = result.config as {
       channels?: {

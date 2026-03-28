@@ -7,7 +7,7 @@ import type {
 } from "../../../../src/auto-reply/commands-registry.types.js";
 import type { ModelsProviderData } from "../../../../src/auto-reply/reply/commands-models.js";
 import * as dispatcherModule from "../../../../src/auto-reply/reply/provider-dispatcher.js";
-import type { OpenClawConfig } from "../../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../../src/config/config.js";
 import * as globalsModule from "../../../../src/globals.js";
 import * as timeoutModule from "../../../../src/utils/with-timeout.js";
 import * as modelPickerPreferencesModule from "./model-picker-preferences.js";
@@ -71,7 +71,7 @@ function createModelPickerContext(): ModelPickerContext {
         },
       },
     },
-  } as unknown as OpenClawConfig;
+  } as unknown as FoxFangConfig;
 
   return {
     cfg,
@@ -244,7 +244,7 @@ function createDispatchSpy() {
     .spyOn(dispatcherModule, "dispatchReplyWithDispatcher")
     .mockResolvedValue({} as never);
   nativeCommandTesting.setDispatchReplyWithDispatcher(
-    dispatcherModule.dispatchReplyWithDispatcher as typeof import("openclaw/plugin-sdk/reply-runtime").dispatchReplyWithDispatcher,
+    dispatcherModule.dispatchReplyWithDispatcher as typeof import("foxfang/plugin-sdk/reply-runtime").dispatchReplyWithDispatcher,
   );
   return dispatchSpy;
 }
@@ -253,7 +253,7 @@ describe("Discord model picker interactions", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     nativeCommandTesting.setDispatchReplyWithDispatcher(
-      dispatcherModule.dispatchReplyWithDispatcher as typeof import("openclaw/plugin-sdk/reply-runtime").dispatchReplyWithDispatcher,
+      dispatcherModule.dispatchReplyWithDispatcher as typeof import("foxfang/plugin-sdk/reply-runtime").dispatchReplyWithDispatcher,
     );
   });
 

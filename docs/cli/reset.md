@@ -1,20 +1,20 @@
 ---
-summary: "CLI reference for `openclaw reset` (reset local state/config)"
+summary: "CLI reference for `foxfang reset` (reset local state/config)"
 read_when:
   - You want to wipe local state while keeping the CLI installed
   - You want a dry-run of what would be removed
 title: "reset"
 ---
 
-# `openclaw reset`
+# `foxfang reset`
 
 Reset local config/state (keeps the CLI installed).
 
 ```bash
-openclaw backup create
-openclaw reset
-openclaw reset --dry-run
-openclaw reset --scope config+creds+sessions --yes --non-interactive
+foxfang backup create
+foxfang reset
+foxfang reset --dry-run
+foxfang reset --scope config+creds+sessions --yes --non-interactive
 ```
 
-Run `openclaw backup create` first if you want a restorable snapshot before removing local state.
+Run `foxfang backup create` first if you want a restorable snapshot before removing local state.

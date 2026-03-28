@@ -1,16 +1,16 @@
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import { emptyPluginConfigSchema } from "../plugins/config-schema.js";
 import type {
   AnyAgentTool,
   MediaUnderstandingProviderPlugin,
-  OpenClawPluginApi,
-  OpenClawPluginCommandDefinition,
-  OpenClawPluginConfigSchema,
-  OpenClawPluginDefinition,
-  OpenClawPluginService,
-  OpenClawPluginServiceContext,
-  OpenClawPluginToolContext,
-  OpenClawPluginToolFactory,
+  FoxFangPluginApi,
+  FoxFangPluginCommandDefinition,
+  FoxFangPluginConfigSchema,
+  FoxFangPluginDefinition,
+  FoxFangPluginService,
+  FoxFangPluginServiceContext,
+  FoxFangPluginToolContext,
+  FoxFangPluginToolFactory,
   PluginInteractiveTelegramHandlerContext,
   PluginLogger,
   ProviderAugmentModelCatalogContext,
@@ -52,11 +52,11 @@ import type {
 export type {
   AnyAgentTool,
   MediaUnderstandingProviderPlugin,
-  OpenClawPluginApi,
-  OpenClawPluginToolContext,
-  OpenClawPluginToolFactory,
+  FoxFangPluginApi,
+  FoxFangPluginToolContext,
+  FoxFangPluginToolFactory,
   PluginCommandContext,
-  OpenClawPluginConfigSchema,
+  FoxFangPluginConfigSchema,
   ProviderDiscoveryContext,
   ProviderCatalogContext,
   ProviderCatalogResult,
@@ -85,19 +85,19 @@ export type {
   SpeechProviderPlugin,
   ProviderThinkingPolicyContext,
   ProviderWrapStreamFnContext,
-  OpenClawPluginService,
-  OpenClawPluginServiceContext,
+  FoxFangPluginService,
+  FoxFangPluginServiceContext,
   ProviderAuthContext,
   ProviderAuthDoctorHintContext,
   ProviderAuthMethodNonInteractiveContext,
   ProviderAuthMethod,
   ProviderAuthResult,
-  OpenClawPluginCommandDefinition,
-  OpenClawPluginDefinition,
+  FoxFangPluginCommandDefinition,
+  FoxFangPluginDefinition,
   PluginLogger,
   PluginInteractiveTelegramHandlerContext,
 };
-export type { OpenClawConfig };
+export type { FoxFangConfig };
 
 export { emptyPluginConfigSchema } from "../plugins/config-schema.js";
 
@@ -106,24 +106,24 @@ type DefinePluginEntryOptions = {
   id: string;
   name: string;
   description: string;
-  kind?: OpenClawPluginDefinition["kind"];
-  configSchema?: OpenClawPluginConfigSchema | (() => OpenClawPluginConfigSchema);
-  register: (api: OpenClawPluginApi) => void;
+  kind?: FoxFangPluginDefinition["kind"];
+  configSchema?: FoxFangPluginConfigSchema | (() => FoxFangPluginConfigSchema);
+  register: (api: FoxFangPluginApi) => void;
 };
 
-/** Normalized object shape that OpenClaw loads from a plugin entry module. */
+/** Normalized object shape that FoxFang loads from a plugin entry module. */
 type DefinedPluginEntry = {
   id: string;
   name: string;
   description: string;
-  configSchema: OpenClawPluginConfigSchema;
-  register: NonNullable<OpenClawPluginDefinition["register"]>;
-} & Pick<OpenClawPluginDefinition, "kind">;
+  configSchema: FoxFangPluginConfigSchema;
+  register: NonNullable<FoxFangPluginDefinition["register"]>;
+} & Pick<FoxFangPluginDefinition, "kind">;
 
 /** Resolve either a concrete config schema or a lazy schema factory. */
 function resolvePluginConfigSchema(
   configSchema: DefinePluginEntryOptions["configSchema"] = emptyPluginConfigSchema,
-): OpenClawPluginConfigSchema {
+): FoxFangPluginConfigSchema {
   return typeof configSchema === "function" ? configSchema() : configSchema;
 }
 
@@ -132,7 +132,7 @@ function resolvePluginConfigSchema(
  *
  * Use this for provider, tool, command, service, memory, and context-engine
  * plugins. Channel plugins should use `defineChannelPluginEntry(...)` from
- * `openclaw/plugin-sdk/core` so they inherit the channel capability wiring.
+ * `foxfang/plugin-sdk/core` so they inherit the channel capability wiring.
  */
 export function definePluginEntry({
   id,

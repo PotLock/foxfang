@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import {
   mergeImplicitAnthropicVertexProvider,
@@ -35,7 +35,7 @@ const PROVIDER_IMPLICIT_MERGERS: Partial<
 const CORE_IMPLICIT_PROVIDER_RESOLVERS = [
   {
     id: "anthropic-vertex",
-    resolve: async (params: { config?: OpenClawConfig; env: NodeJS.ProcessEnv }) =>
+    resolve: async (params: { config?: FoxFangConfig; env: NodeJS.ProcessEnv }) =>
       resolveImplicitAnthropicVertexProvider({
         env: params.env,
       }),
@@ -46,7 +46,7 @@ const PLUGIN_DISCOVERY_ORDERS = ["simple", "profile", "paired", "late"] as const
 
 type ImplicitProviderParams = {
   agentDir: string;
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   env?: NodeJS.ProcessEnv;
   workspaceDir?: string;
   explicitProviders?: Record<string, ProviderConfig> | null;
@@ -61,11 +61,11 @@ type ImplicitProviderContext = ImplicitProviderParams & {
 
 function resolveLiveProviderCatalogTimeoutMs(env: NodeJS.ProcessEnv): number | null {
   const live =
-    env.OPENCLAW_LIVE_TEST === "1" || env.OPENCLAW_LIVE_GATEWAY === "1" || env.LIVE === "1";
+    env.FOXFANG_LIVE_TEST === "1" || env.FOXFANG_LIVE_GATEWAY === "1" || env.LIVE === "1";
   if (!live) {
     return null;
   }
-  const raw = env.OPENCLAW_LIVE_PROVIDER_DISCOVERY_TIMEOUT_MS?.trim();
+  const raw = env.FOXFANG_LIVE_PROVIDER_DISCOVERY_TIMEOUT_MS?.trim();
   if (!raw) {
     return 15_000;
   }
@@ -75,11 +75,11 @@ function resolveLiveProviderCatalogTimeoutMs(env: NodeJS.ProcessEnv): number | n
 
 function resolveLiveProviderDiscoveryFilter(env: NodeJS.ProcessEnv): string[] | undefined {
   const live =
-    env.OPENCLAW_LIVE_TEST === "1" || env.OPENCLAW_LIVE_GATEWAY === "1" || env.LIVE === "1";
+    env.FOXFANG_LIVE_TEST === "1" || env.FOXFANG_LIVE_GATEWAY === "1" || env.LIVE === "1";
   if (!live) {
     return undefined;
   }
-  const raw = env.OPENCLAW_LIVE_PROVIDERS?.trim();
+  const raw = env.FOXFANG_LIVE_PROVIDERS?.trim();
   if (!raw || raw === "all") {
     return undefined;
   }
@@ -143,7 +143,7 @@ async function resolvePluginImplicitProviders(
   return Object.keys(discovered).length > 0 ? discovered : undefined;
 }
 
-function buildPluginCatalogConfig(ctx: ImplicitProviderContext): OpenClawConfig {
+function buildPluginCatalogConfig(ctx: ImplicitProviderContext): FoxFangConfig {
   if (!ctx.explicitProviders || Object.keys(ctx.explicitProviders).length === 0) {
     return ctx.config ?? {};
   }
@@ -198,7 +198,7 @@ async function runProviderCatalogWithTimeout(
 }
 
 async function mergeCoreImplicitProviders(params: {
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   env: NodeJS.ProcessEnv;
   providers: Record<string, ProviderConfig>;
 }): Promise<void> {
@@ -221,7 +221,7 @@ async function mergeCoreImplicitProviders(params: {
 
 export async function resolveImplicitProviders(
   params: ImplicitProviderParams,
-): Promise<NonNullable<OpenClawConfig["models"]>["providers"]> {
+): Promise<NonNullable<FoxFangConfig["models"]>["providers"]> {
   const providers: Record<string, ProviderConfig> = {};
   const env = params.env ?? process.env;
   const authStore = ensureAuthProfileStore(params.agentDir, {

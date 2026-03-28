@@ -1,4 +1,4 @@
-import type { DmPolicy, GroupPolicy, OpenClawConfig, SecretInput } from "./runtime-api.js";
+import type { DmPolicy, GroupPolicy, FoxFangConfig, SecretInput } from "./runtime-api.js";
 export type { DmPolicy, GroupPolicy };
 
 export type ReplyToMode = "off" | "first" | "all";
@@ -152,6 +152,6 @@ export type CoreConfig = {
     ackReaction?: string;
     ackReactionScope?: "group-mentions" | "group-all" | "direct" | "all" | "none" | "off";
   };
-  secrets?: OpenClawConfig["secrets"];
+  secrets?: FoxFangConfig["secrets"];
   [key: string]: unknown;
 };

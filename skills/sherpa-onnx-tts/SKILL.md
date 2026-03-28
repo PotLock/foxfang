@@ -3,7 +3,7 @@ name: sherpa-onnx-tts
 description: Local text-to-speech via sherpa-onnx (offline, no cloud)
 metadata:
   {
-    "openclaw":
+    "foxfang":
       {
         "emoji": "🔉",
         "os": ["darwin", "linux", "win32"],
@@ -66,7 +66,7 @@ Local TTS using the sherpa-onnx offline CLI.
 1. Download the runtime for your OS (extracts into `~/.foxfang/tools/sherpa-onnx-tts/runtime`)
 2. Download a voice model (extracts into `~/.foxfang/tools/sherpa-onnx-tts/models`)
 
-Update `~/.foxfang/openclaw.json`:
+Update `~/.foxfang/foxfang.json`:
 
 ```json5
 {

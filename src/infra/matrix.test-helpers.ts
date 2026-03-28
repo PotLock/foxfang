@@ -11,9 +11,9 @@ export const MATRIX_OPS_ACCESS_TOKEN = "tok-ops";
 export const MATRIX_OPS_DEVICE_ID = "DEVICEOPS";
 
 export const matrixHelperEnv = {
-  OPENCLAW_BUNDLED_PLUGINS_DIR: (home: string) => path.join(home, "bundled"),
-  OPENCLAW_DISABLE_PLUGIN_DISCOVERY_CACHE: "1",
-  OPENCLAW_VERSION: undefined,
+  FOXFANG_BUNDLED_PLUGINS_DIR: (home: string) => path.join(home, "bundled"),
+  FOXFANG_DISABLE_PLUGIN_DISCOVERY_CACHE: "1",
+  FOXFANG_VERSION: undefined,
   VITEST: "true",
 } as const;
 
@@ -25,7 +25,7 @@ export function writeFile(filePath: string, value: string) {
 export function writeMatrixPluginManifest(rootDir: string): void {
   fs.mkdirSync(rootDir, { recursive: true });
   fs.writeFileSync(
-    path.join(rootDir, "openclaw.plugin.json"),
+    path.join(rootDir, "foxfang.plugin.json"),
     JSON.stringify({
       id: "matrix",
       configSchema: {

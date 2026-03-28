@@ -1,32 +1,32 @@
 #!/usr/bin/env bash
-# One-time host setup for rootless OpenClaw in Podman. Uses the current
+# One-time host setup for rootless FoxFang in Podman. Uses the current
 # non-root user throughout, builds or pulls the image into that user's Podman
 # store, writes config under ~/.foxfang by default, and uses the repo-local
-# launch script at ./scripts/run-openclaw-podman.sh.
+# launch script at ./scripts/run-foxfang-podman.sh.
 #
 # Usage: ./scripts/podman/setup.sh [--quadlet|--container]
 #   --quadlet   Install a Podman Quadlet as the current user's systemd service
 #   --container Only install image + config; you start the container manually (default)
-#   Or set OPENCLAW_PODMAN_QUADLET=1 (or 0) to choose without a flag.
+#   Or set FOXFANG_PODMAN_QUADLET=1 (or 0) to choose without a flag.
 #
 # After this, start the gateway manually:
-#   ./scripts/run-openclaw-podman.sh launch
-#   ./scripts/run-openclaw-podman.sh launch setup
+#   ./scripts/run-foxfang-podman.sh launch
+#   ./scripts/run-foxfang-podman.sh launch setup
 # Or, if you used --quadlet:
-#   systemctl --user start openclaw.service
+#   systemctl --user start foxfang.service
 set -euo pipefail
 
-REPO_PATH="${OPENCLAW_REPO_PATH:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-RUN_SCRIPT_SRC="$REPO_PATH/scripts/run-openclaw-podman.sh"
-QUADLET_TEMPLATE="$REPO_PATH/scripts/podman/openclaw.container.in"
-OPENCLAW_USER="$(id -un)"
-OPENCLAW_HOME="${HOME:-}"
-OPENCLAW_CONFIG_DIR="${OPENCLAW_CONFIG_DIR:-}"
-OPENCLAW_WORKSPACE_DIR="${OPENCLAW_WORKSPACE_DIR:-}"
-OPENCLAW_IMAGE="${OPENCLAW_PODMAN_IMAGE:-${OPENCLAW_IMAGE:-openclaw:local}}"
-OPENCLAW_CONTAINER_NAME="${OPENCLAW_PODMAN_CONTAINER:-openclaw}"
+REPO_PATH="${FOXFANG_REPO_PATH:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+RUN_SCRIPT_SRC="$REPO_PATH/scripts/run-foxfang-podman.sh"
+QUADLET_TEMPLATE="$REPO_PATH/scripts/podman/foxfang.container.in"
+FOXFANG_USER="$(id -un)"
+FOXFANG_HOME="${HOME:-}"
+FOXFANG_CONFIG_DIR="${FOXFANG_CONFIG_DIR:-}"
+FOXFANG_WORKSPACE_DIR="${FOXFANG_WORKSPACE_DIR:-}"
+FOXFANG_IMAGE="${FOXFANG_PODMAN_IMAGE:-${FOXFANG_IMAGE:-foxfang:local}}"
+FOXFANG_CONTAINER_NAME="${FOXFANG_PODMAN_CONTAINER:-foxfang}"
 PLATFORM_NAME="$(uname -s 2>/dev/null || echo unknown)"
-HOST_GATEWAY_PORT="${OPENCLAW_PODMAN_GATEWAY_HOST_PORT:-${OPENCLAW_GATEWAY_PORT:-18789}}"
+HOST_GATEWAY_PORT="${FOXFANG_PODMAN_GATEWAY_HOST_PORT:-${FOXFANG_GATEWAY_PORT:-18789}}"
 QUADLET_GATEWAY_PORT="18789"
 
 require_cmd() {
@@ -195,7 +195,7 @@ PY
     od -An -N32 -tx1 /dev/urandom | tr -d " \n"
     return 0
   fi
-  echo "Missing dependency: need openssl or python3 (or od) to generate OPENCLAW_GATEWAY_TOKEN." >&2
+  echo "Missing dependency: need openssl or python3 (or od) to generate FOXFANG_GATEWAY_TOKEN." >&2
   exit 1
 }
 
@@ -304,8 +304,8 @@ for arg in "$@"; do
     --container) INSTALL_QUADLET=false ;;
   esac
 done
-if [[ -n "${OPENCLAW_PODMAN_QUADLET:-}" ]]; then
-  case "${OPENCLAW_PODMAN_QUADLET,,}" in
+if [[ -n "${FOXFANG_PODMAN_QUADLET:-}" ]]; then
+  case "${FOXFANG_PODMAN_QUADLET,,}" in
     1|yes|true) INSTALL_QUADLET=true ;;
     0|no|false) INSTALL_QUADLET=false ;;
   esac
@@ -324,8 +324,8 @@ if is_root; then
   echo "Run scripts/podman/setup.sh as your normal user so Podman stays rootless." >&2
   exit 1
 fi
-if [[ "$OPENCLAW_IMAGE" == "openclaw:local" ]] && [[ ! -f "$REPO_PATH/Dockerfile" ]]; then
-  echo "Dockerfile not found at $REPO_PATH. Set OPENCLAW_REPO_PATH to the repo root." >&2
+if [[ "$FOXFANG_IMAGE" == "foxfang:local" ]] && [[ ! -f "$REPO_PATH/Dockerfile" ]]; then
+  echo "Dockerfile not found at $REPO_PATH. Set FOXFANG_REPO_PATH to the repo root." >&2
   exit 1
 fi
 if [[ ! -f "$RUN_SCRIPT_SRC" ]]; then
@@ -333,66 +333,66 @@ if [[ ! -f "$RUN_SCRIPT_SRC" ]]; then
   exit 1
 fi
 
-if [[ -z "$OPENCLAW_HOME" ]]; then
-  OPENCLAW_HOME="$(resolve_user_home "$OPENCLAW_USER")"
+if [[ -z "$FOXFANG_HOME" ]]; then
+  FOXFANG_HOME="$(resolve_user_home "$FOXFANG_USER")"
 fi
-if [[ -z "$OPENCLAW_HOME" ]]; then
-  echo "Unable to resolve HOME for user $OPENCLAW_USER." >&2
+if [[ -z "$FOXFANG_HOME" ]]; then
+  echo "Unable to resolve HOME for user $FOXFANG_USER." >&2
   exit 1
 fi
-if [[ -z "$OPENCLAW_CONFIG_DIR" ]]; then
-  OPENCLAW_CONFIG_DIR="$OPENCLAW_HOME/.foxfang"
+if [[ -z "$FOXFANG_CONFIG_DIR" ]]; then
+  FOXFANG_CONFIG_DIR="$FOXFANG_HOME/.foxfang"
 fi
-if [[ -z "$OPENCLAW_WORKSPACE_DIR" ]]; then
-  OPENCLAW_WORKSPACE_DIR="$OPENCLAW_CONFIG_DIR/workspace"
+if [[ -z "$FOXFANG_WORKSPACE_DIR" ]]; then
+  FOXFANG_WORKSPACE_DIR="$FOXFANG_CONFIG_DIR/workspace"
 fi
-validate_absolute_path "home directory" "$OPENCLAW_HOME"
-validate_mount_source_path "config directory" "$OPENCLAW_CONFIG_DIR"
-validate_mount_source_path "workspace directory" "$OPENCLAW_WORKSPACE_DIR"
-validate_container_name "$OPENCLAW_CONTAINER_NAME"
-validate_image_name "$OPENCLAW_IMAGE"
+validate_absolute_path "home directory" "$FOXFANG_HOME"
+validate_mount_source_path "config directory" "$FOXFANG_CONFIG_DIR"
+validate_mount_source_path "workspace directory" "$FOXFANG_WORKSPACE_DIR"
+validate_container_name "$FOXFANG_CONTAINER_NAME"
+validate_image_name "$FOXFANG_IMAGE"
 validate_port "gateway host port" "$HOST_GATEWAY_PORT"
 validate_port "seed gateway port" "$SEED_GATEWAY_PORT"
 
-install -d -m 700 "$OPENCLAW_CONFIG_DIR" "$OPENCLAW_WORKSPACE_DIR"
-ensure_private_existing_dir_owned_by_user "config directory" "$OPENCLAW_CONFIG_DIR"
-ensure_private_existing_dir_owned_by_user "workspace directory" "$OPENCLAW_WORKSPACE_DIR"
+install -d -m 700 "$FOXFANG_CONFIG_DIR" "$FOXFANG_WORKSPACE_DIR"
+ensure_private_existing_dir_owned_by_user "config directory" "$FOXFANG_CONFIG_DIR"
+ensure_private_existing_dir_owned_by_user "workspace directory" "$FOXFANG_WORKSPACE_DIR"
 
 BUILD_ARGS=()
-if [[ -n "${OPENCLAW_DOCKER_APT_PACKAGES:-}" ]]; then
-  BUILD_ARGS+=(--build-arg "OPENCLAW_DOCKER_APT_PACKAGES=${OPENCLAW_DOCKER_APT_PACKAGES}")
+if [[ -n "${FOXFANG_DOCKER_APT_PACKAGES:-}" ]]; then
+  BUILD_ARGS+=(--build-arg "FOXFANG_DOCKER_APT_PACKAGES=${FOXFANG_DOCKER_APT_PACKAGES}")
 fi
-if [[ -n "${OPENCLAW_EXTENSIONS:-}" ]]; then
-  BUILD_ARGS+=(--build-arg "OPENCLAW_EXTENSIONS=${OPENCLAW_EXTENSIONS}")
+if [[ -n "${FOXFANG_EXTENSIONS:-}" ]]; then
+  BUILD_ARGS+=(--build-arg "FOXFANG_EXTENSIONS=${FOXFANG_EXTENSIONS}")
 fi
 
-if [[ "$OPENCLAW_IMAGE" == "openclaw:local" ]]; then
-  echo "Building image $OPENCLAW_IMAGE ..."
-  podman build -t "$OPENCLAW_IMAGE" -f "$REPO_PATH/Dockerfile" "${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"}" "$REPO_PATH"
+if [[ "$FOXFANG_IMAGE" == "foxfang:local" ]]; then
+  echo "Building image $FOXFANG_IMAGE ..."
+  podman build -t "$FOXFANG_IMAGE" -f "$REPO_PATH/Dockerfile" "${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"}" "$REPO_PATH"
 else
-  if podman image exists "$OPENCLAW_IMAGE" >/dev/null 2>&1; then
-    echo "Using existing image $OPENCLAW_IMAGE"
+  if podman image exists "$FOXFANG_IMAGE" >/dev/null 2>&1; then
+    echo "Using existing image $FOXFANG_IMAGE"
   else
-    echo "Pulling image $OPENCLAW_IMAGE ..."
-    podman pull "$OPENCLAW_IMAGE"
+    echo "Pulling image $FOXFANG_IMAGE ..."
+    podman pull "$FOXFANG_IMAGE"
   fi
 fi
 
-ENV_FILE="$OPENCLAW_CONFIG_DIR/.env"
+ENV_FILE="$FOXFANG_CONFIG_DIR/.env"
 if [[ ! -f "$ENV_FILE" ]]; then
   TOKEN="$(generate_token_hex_32)"
   (
     umask 077
     write_file_atomically "$ENV_FILE" 600 <<EOF
-OPENCLAW_GATEWAY_TOKEN=$TOKEN
+FOXFANG_GATEWAY_TOKEN=$TOKEN
 EOF
   )
-  echo "Generated OPENCLAW_GATEWAY_TOKEN and wrote it to $ENV_FILE"
+  echo "Generated FOXFANG_GATEWAY_TOKEN and wrote it to $ENV_FILE"
 fi
-upsert_env_var "$ENV_FILE" "OPENCLAW_PODMAN_CONTAINER" "$OPENCLAW_CONTAINER_NAME"
-upsert_env_var "$ENV_FILE" "OPENCLAW_PODMAN_IMAGE" "$OPENCLAW_IMAGE"
+upsert_env_var "$ENV_FILE" "FOXFANG_PODMAN_CONTAINER" "$FOXFANG_CONTAINER_NAME"
+upsert_env_var "$ENV_FILE" "FOXFANG_PODMAN_IMAGE" "$FOXFANG_IMAGE"
 
-CONFIG_JSON="$OPENCLAW_CONFIG_DIR/openclaw.json"
+CONFIG_JSON="$FOXFANG_CONFIG_DIR/foxfang.json"
 if [[ ! -f "$CONFIG_JSON" ]]; then
   (
     umask 077
@@ -415,31 +415,31 @@ fi
 seed_local_control_ui_origins "$CONFIG_JSON" "$SEED_GATEWAY_PORT"
 
 if [[ "$INSTALL_QUADLET" == true ]]; then
-  QUADLET_DIR="$OPENCLAW_HOME/.config/containers/systemd"
-  QUADLET_DST="$QUADLET_DIR/openclaw.container"
+  QUADLET_DIR="$FOXFANG_HOME/.config/containers/systemd"
+  QUADLET_DST="$QUADLET_DIR/foxfang.container"
   echo "Installing Quadlet to $QUADLET_DST ..."
   mkdir -p "$QUADLET_DIR"
   ensure_safe_existing_dir "quadlet directory" "$QUADLET_DIR"
-  OPENCLAW_HOME_ESCAPED="$(escape_sed_replacement_pipe_delim "$OPENCLAW_HOME")"
-  OPENCLAW_CONFIG_ESCAPED="$(escape_sed_replacement_pipe_delim "$OPENCLAW_CONFIG_DIR")"
-  OPENCLAW_WORKSPACE_ESCAPED="$(escape_sed_replacement_pipe_delim "$OPENCLAW_WORKSPACE_DIR")"
-  OPENCLAW_IMAGE_ESCAPED="$(escape_sed_replacement_pipe_delim "$OPENCLAW_IMAGE")"
-  OPENCLAW_CONTAINER_ESCAPED="$(escape_sed_replacement_pipe_delim "$OPENCLAW_CONTAINER_NAME")"
+  FOXFANG_HOME_ESCAPED="$(escape_sed_replacement_pipe_delim "$FOXFANG_HOME")"
+  FOXFANG_CONFIG_ESCAPED="$(escape_sed_replacement_pipe_delim "$FOXFANG_CONFIG_DIR")"
+  FOXFANG_WORKSPACE_ESCAPED="$(escape_sed_replacement_pipe_delim "$FOXFANG_WORKSPACE_DIR")"
+  FOXFANG_IMAGE_ESCAPED="$(escape_sed_replacement_pipe_delim "$FOXFANG_IMAGE")"
+  FOXFANG_CONTAINER_ESCAPED="$(escape_sed_replacement_pipe_delim "$FOXFANG_CONTAINER_NAME")"
   sed \
-    -e "s|{{OPENCLAW_HOME}}|$OPENCLAW_HOME_ESCAPED|g" \
-    -e "s|{{OPENCLAW_CONFIG_DIR}}|$OPENCLAW_CONFIG_ESCAPED|g" \
-    -e "s|{{OPENCLAW_WORKSPACE_DIR}}|$OPENCLAW_WORKSPACE_ESCAPED|g" \
-    -e "s|{{IMAGE_NAME}}|$OPENCLAW_IMAGE_ESCAPED|g" \
-    -e "s|{{CONTAINER_NAME}}|$OPENCLAW_CONTAINER_ESCAPED|g" \
+    -e "s|{{FOXFANG_HOME}}|$FOXFANG_HOME_ESCAPED|g" \
+    -e "s|{{FOXFANG_CONFIG_DIR}}|$FOXFANG_CONFIG_ESCAPED|g" \
+    -e "s|{{FOXFANG_WORKSPACE_DIR}}|$FOXFANG_WORKSPACE_ESCAPED|g" \
+    -e "s|{{IMAGE_NAME}}|$FOXFANG_IMAGE_ESCAPED|g" \
+    -e "s|{{CONTAINER_NAME}}|$FOXFANG_CONTAINER_ESCAPED|g" \
     "$QUADLET_TEMPLATE" | write_file_atomically "$QUADLET_DST" 644
 
   if command -v systemctl >/dev/null 2>&1; then
     echo "Reloading and starting user service..."
-    if systemctl --user daemon-reload && systemctl --user start openclaw.service; then
+    if systemctl --user daemon-reload && systemctl --user start foxfang.service; then
       echo "Quadlet installed and service started."
     else
       echo "Quadlet installed, but automatic start failed." >&2
-      echo "Try: systemctl --user daemon-reload && systemctl --user start openclaw.service" >&2
+      echo "Try: systemctl --user daemon-reload && systemctl --user start foxfang.service" >&2
       if command -v loginctl >/dev/null 2>&1; then
         echo "For boot persistence on headless hosts, you may also need: sudo loginctl enable-linger $(whoami)" >&2
       fi
@@ -453,6 +453,6 @@ fi
 
 echo
 echo "Next:"
-echo "  ./scripts/run-openclaw-podman.sh launch"
-echo "  ./scripts/run-openclaw-podman.sh launch setup"
-echo "  openclaw --container $OPENCLAW_CONTAINER_NAME dashboard --no-open"
+echo "  ./scripts/run-foxfang-podman.sh launch"
+echo "  ./scripts/run-foxfang-podman.sh launch setup"
+echo "  foxfang --container $FOXFANG_CONTAINER_NAME dashboard --no-open"

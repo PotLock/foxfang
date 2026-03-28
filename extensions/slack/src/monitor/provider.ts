@@ -6,29 +6,29 @@ import {
   mergeAllowlist,
   patchAllowlistUsersInConfigEntries,
   summarizeMapping,
-} from "openclaw/plugin-sdk/allow-from";
-import { loadConfig } from "openclaw/plugin-sdk/config-runtime";
-import { isDangerousNameMatchingEnabled } from "openclaw/plugin-sdk/config-runtime";
+} from "foxfang/plugin-sdk/allow-from";
+import { loadConfig } from "foxfang/plugin-sdk/config-runtime";
+import { isDangerousNameMatchingEnabled } from "foxfang/plugin-sdk/config-runtime";
 import {
   resolveOpenProviderRuntimeGroupPolicy,
   resolveDefaultGroupPolicy,
   warnMissingProviderGroupPolicyFallbackOnce,
-} from "openclaw/plugin-sdk/config-runtime";
-import type { SessionScope } from "openclaw/plugin-sdk/config-runtime";
-import { createConnectedChannelStatusPatch } from "openclaw/plugin-sdk/gateway-runtime";
-import { DEFAULT_GROUP_HISTORY_LIMIT } from "openclaw/plugin-sdk/reply-history";
-import { resolveTextChunkLimit } from "openclaw/plugin-sdk/reply-runtime";
-import { normalizeMainKey } from "openclaw/plugin-sdk/routing";
-import { warn } from "openclaw/plugin-sdk/runtime-env";
+} from "foxfang/plugin-sdk/config-runtime";
+import type { SessionScope } from "foxfang/plugin-sdk/config-runtime";
+import { createConnectedChannelStatusPatch } from "foxfang/plugin-sdk/gateway-runtime";
+import { DEFAULT_GROUP_HISTORY_LIMIT } from "foxfang/plugin-sdk/reply-history";
+import { resolveTextChunkLimit } from "foxfang/plugin-sdk/reply-runtime";
+import { normalizeMainKey } from "foxfang/plugin-sdk/routing";
+import { warn } from "foxfang/plugin-sdk/runtime-env";
 import {
   computeBackoff,
   createNonExitingRuntime,
   sleepWithAbort,
   type RuntimeEnv,
-} from "openclaw/plugin-sdk/runtime-env";
-import { normalizeResolvedSecretInputString } from "openclaw/plugin-sdk/secret-input";
-import { normalizeStringEntries } from "openclaw/plugin-sdk/text-runtime";
-import { installRequestBodyLimitGuard } from "openclaw/plugin-sdk/webhook-request-guards";
+} from "foxfang/plugin-sdk/runtime-env";
+import { normalizeResolvedSecretInputString } from "foxfang/plugin-sdk/secret-input";
+import { normalizeStringEntries } from "foxfang/plugin-sdk/text-runtime";
+import { installRequestBodyLimitGuard } from "foxfang/plugin-sdk/webhook-request-guards";
 import { resolveSlackAccount } from "../accounts.js";
 import { resolveSlackWebClientOptions } from "../client.js";
 import { normalizeSlackWebhookPath, registerSlackHttpHandler } from "../http/index.js";

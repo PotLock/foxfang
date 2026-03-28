@@ -1,6 +1,6 @@
 import { slackPlugin, setSlackRuntime } from "../../../extensions/slack/test-api.js";
 import { telegramPlugin, setTelegramRuntime } from "../../../extensions/telegram/test-api.js";
-import type { OpenClawConfig } from "../../config/config.js";
+import type { FoxFangConfig } from "../../config/config.js";
 import { setActivePluginRegistry } from "../../plugins/runtime.js";
 import { createPluginRuntime } from "../../plugins/runtime/index.js";
 import { createTestRegistry } from "../../test-utils/channel-plugins.js";
@@ -12,7 +12,7 @@ export const slackConfig = {
       appToken: "xapp-test",
     },
   },
-} as OpenClawConfig;
+} as FoxFangConfig;
 
 export const telegramConfig = {
   channels: {
@@ -20,7 +20,7 @@ export const telegramConfig = {
       botToken: "telegram-test",
     },
   },
-} as OpenClawConfig;
+} as FoxFangConfig;
 
 export function installMessageActionRunnerTestRegistry() {
   const runtime = createPluginRuntime();

@@ -1,6 +1,6 @@
 import "./test-helpers.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../src/config/config.js";
 import { installWebAutoReplyUnitTestHooks, makeSessionStore } from "./auto-reply.test-harness.js";
 
 const updateLastRouteInBackgroundMock = vi.hoisted(() => vi.fn());
@@ -17,7 +17,7 @@ vi.mock("./auto-reply/monitor/last-route.js", async (importOriginal) => {
   };
 });
 
-function makeCfg(storePath: string): OpenClawConfig {
+function makeCfg(storePath: string): FoxFangConfig {
   return {
     channels: { whatsapp: { allowFrom: ["*"] } },
     session: { store: storePath },
@@ -33,7 +33,7 @@ function makeReplyLogger() {
   } as unknown as Parameters<typeof createWebOnMessageHandler>[0]["replyLogger"];
 }
 
-function createHandlerForTest(opts: { cfg: OpenClawConfig; replyResolver: unknown }) {
+function createHandlerForTest(opts: { cfg: FoxFangConfig; replyResolver: unknown }) {
   const backgroundTasks = new Set<Promise<unknown>>();
   const handler = createWebOnMessageHandler({
     cfg: opts.cfg,

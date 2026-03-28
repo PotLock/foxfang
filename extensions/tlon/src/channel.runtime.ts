@@ -1,9 +1,9 @@
 import crypto from "node:crypto";
-import type { ChannelAccountSnapshot } from "openclaw/plugin-sdk/channel-contract";
-import type { ChannelOutboundAdapter } from "openclaw/plugin-sdk/channel-send-result";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import type { ChannelPlugin } from "openclaw/plugin-sdk/core";
-import { createLoggerBackedRuntime } from "openclaw/plugin-sdk/runtime";
+import type { ChannelAccountSnapshot } from "foxfang/plugin-sdk/channel-contract";
+import type { ChannelOutboundAdapter } from "foxfang/plugin-sdk/channel-send-result";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import type { ChannelPlugin } from "foxfang/plugin-sdk/core";
+import { createLoggerBackedRuntime } from "foxfang/plugin-sdk/runtime";
 import { monitorTlonProvider } from "./monitor/index.js";
 import { tlonSetupWizard } from "./setup-surface.js";
 import {
@@ -90,7 +90,7 @@ async function createHttpPokeApi(params: {
 }
 
 function resolveOutboundContext(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId?: string | null;
   to: string;
 }) {

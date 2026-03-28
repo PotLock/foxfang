@@ -2,23 +2,23 @@ import type {
   ProviderAuthContext,
   ProviderResolveDynamicModelContext,
   ProviderRuntimeModel,
-} from "openclaw/plugin-sdk/plugin-entry";
+} from "foxfang/plugin-sdk/plugin-entry";
 import {
   CODEX_CLI_PROFILE_ID,
   ensureAuthProfileStore,
   listProfilesForProvider,
   type OAuthCredential,
-} from "openclaw/plugin-sdk/provider-auth";
-import { buildOauthProviderAuthResult } from "openclaw/plugin-sdk/provider-auth";
-import { loginOpenAICodexOAuth } from "openclaw/plugin-sdk/provider-auth-login";
+} from "foxfang/plugin-sdk/provider-auth";
+import { buildOauthProviderAuthResult } from "foxfang/plugin-sdk/provider-auth";
+import { loginOpenAICodexOAuth } from "foxfang/plugin-sdk/provider-auth-login";
 import {
   DEFAULT_CONTEXT_TOKENS,
   normalizeModelCompat,
   normalizeProviderId,
   type ProviderPlugin,
-} from "openclaw/plugin-sdk/provider-model-shared";
-import { createOpenAIAttributionHeadersWrapper } from "openclaw/plugin-sdk/provider-stream";
-import { fetchCodexUsage } from "openclaw/plugin-sdk/provider-usage";
+} from "foxfang/plugin-sdk/provider-model-shared";
+import { createOpenAIAttributionHeadersWrapper } from "foxfang/plugin-sdk/provider-stream";
+import { fetchCodexUsage } from "foxfang/plugin-sdk/provider-usage";
 import { OPENAI_CODEX_DEFAULT_MODEL } from "./default-models.js";
 import { resolveCodexAuthIdentity } from "./openai-codex-auth-identity.js";
 import { buildOpenAICodexProvider } from "./openai-codex-catalog.js";
@@ -199,7 +199,7 @@ function buildOpenAICodexAuthDoctorHint(ctx: { profileId?: string }) {
   if (ctx.profileId !== CODEX_CLI_PROFILE_ID) {
     return undefined;
   }
-  return "Deprecated profile. Run `openclaw models auth login --provider openai-codex` or `openclaw configure`.";
+  return "Deprecated profile. Run `foxfang models auth login --provider openai-codex` or `foxfang configure`.";
 }
 
 export function buildOpenAICodexProviderPlugin(): ProviderPlugin {

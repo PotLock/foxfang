@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const loadConfigMock = vi.hoisted(() => vi.fn());
 
-vi.mock("openclaw/plugin-sdk/config-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/config-runtime")>();
+vi.mock("foxfang/plugin-sdk/config-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/config-runtime")>();
   return {
     ...actual,
     loadConfig: () => loadConfigMock(),
@@ -15,7 +15,7 @@ import { __testing as acpManagerTesting } from "../../../../src/acp/control-plan
 import { handleAcpCommand } from "../../../../src/auto-reply/reply/commands-acp.js";
 import { buildCommandTestParams } from "../../../../src/auto-reply/reply/commands-spawn.test-harness.js";
 import { setDefaultChannelPluginRegistryForTests } from "../../../../src/commands/channel-test-helpers.js";
-import type { OpenClawConfig } from "../../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../../src/config/config.js";
 import * as gatewayCall from "../../../../src/gateway/call.js";
 import {
   __testing as sessionBindingTesting,
@@ -54,9 +54,9 @@ const baseCfg = {
       },
     },
   },
-} satisfies OpenClawConfig;
+} satisfies FoxFangConfig;
 
-function createDiscordDmCommandParams(commandBody: string, cfg: OpenClawConfig = baseCfg) {
+function createDiscordDmCommandParams(commandBody: string, cfg: FoxFangConfig = baseCfg) {
   const params = buildCommandTestParams(commandBody, cfg, {
     Provider: "discord",
     Surface: "discord",

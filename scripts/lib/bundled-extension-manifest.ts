@@ -9,7 +9,7 @@ export type ExtensionPackageJson = {
   version?: string;
   dependencies?: Record<string, string>;
   optionalDependencies?: Record<string, string>;
-  openclaw?: {
+  foxfang?: {
     install?: unknown;
   };
 };
@@ -20,10 +20,10 @@ export function collectBundledExtensionManifestErrors(extensions: BundledExtensi
   const errors: string[] = [];
 
   for (const extension of extensions) {
-    const install = extension.packageJson.openclaw?.install;
+    const install = extension.packageJson.foxfang?.install;
     if (install !== undefined && !isRecord(install)) {
       errors.push(
-        `bundled extension '${extension.id}' manifest invalid | openclaw.install must be an object`,
+        `bundled extension '${extension.id}' manifest invalid | foxfang.install must be an object`,
       );
       continue;
     }
@@ -33,7 +33,7 @@ export function collectBundledExtensionManifestErrors(extensions: BundledExtensi
       (!install.npmSpec || typeof install.npmSpec !== "string" || !install.npmSpec.trim())
     ) {
       errors.push(
-        `bundled extension '${extension.id}' manifest invalid | openclaw.install.npmSpec must be a non-empty string`,
+        `bundled extension '${extension.id}' manifest invalid | foxfang.install.npmSpec must be a non-empty string`,
       );
     }
     const minHostVersionError = validateMinHostVersion(install?.minHostVersion);

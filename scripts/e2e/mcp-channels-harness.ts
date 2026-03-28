@@ -178,7 +178,7 @@ export async function connectGateway(params: {
         minProtocol: PROTOCOL_VERSION,
         maxProtocol: PROTOCOL_VERSION,
         client: {
-          id: "openclaw-tui",
+          id: "foxfang-tui",
           displayName: "docker-mcp-channels",
           version: "1.0.0",
           platform: process.platform,
@@ -304,13 +304,13 @@ export async function connectMcpClient(params: {
     cwd: "/app",
     env: {
       ...process.env,
-      OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: "1",
-      OPENCLAW_STATE_DIR: "/tmp/openclaw-mcp-client",
+      FOXFANG_ALLOW_INSECURE_PRIVATE_WS: "1",
+      FOXFANG_STATE_DIR: "/tmp/foxfang-mcp-client",
     },
     stderr: "pipe",
   });
   transport.stderr?.on("data", (chunk) => {
-    process.stderr.write(`[openclaw mcp] ${String(chunk)}`);
+    process.stderr.write(`[foxfang mcp] ${String(chunk)}`);
   });
   const rawMessages: unknown[] = [];
   // The MCP stdio transport here exposes a writable onmessage callback at

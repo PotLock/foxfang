@@ -1,9 +1,9 @@
 import type { ButtonInteraction, ComponentData, StringSelectMenuInteraction } from "@buape/carbon";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import type { DiscordAccountConfig } from "openclaw/plugin-sdk/config-runtime";
-import * as conversationRuntime from "openclaw/plugin-sdk/conversation-runtime";
-import { buildAgentSessionKey } from "openclaw/plugin-sdk/routing";
-import * as securityRuntime from "openclaw/plugin-sdk/security-runtime";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import type { DiscordAccountConfig } from "foxfang/plugin-sdk/config-runtime";
+import * as conversationRuntime from "foxfang/plugin-sdk/conversation-runtime";
+import { buildAgentSessionKey } from "foxfang/plugin-sdk/routing";
+import * as securityRuntime from "foxfang/plugin-sdk/security-runtime";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { peekSystemEvents, resetSystemEventsForTest } from "../../../../src/infra/system-events.ts";
 import {
@@ -22,7 +22,7 @@ describe("agent components", () => {
     peer: { kind: "direct", id: "123456789" },
   });
 
-  const createCfg = (): OpenClawConfig => ({}) as OpenClawConfig;
+  const createCfg = (): FoxFangConfig => ({}) as FoxFangConfig;
 
   const createBaseDmInteraction = (overrides: Record<string, unknown> = {}) => {
     const reply = vi.fn().mockResolvedValue(undefined);
@@ -93,7 +93,7 @@ describe("agent components", () => {
       channel: "discord",
       idLine: "Your Discord user id: 123456789",
     });
-    expect(pairingText).toContain(`openclaw pairing approve discord ${code}`);
+    expect(pairingText).toContain(`foxfang pairing approve discord ${code}`);
     expect(peekSystemEvents(defaultDmSessionKey)).toEqual([]);
     expect(readAllowFromStoreMock).toHaveBeenCalledWith("discord", "default");
   });

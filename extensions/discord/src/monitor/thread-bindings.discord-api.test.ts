@@ -1,6 +1,6 @@
 import { ChannelType } from "discord-api-types/v10";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../../src/config/config.js";
 import * as discordClientModule from "../client.js";
 import * as discordSendModule from "../send.js";
 import type { ThreadBindingRecord } from "./thread-bindings.types.js";
@@ -88,7 +88,7 @@ describe("resolveChannelIdForBinding", () => {
   it("forwards cfg when resolving channel id through Discord client", async () => {
     const cfg = {
       channels: { discord: { token: "tok" } },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     restGet.mockResolvedValueOnce({
       id: "thread-1",
       type: ChannelType.PublicThread,
@@ -152,7 +152,7 @@ describe("maybeSendBindingMessage", () => {
   it("forwards cfg to webhook send path", async () => {
     const cfg = {
       channels: { discord: { token: "tok" } },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     const record = {
       accountId: "default",
       channelId: "parent-1",

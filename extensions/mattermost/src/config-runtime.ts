@@ -4,4 +4,4 @@ export {
   GroupPolicySchema,
   MarkdownConfigSchema,
   requireOpenAllowFrom,
-} from "openclaw/plugin-sdk/channel-config-schema";
+} from "foxfang/plugin-sdk/channel-config-schema";

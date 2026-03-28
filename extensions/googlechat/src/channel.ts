@@ -1,27 +1,27 @@
-import { describeAccountSnapshot } from "openclaw/plugin-sdk/account-helpers";
-import { formatNormalizedAllowFromEntries } from "openclaw/plugin-sdk/allow-from";
+import { describeAccountSnapshot } from "foxfang/plugin-sdk/account-helpers";
+import { formatNormalizedAllowFromEntries } from "foxfang/plugin-sdk/allow-from";
 import {
   adaptScopedAccountAccessor,
   createScopedChannelConfigAdapter,
-} from "openclaw/plugin-sdk/channel-config-helpers";
+} from "foxfang/plugin-sdk/channel-config-helpers";
 import {
   composeAccountWarningCollectors,
   composeWarningCollectors,
   createAllowlistProviderGroupPolicyWarningCollector,
   createAllowlistProviderOpenWarningCollector,
-} from "openclaw/plugin-sdk/channel-policy";
-import { createChatChannelPlugin } from "openclaw/plugin-sdk/core";
+} from "foxfang/plugin-sdk/channel-policy";
+import { createChatChannelPlugin } from "foxfang/plugin-sdk/core";
 import {
   createChannelDirectoryAdapter,
   listResolvedDirectoryGroupEntriesFromMapKeys,
   listResolvedDirectoryUserEntriesFromAllowFrom,
-} from "openclaw/plugin-sdk/directory-runtime";
-import { buildPassiveProbedChannelStatusSummary } from "openclaw/plugin-sdk/extension-shared";
-import { createLazyRuntimeNamedExport } from "openclaw/plugin-sdk/lazy-runtime";
+} from "foxfang/plugin-sdk/directory-runtime";
+import { buildPassiveProbedChannelStatusSummary } from "foxfang/plugin-sdk/extension-shared";
+import { createLazyRuntimeNamedExport } from "foxfang/plugin-sdk/lazy-runtime";
 import {
   createComputedAccountStatusAdapter,
   createDefaultChannelRuntimeState,
-} from "openclaw/plugin-sdk/status-helpers";
+} from "foxfang/plugin-sdk/status-helpers";
 import {
   buildChannelConfigSchema,
   chunkTextForOutbound,
@@ -36,7 +36,7 @@ import {
   runPassiveAccountLifecycle,
   type ChannelMessageActionAdapter,
   type ChannelStatusIssue,
-  type OpenClawConfig,
+  type FoxFangConfig,
 } from "../runtime-api.js";
 import { GoogleChatConfigSchema } from "../runtime-api.js";
 import {
@@ -122,7 +122,7 @@ const collectGoogleChatGroupPolicyWarnings =
 const collectGoogleChatSecurityWarnings = composeAccountWarningCollectors<
   ResolvedGoogleChatAccount,
   {
-    cfg: OpenClawConfig;
+    cfg: FoxFangConfig;
     account: ResolvedGoogleChatAccount;
   }
 >(

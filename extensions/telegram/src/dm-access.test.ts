@@ -1,4 +1,4 @@
-import type { createChannelPairingChallengeIssuer } from "openclaw/plugin-sdk/channel-pairing";
+import type { createChannelPairingChallengeIssuer } from "foxfang/plugin-sdk/channel-pairing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const createChannelPairingChallengeIssuerMock = vi.hoisted(() => vi.fn());
@@ -11,7 +11,7 @@ const createPairingPrefixStripperMock = vi.hoisted(
     normalize(value.replace(prefix, "")),
 );
 
-vi.mock("openclaw/plugin-sdk/channel-pairing", () => ({
+vi.mock("foxfang/plugin-sdk/channel-pairing", () => ({
   createChannelPairingChallengeIssuer: createChannelPairingChallengeIssuerMock,
   createPairingPrefixStripper: createPairingPrefixStripperMock,
   createLoggedPairingApprovalNotifier: () => undefined,
@@ -19,7 +19,7 @@ vi.mock("openclaw/plugin-sdk/channel-pairing", () => ({
   createChannelPairingController: () => ({}),
 }));
 
-vi.mock("openclaw/plugin-sdk/conversation-runtime", () => ({
+vi.mock("foxfang/plugin-sdk/conversation-runtime", () => ({
   upsertChannelPairingRequest: upsertChannelPairingRequestMock,
   createStaticReplyToModeResolver: (mode: string) => () => mode,
   createTopLevelChannelReplyToModeResolver: () => () => "off",

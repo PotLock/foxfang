@@ -32,20 +32,20 @@ export type ImageGenerationProviderContractEntry = {
 };
 
 function buildVitestCapabilityAliasMap(modulePath: string): Record<string, string> {
-  const { ["openclaw/plugin-sdk"]: _ignoredRootAlias, ...scopedAliasMap } =
+  const { ["foxfang/plugin-sdk"]: _ignoredRootAlias, ...scopedAliasMap } =
     buildPluginLoaderAliasMap(modulePath, process.argv[1], import.meta.url, "dist");
   return {
     ...scopedAliasMap,
-    "openclaw/plugin-sdk/llm-task": fileURLToPath(
+    "foxfang/plugin-sdk/llm-task": fileURLToPath(
       new URL("../capability-runtime-vitest-shims/llm-task.ts", import.meta.url),
     ),
-    "openclaw/plugin-sdk/media-runtime": fileURLToPath(
+    "foxfang/plugin-sdk/media-runtime": fileURLToPath(
       new URL("../capability-runtime-vitest-shims/media-runtime.ts", import.meta.url),
     ),
-    "openclaw/plugin-sdk/provider-onboard": fileURLToPath(
+    "foxfang/plugin-sdk/provider-onboard": fileURLToPath(
       new URL("../../plugin-sdk/provider-onboard.ts", import.meta.url),
     ),
-    "openclaw/plugin-sdk/speech-core": fileURLToPath(
+    "foxfang/plugin-sdk/speech-core": fileURLToPath(
       new URL("../capability-runtime-vitest-shims/speech-core.ts", import.meta.url),
     ),
   };

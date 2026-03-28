@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import { isRecord } from "../utils.js";
 import {
   mergeProviders,
@@ -11,7 +11,7 @@ import { applyNativeStreamingUsageCompat } from "./models-config.providers.polic
 import type { ProviderConfig } from "./models-config.providers.secrets.js";
 import { enforceSourceManagedProviderSecrets } from "./models-config.providers.source-managed.js";
 
-type ModelsConfig = NonNullable<OpenClawConfig["models"]>;
+type ModelsConfig = NonNullable<FoxFangConfig["models"]>;
 
 export type ModelsJsonPlan =
   | {
@@ -26,7 +26,7 @@ export type ModelsJsonPlan =
     };
 
 async function resolveProvidersForModelsJson(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   agentDir: string;
   env: NodeJS.ProcessEnv;
 }): Promise<Record<string, ProviderConfig>> {
@@ -45,7 +45,7 @@ async function resolveProvidersForModelsJson(params: {
 }
 
 function resolveExplicitBaseUrlProviders(
-  providers: OpenClawConfig["models"] | undefined,
+  providers: FoxFangConfig["models"] | undefined,
 ): ReadonlySet<string> {
   return new Set(
     Object.entries(providers?.providers ?? {})
@@ -84,9 +84,9 @@ function resolveProvidersForMode(params: {
   });
 }
 
-export async function planOpenClawModelsJson(params: {
-  cfg: OpenClawConfig;
-  sourceConfigForSecrets?: OpenClawConfig;
+export async function planFoxFangModelsJson(params: {
+  cfg: FoxFangConfig;
+  sourceConfigForSecrets?: FoxFangConfig;
   agentDir: string;
   env: NodeJS.ProcessEnv;
   existingRaw: string;

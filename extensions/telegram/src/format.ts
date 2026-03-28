@@ -1,4 +1,4 @@
-import type { MarkdownTableMode } from "openclaw/plugin-sdk/config-runtime";
+import type { MarkdownTableMode } from "foxfang/plugin-sdk/config-runtime";
 import {
   chunkMarkdownIR,
   FILE_REF_EXTENSIONS_WITH_TLD,
@@ -6,8 +6,8 @@ import {
   markdownToIR,
   type MarkdownLinkSpan,
   type MarkdownIR,
-} from "openclaw/plugin-sdk/text-runtime";
-import { renderMarkdownWithMarkers } from "openclaw/plugin-sdk/text-runtime";
+} from "foxfang/plugin-sdk/text-runtime";
+import { renderMarkdownWithMarkers } from "foxfang/plugin-sdk/text-runtime";
 
 export type TelegramFormattedChunk = {
   html: string;

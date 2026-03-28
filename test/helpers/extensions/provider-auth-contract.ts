@@ -11,23 +11,23 @@ import type {
 } from "../../../src/wizard/prompts.js";
 
 type LoginOpenAICodexOAuth =
-  (typeof import("openclaw/plugin-sdk/provider-auth-login"))["loginOpenAICodexOAuth"];
+  (typeof import("foxfang/plugin-sdk/provider-auth-login"))["loginOpenAICodexOAuth"];
 type GithubCopilotLoginCommand =
-  (typeof import("openclaw/plugin-sdk/provider-auth-login"))["githubCopilotLoginCommand"];
+  (typeof import("foxfang/plugin-sdk/provider-auth-login"))["githubCopilotLoginCommand"];
 type CreateVpsAwareHandlers =
   (typeof import("../../../src/plugins/provider-oauth-flow.js"))["createVpsAwareOAuthHandlers"];
 type EnsureAuthProfileStore =
-  typeof import("openclaw/plugin-sdk/provider-auth").ensureAuthProfileStore;
+  typeof import("foxfang/plugin-sdk/provider-auth").ensureAuthProfileStore;
 type ListProfilesForProvider =
-  typeof import("openclaw/plugin-sdk/provider-auth").listProfilesForProvider;
+  typeof import("foxfang/plugin-sdk/provider-auth").listProfilesForProvider;
 
 const loginOpenAICodexOAuthMock = vi.hoisted(() => vi.fn<LoginOpenAICodexOAuth>());
 const githubCopilotLoginCommandMock = vi.hoisted(() => vi.fn<GithubCopilotLoginCommand>());
 const ensureAuthProfileStoreMock = vi.hoisted(() => vi.fn<EnsureAuthProfileStore>());
 const listProfilesForProviderMock = vi.hoisted(() => vi.fn<ListProfilesForProvider>());
 
-vi.mock("openclaw/plugin-sdk/provider-auth-login", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/provider-auth-login")>();
+vi.mock("foxfang/plugin-sdk/provider-auth-login", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/provider-auth-login")>();
   return {
     ...actual,
     loginOpenAICodexOAuth: loginOpenAICodexOAuthMock,
@@ -35,8 +35,8 @@ vi.mock("openclaw/plugin-sdk/provider-auth-login", async (importOriginal) => {
   };
 });
 
-vi.mock("openclaw/plugin-sdk/provider-auth", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/provider-auth")>();
+vi.mock("foxfang/plugin-sdk/provider-auth", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/provider-auth")>();
   return {
     ...actual,
     ensureAuthProfileStore: ensureAuthProfileStoreMock,

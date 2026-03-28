@@ -1,17 +1,17 @@
 import type { Command } from "commander";
 import { resolveAgentWorkspaceDir, resolveDefaultAgentId } from "../agents/agent-scope.js";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import { loadConfig } from "../config/config.js";
 import { applyPluginAutoEnable } from "../config/plugin-auto-enable.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
-import { loadOpenClawPlugins, type PluginLoadOptions } from "./loader.js";
-import type { OpenClawPluginCliCommandDescriptor } from "./types.js";
+import { loadFoxFangPlugins, type PluginLoadOptions } from "./loader.js";
+import type { FoxFangPluginCliCommandDescriptor } from "./types.js";
 import type { PluginLogger } from "./types.js";
 
 const log = createSubsystemLogger("plugins");
 
 function loadPluginCliRegistry(
-  cfg?: OpenClawConfig,
+  cfg?: FoxFangConfig,
   env?: NodeJS.ProcessEnv,
   loaderOptions?: Pick<PluginLoadOptions, "pluginSdkResolution">,
 ) {
@@ -31,7 +31,7 @@ function loadPluginCliRegistry(
     config: resolvedConfig,
     workspaceDir,
     logger,
-    registry: loadOpenClawPlugins({
+    registry: loadFoxFangPlugins({
       config: resolvedConfig,
       workspaceDir,
       env,
@@ -42,13 +42,13 @@ function loadPluginCliRegistry(
 }
 
 export function getPluginCliCommandDescriptors(
-  cfg?: OpenClawConfig,
+  cfg?: FoxFangConfig,
   env?: NodeJS.ProcessEnv,
-): OpenClawPluginCliCommandDescriptor[] {
+): FoxFangPluginCliCommandDescriptor[] {
   try {
     const { registry } = loadPluginCliRegistry(cfg, env);
     const seen = new Set<string>();
-    const descriptors: OpenClawPluginCliCommandDescriptor[] = [];
+    const descriptors: FoxFangPluginCliCommandDescriptor[] = [];
     for (const entry of registry.cliRegistrars) {
       for (const descriptor of entry.descriptors) {
         if (seen.has(descriptor.name)) {
@@ -66,7 +66,7 @@ export function getPluginCliCommandDescriptors(
 
 export function registerPluginCliCommands(
   program: Command,
-  cfg?: OpenClawConfig,
+  cfg?: FoxFangConfig,
   env?: NodeJS.ProcessEnv,
   loaderOptions?: Pick<PluginLoadOptions, "pluginSdkResolution">,
 ) {

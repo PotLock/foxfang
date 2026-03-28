@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import { expectGeneratedTokenPersistedToGatewayAuth } from "../test-utils/auth-token-assertions.js";
 
 const mocks = vi.hoisted(() => ({
-  writeConfigFile: vi.fn(async (_cfg: OpenClawConfig) => {}),
+  writeConfigFile: vi.fn(async (_cfg: FoxFangConfig) => {}),
 }));
 
 vi.mock("../config/config.js", async (importOriginal) => {
@@ -24,7 +24,7 @@ async function loadFreshStartupAuthModuleForTest() {
 }
 
 describe("ensureGatewayStartupAuth", () => {
-  async function expectEphemeralGeneratedTokenWhenOverridden(cfg: OpenClawConfig) {
+  async function expectEphemeralGeneratedTokenWhenOverridden(cfg: FoxFangConfig) {
     const result = await ensureGatewayStartupAuth({
       cfg,
       env: {} as NodeJS.ProcessEnv,
@@ -45,7 +45,7 @@ describe("ensureGatewayStartupAuth", () => {
     await loadFreshStartupAuthModuleForTest();
   });
 
-  async function expectNoTokenGeneration(cfg: OpenClawConfig, mode: string) {
+  async function expectNoTokenGeneration(cfg: FoxFangConfig, mode: string) {
     const result = await ensureGatewayStartupAuth({
       cfg,
       env: {} as NodeJS.ProcessEnv,
@@ -59,7 +59,7 @@ describe("ensureGatewayStartupAuth", () => {
   }
 
   async function expectResolvedToken(params: {
-    cfg: OpenClawConfig;
+    cfg: FoxFangConfig;
     env: NodeJS.ProcessEnv;
     expectedToken: string;
     expectedConfiguredToken?: unknown;
@@ -80,7 +80,7 @@ describe("ensureGatewayStartupAuth", () => {
     expect(mocks.writeConfigFile).not.toHaveBeenCalled();
   }
 
-  function createMissingGatewayTokenSecretRefConfig(): OpenClawConfig {
+  function createMissingGatewayTokenSecretRefConfig(): FoxFangConfig {
     return {
       gateway: {
         auth: {
@@ -206,23 +206,23 @@ describe("ensureGatewayStartupAuth", () => {
         gateway: {
           auth: {
             mode: "token",
-            token: "${OPENCLAW_GATEWAY_TOKEN}",
+            token: "${FOXFANG_GATEWAY_TOKEN}",
           },
         },
       },
       env: {
-        OPENCLAW_GATEWAY_TOKEN: "resolved-token",
+        FOXFANG_GATEWAY_TOKEN: "resolved-token",
       } as NodeJS.ProcessEnv,
       expectedToken: "resolved-token",
-      expectedConfiguredToken: "${OPENCLAW_GATEWAY_TOKEN}",
+      expectedConfiguredToken: "${FOXFANG_GATEWAY_TOKEN}",
     });
   });
 
-  it("uses OPENCLAW_GATEWAY_TOKEN without resolving configured token SecretRef", async () => {
+  it("uses FOXFANG_GATEWAY_TOKEN without resolving configured token SecretRef", async () => {
     await expectResolvedToken({
       cfg: createMissingGatewayTokenSecretRefConfig(),
       env: {
-        OPENCLAW_GATEWAY_TOKEN: "token-from-env",
+        FOXFANG_GATEWAY_TOKEN: "token-from-env",
       } as NodeJS.ProcessEnv,
       expectedToken: "token-from-env",
     });
@@ -257,7 +257,7 @@ describe("ensureGatewayStartupAuth", () => {
     expect(mocks.writeConfigFile).not.toHaveBeenCalled();
   });
 
-  it("uses OPENCLAW_GATEWAY_PASSWORD without resolving configured password SecretRef", async () => {
+  it("uses FOXFANG_GATEWAY_PASSWORD without resolving configured password SecretRef", async () => {
     const result = await ensureGatewayStartupAuth({
       cfg: {
         gateway: {
@@ -273,7 +273,7 @@ describe("ensureGatewayStartupAuth", () => {
         },
       },
       env: {
-        OPENCLAW_GATEWAY_PASSWORD: "password-from-env", // pragma: allowlist secret
+        FOXFANG_GATEWAY_PASSWORD: "password-from-env", // pragma: allowlist secret
       } as NodeJS.ProcessEnv,
       persist: true,
     });
@@ -284,7 +284,7 @@ describe("ensureGatewayStartupAuth", () => {
   });
 
   it("does not resolve gateway.auth.password SecretRef when token mode is explicit", async () => {
-    const cfg: OpenClawConfig = {
+    const cfg: FoxFangConfig = {
       gateway: {
         auth: {
           mode: "token",
@@ -338,7 +338,7 @@ describe("ensureGatewayStartupAuth", () => {
   });
 
   it("treats undefined token override as no override", async () => {
-    const cfg: OpenClawConfig = {
+    const cfg: FoxFangConfig = {
       gateway: {
         auth: {
           mode: "token",
@@ -400,7 +400,7 @@ describe("ensureGatewayStartupAuth", () => {
           },
         },
         env: {
-          OPENCLAW_GATEWAY_TOKEN: "shared-gateway-token-1234567890",
+          FOXFANG_GATEWAY_TOKEN: "shared-gateway-token-1234567890",
         } as NodeJS.ProcessEnv,
       }),
     ).rejects.toThrow(/hooks\.token must not match gateway auth token/i);

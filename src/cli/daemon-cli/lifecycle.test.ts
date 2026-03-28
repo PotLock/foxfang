@@ -129,8 +129,8 @@ describe("runDaemonRestart health checks", () => {
   });
 
   beforeEach(() => {
-    envSnapshot = captureEnv(["OPENCLAW_CONTAINER_HINT", "OPENCLAW_PROFILE"]);
-    delete process.env.OPENCLAW_CONTAINER_HINT;
+    envSnapshot = captureEnv(["FOXFANG_CONTAINER_HINT", "FOXFANG_PROFILE"]);
+    delete process.env.FOXFANG_CONTAINER_HINT;
     service.readCommand.mockReset();
     service.restart.mockReset();
     runServiceRestart.mockReset();
@@ -149,7 +149,7 @@ describe("runDaemonRestart health checks", () => {
     loadConfig.mockReset();
 
     service.readCommand.mockResolvedValue({
-      programArguments: ["openclaw", "gateway", "--port", "18789"],
+      programArguments: ["foxfang", "gateway", "--port", "18789"],
       environment: {},
     });
     service.restart.mockResolvedValue({ outcome: "completed" });
@@ -243,8 +243,8 @@ describe("runDaemonRestart health checks", () => {
     await expect(runDaemonRestart({ json: true })).rejects.toMatchObject({
       message: "Gateway restart timed out after 60s waiting for health checks.",
       hints: [
-        formatCliCommand("openclaw gateway status --deep"),
-        formatCliCommand("openclaw doctor"),
+        formatCliCommand("foxfang gateway status --deep"),
+        formatCliCommand("foxfang doctor"),
       ],
     });
     expect(terminateStaleGatewayPids).not.toHaveBeenCalled();

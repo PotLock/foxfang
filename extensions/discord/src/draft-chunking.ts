@@ -1,14 +1,14 @@
-import { type OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import { resolveTextChunkLimit } from "openclaw/plugin-sdk/reply-runtime";
-import { resolveAccountEntry } from "openclaw/plugin-sdk/routing";
-import { normalizeAccountId } from "openclaw/plugin-sdk/routing";
+import { type FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import { resolveTextChunkLimit } from "foxfang/plugin-sdk/reply-runtime";
+import { resolveAccountEntry } from "foxfang/plugin-sdk/routing";
+import { normalizeAccountId } from "foxfang/plugin-sdk/routing";
 import { DISCORD_TEXT_CHUNK_LIMIT } from "./outbound-adapter.js";
 
 const DEFAULT_DISCORD_DRAFT_STREAM_MIN = 200;
 const DEFAULT_DISCORD_DRAFT_STREAM_MAX = 800;
 
 export function resolveDiscordDraftStreamingChunking(
-  cfg: OpenClawConfig | undefined,
+  cfg: FoxFangConfig | undefined,
   accountId?: string | null,
 ): {
   minChars: number;

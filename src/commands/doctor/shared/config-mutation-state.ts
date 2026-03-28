@@ -1,14 +1,14 @@
-import type { OpenClawConfig } from "../../../config/config.js";
+import type { FoxFangConfig } from "../../../config/config.js";
 
 export type DoctorConfigMutationState = {
-  cfg: OpenClawConfig;
-  candidate: OpenClawConfig;
+  cfg: FoxFangConfig;
+  candidate: FoxFangConfig;
   pendingChanges: boolean;
   fixHints: string[];
 };
 
 export type DoctorConfigMutationResult = {
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   changes: string[];
 };
 

@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/synthetic-provider",
+  "name": "@foxfang/synthetic-provider",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw Synthetic provider plugin",
+  "description": "FoxFang Synthetic provider plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

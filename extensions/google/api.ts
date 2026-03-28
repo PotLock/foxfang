@@ -1,8 +1,8 @@
-import type { ModelProviderConfig } from "openclaw/plugin-sdk/provider-model-shared";
+import type { ModelProviderConfig } from "foxfang/plugin-sdk/provider-model-shared";
 import {
   applyAgentDefaultModelPrimary,
-  type OpenClawConfig,
-} from "openclaw/plugin-sdk/provider-onboard";
+  type FoxFangConfig,
+} from "foxfang/plugin-sdk/provider-onboard";
 import { normalizeAntigravityModelId, normalizeGoogleModelId } from "./model-id.js";
 export { normalizeAntigravityModelId, normalizeGoogleModelId };
 
@@ -161,8 +161,8 @@ export function parseGeminiAuth(apiKey: string): { headers: Record<string, strin
 
 export const GOOGLE_GEMINI_DEFAULT_MODEL = "google/gemini-3.1-pro-preview";
 
-export function applyGoogleGeminiModelDefault(cfg: OpenClawConfig): {
-  next: OpenClawConfig;
+export function applyGoogleGeminiModelDefault(cfg: FoxFangConfig): {
+  next: FoxFangConfig;
   changed: boolean;
 } {
   const current = cfg.agents?.defaults?.model as unknown;

@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
 import {
   registerSessionBindingAdapter,
   resolveThreadBindingConversationIdFromBindingId,
@@ -8,8 +8,8 @@ import {
   type BindingTargetKind,
   type SessionBindingAdapter,
   type SessionBindingRecord,
-} from "openclaw/plugin-sdk/conversation-runtime";
-import { normalizeAccountId, resolveAgentIdFromSessionKey } from "openclaw/plugin-sdk/routing";
+} from "foxfang/plugin-sdk/conversation-runtime";
+import { normalizeAccountId, resolveAgentIdFromSessionKey } from "foxfang/plugin-sdk/routing";
 
 type BlueBubblesBindingTargetKind = "subagent" | "acp";
 
@@ -50,7 +50,7 @@ type BlueBubblesConversationBindingsState = {
 };
 
 const BLUEBUBBLES_CONVERSATION_BINDINGS_STATE_KEY = Symbol.for(
-  "openclaw.bluebubblesConversationBindingsState",
+  "foxfang.bluebubblesConversationBindingsState",
 );
 let state: BlueBubblesConversationBindingsState | undefined;
 
@@ -119,7 +119,7 @@ function toSessionBindingRecord(
 
 export function createBlueBubblesConversationBindingManager(params: {
   accountId?: string;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
 }): BlueBubblesConversationBindingManager {
   const accountId = normalizeAccountId(params.accountId);
   const existing = getState().managersByAccountId.get(accountId);

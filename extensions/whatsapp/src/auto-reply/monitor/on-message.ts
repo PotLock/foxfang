@@ -1,10 +1,10 @@
-import { loadConfig } from "openclaw/plugin-sdk/config-runtime";
-import type { getReplyFromConfig } from "openclaw/plugin-sdk/reply-runtime";
-import type { MsgContext } from "openclaw/plugin-sdk/reply-runtime";
-import { resolveAgentRoute } from "openclaw/plugin-sdk/routing";
-import { buildGroupHistoryKey } from "openclaw/plugin-sdk/routing";
-import { logVerbose } from "openclaw/plugin-sdk/runtime-env";
-import { normalizeE164 } from "openclaw/plugin-sdk/text-runtime";
+import { loadConfig } from "foxfang/plugin-sdk/config-runtime";
+import type { getReplyFromConfig } from "foxfang/plugin-sdk/reply-runtime";
+import type { MsgContext } from "foxfang/plugin-sdk/reply-runtime";
+import { resolveAgentRoute } from "foxfang/plugin-sdk/routing";
+import { buildGroupHistoryKey } from "foxfang/plugin-sdk/routing";
+import { logVerbose } from "foxfang/plugin-sdk/runtime-env";
+import { normalizeE164 } from "foxfang/plugin-sdk/text-runtime";
 import { getPrimaryIdentityId, getSenderIdentity } from "../../identity.js";
 import type { MentionConfig } from "../mentions.js";
 import type { WebInboundMsg } from "../types.js";
@@ -27,7 +27,7 @@ export function createWebOnMessageHandler(params: {
   echoTracker: EchoTracker;
   backgroundTasks: Set<Promise<unknown>>;
   replyResolver: typeof getReplyFromConfig;
-  replyLogger: ReturnType<(typeof import("openclaw/plugin-sdk/runtime-env"))["getChildLogger"]>;
+  replyLogger: ReturnType<(typeof import("foxfang/plugin-sdk/runtime-env"))["getChildLogger"]>;
   baseMentionConfig: MentionConfig;
   account: { authDir?: string; accountId?: string };
 }) {

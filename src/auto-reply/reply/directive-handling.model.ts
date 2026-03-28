@@ -6,7 +6,7 @@ import {
   resolveConfiguredModelRef,
   resolveModelRefFromString,
 } from "../../agents/model-selection.js";
-import type { OpenClawConfig } from "../../config/config.js";
+import type { FoxFangConfig } from "../../config/config.js";
 import type { SessionEntry } from "../../config/sessions.js";
 import { buildBrowseProvidersButton } from "../../plugin-sdk/telegram-runtime.js";
 import { shortenHomePath } from "../../utils.js";
@@ -51,7 +51,7 @@ function pushUniqueCatalogEntry(params: {
 }
 
 function buildModelPickerCatalog(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   defaultProvider: string;
   defaultModel: string;
   aliasIndex: ModelAliasIndex;
@@ -188,7 +188,7 @@ function buildModelPickerCatalog(params: {
 
 export async function maybeHandleModelDirectiveInfo(params: {
   directives: InlineDirectives;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   agentDir: string;
   activeAgentId: string;
   provider: string;

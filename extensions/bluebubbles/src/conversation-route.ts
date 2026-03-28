@@ -1,19 +1,19 @@
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
 import {
   getSessionBindingService,
   isPluginOwnedSessionBindingRecord,
   resolveConfiguredBindingRoute,
-} from "openclaw/plugin-sdk/conversation-runtime";
+} from "foxfang/plugin-sdk/conversation-runtime";
 import {
   deriveLastRoutePolicy,
   resolveAgentIdFromSessionKey,
   resolveAgentRoute,
-} from "openclaw/plugin-sdk/routing";
-import { logVerbose } from "openclaw/plugin-sdk/runtime-env";
+} from "foxfang/plugin-sdk/routing";
+import { logVerbose } from "foxfang/plugin-sdk/runtime-env";
 import { resolveBlueBubblesInboundConversationId } from "./conversation-id.js";
 
 export function resolveBlueBubblesConversationRoute(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId: string;
   isGroup: boolean;
   peerId: string;

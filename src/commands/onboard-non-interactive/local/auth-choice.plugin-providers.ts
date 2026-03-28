@@ -5,7 +5,7 @@ import {
 } from "../../../agents/agent-scope.js";
 import type { ApiKeyCredential } from "../../../agents/auth-profiles/types.js";
 import { resolveDefaultAgentWorkspaceDir } from "../../../agents/workspace.js";
-import type { OpenClawConfig } from "../../../config/config.js";
+import type { FoxFangConfig } from "../../../config/config.js";
 import { enablePluginInConfig } from "../../../plugins/enable.js";
 import { resolvePreferredProviderForAuthChoice } from "../../../plugins/provider-auth-choice-preference.js";
 import type {
@@ -29,9 +29,9 @@ const loadAuthChoicePluginProvidersRuntime = createLazyRuntimeSurface(
 );
 
 function buildIsolatedProviderResolutionConfig(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   ids: Iterable<string | undefined>,
-): OpenClawConfig {
+): FoxFangConfig {
   const allow = new Set(cfg.plugins?.allow ?? []);
   const entries = {
     ...cfg.plugins?.entries,
@@ -63,11 +63,11 @@ function buildIsolatedProviderResolutionConfig(
 }
 
 export async function applyNonInteractivePluginProviderChoice(params: {
-  nextConfig: OpenClawConfig;
+  nextConfig: FoxFangConfig;
   authChoice: string;
   opts: OnboardOptions;
   runtime: RuntimeEnv;
-  baseConfig: OpenClawConfig;
+  baseConfig: FoxFangConfig;
   resolveApiKey: (input: ProviderResolveNonInteractiveApiKeyParams) => Promise<{
     key: string;
     source: "profile" | "env" | "flag";
@@ -76,7 +76,7 @@ export async function applyNonInteractivePluginProviderChoice(params: {
   toApiKeyCredential: (
     input: ProviderNonInteractiveApiKeyCredentialParams,
   ) => ApiKeyCredential | null;
-}): Promise<OpenClawConfig | null | undefined> {
+}): Promise<FoxFangConfig | null | undefined> {
   const agentId = resolveDefaultAgentId(params.nextConfig);
   const agentDir = resolveAgentDir(params.nextConfig, agentId);
   const workspaceDir =

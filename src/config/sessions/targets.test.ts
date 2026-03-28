@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { withTempHome } from "../../../test/helpers/temp-home.js";
-import type { OpenClawConfig } from "../config.js";
+import type { FoxFangConfig } from "../config.js";
 import { resolveStorePath } from "./paths.js";
 import {
   resolveAllAgentSessionStoreTargets,
@@ -30,7 +30,7 @@ async function createAgentSessionStores(
   return storePaths;
 }
 
-function createCustomRootCfg(customRoot: string, defaultAgentId = "ops"): OpenClawConfig {
+function createCustomRootCfg(customRoot: string, defaultAgentId = "ops"): FoxFangConfig {
   return {
     session: {
       store: path.join(customRoot, "agents", "{agentId}", "sessions", "sessions.json"),
@@ -66,12 +66,12 @@ function expectTargetsToContainStores(
 const discoveryResolvers = [
   {
     label: "async",
-    resolve: async (cfg: OpenClawConfig, env: NodeJS.ProcessEnv) =>
+    resolve: async (cfg: FoxFangConfig, env: NodeJS.ProcessEnv) =>
       await resolveAllAgentSessionStoreTargets(cfg, { env }),
   },
   {
     label: "sync",
-    resolve: async (cfg: OpenClawConfig, env: NodeJS.ProcessEnv) =>
+    resolve: async (cfg: FoxFangConfig, env: NodeJS.ProcessEnv) =>
       resolveAllAgentSessionStoreTargetsSync(cfg, { env }),
   },
 ] as const;
@@ -79,7 +79,7 @@ const discoveryResolvers = [
 describe("resolveSessionStoreTargets", () => {
   it("resolves all configured agent stores", async () => {
     await withTempHome(async () => {
-      const cfg: OpenClawConfig = {
+      const cfg: FoxFangConfig = {
         session: {
           store: "~/.foxfang/agents/{agentId}/sessions/sessions.json",
         },
@@ -104,7 +104,7 @@ describe("resolveSessionStoreTargets", () => {
   });
 
   it("dedupes shared store paths for --all-agents", () => {
-    const cfg: OpenClawConfig = {
+    const cfg: FoxFangConfig = {
       session: {
         store: "/tmp/shared-sessions.json",
       },
@@ -119,7 +119,7 @@ describe("resolveSessionStoreTargets", () => {
   });
 
   it("rejects unknown agent ids", () => {
-    const cfg: OpenClawConfig = {
+    const cfg: FoxFangConfig = {
       agents: {
         list: [{ id: "main", default: true }, { id: "work" }],
       },
@@ -144,7 +144,7 @@ describe("resolveAllAgentSessionStoreTargets", () => {
       const stateDir = path.join(home, ".foxfang");
       const storePaths = await createAgentSessionStores(stateDir, ["ops", "retired"]);
 
-      const cfg: OpenClawConfig = {
+      const cfg: FoxFangConfig = {
         agents: {
           list: [{ id: "ops", default: true }],
         },
@@ -196,9 +196,9 @@ describe("resolveAllAgentSessionStoreTargets", () => {
 
       const env = {
         ...process.env,
-        OPENCLAW_STATE_DIR: envStateDir,
+        FOXFANG_STATE_DIR: envStateDir,
       };
-      const cfg: OpenClawConfig = {};
+      const cfg: FoxFangConfig = {};
       const mainStorePath = await resolveRealStorePath(mainSessionsDir);
       const retiredStorePath = await resolveRealStorePath(retiredSessionsDir);
 
@@ -231,7 +231,7 @@ describe("resolveAllAgentSessionStoreTargets", () => {
         const cfg = createCustomRootCfg(customRoot, "main");
         const env = {
           ...process.env,
-          OPENCLAW_STATE_DIR: envStateDir,
+          FOXFANG_STATE_DIR: envStateDir,
         };
 
         await expect(resolver.resolve(cfg, env)).resolves.toEqual(
@@ -276,7 +276,7 @@ describe("resolveAllAgentSessionStoreTargets", () => {
       await fs.writeFile(path.join(mainSessionsDir, "sessions.json"), "{}", "utf8");
       await fs.writeFile(path.join(junkSessionsDir, "sessions.json"), "{}", "utf8");
 
-      const cfg: OpenClawConfig = {};
+      const cfg: FoxFangConfig = {};
       const mainStorePath = await resolveRealStorePath(mainSessionsDir);
       const targets = await resolveAllAgentSessionStoreTargets(cfg, { env: process.env });
 

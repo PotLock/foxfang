@@ -1,5 +1,5 @@
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import type { RuntimeEnv } from "openclaw/plugin-sdk/runtime-env";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import type { RuntimeEnv } from "foxfang/plugin-sdk/runtime-env";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { createLineBotMock, registerPluginHttpRouteMock, unregisterHttpMock } = vi.hoisted(() => ({
@@ -17,13 +17,13 @@ vi.mock("./bot.js", () => ({
   createLineBot: createLineBotMock,
 }));
 
-vi.mock("openclaw/plugin-sdk/reply-runtime", () => ({
+vi.mock("foxfang/plugin-sdk/reply-runtime", () => ({
   chunkMarkdownText: vi.fn(),
   dispatchReplyWithBufferedBlockDispatcher: vi.fn(),
 }));
 
-vi.mock("openclaw/plugin-sdk/runtime-env", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/runtime-env")>();
+vi.mock("foxfang/plugin-sdk/runtime-env", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/runtime-env")>();
   return {
     ...actual,
     danger: (value: unknown) => String(value),
@@ -32,11 +32,11 @@ vi.mock("openclaw/plugin-sdk/runtime-env", async (importOriginal) => {
   };
 });
 
-vi.mock("openclaw/plugin-sdk/channel-reply-pipeline", () => ({
+vi.mock("foxfang/plugin-sdk/channel-reply-pipeline", () => ({
   createChannelReplyPipeline: vi.fn(() => ({})),
 }));
 
-vi.mock("openclaw/plugin-sdk/webhook-ingress", () => ({
+vi.mock("foxfang/plugin-sdk/webhook-ingress", () => ({
   normalizePluginHttpPath: (_path: string | undefined, fallback: string) => fallback,
   registerPluginHttpRoute: registerPluginHttpRouteMock,
 }));
@@ -95,7 +95,7 @@ describe("monitorLineProvider lifecycle", () => {
     const task = monitorLineProvider({
       channelAccessToken: "token",
       channelSecret: "secret", // pragma: allowlist secret
-      config: {} as OpenClawConfig,
+      config: {} as FoxFangConfig,
       runtime: {} as RuntimeEnv,
       abortSignal: abort.signal,
     }).then((monitor) => {
@@ -121,7 +121,7 @@ describe("monitorLineProvider lifecycle", () => {
     await monitorLineProvider({
       channelAccessToken: "token",
       channelSecret: "secret", // pragma: allowlist secret
-      config: {} as OpenClawConfig,
+      config: {} as FoxFangConfig,
       runtime: {} as RuntimeEnv,
       abortSignal: abort.signal,
     });
@@ -133,7 +133,7 @@ describe("monitorLineProvider lifecycle", () => {
     const monitor = await monitorLineProvider({
       channelAccessToken: "token",
       channelSecret: "secret", // pragma: allowlist secret
-      config: {} as OpenClawConfig,
+      config: {} as FoxFangConfig,
       runtime: {} as RuntimeEnv,
     });
 
@@ -148,7 +148,7 @@ describe("monitorLineProvider lifecycle", () => {
       monitorLineProvider({
         channelAccessToken: "token",
         channelSecret: "   ",
-        config: {} as OpenClawConfig,
+        config: {} as FoxFangConfig,
         runtime: {} as RuntimeEnv,
       }),
     ).rejects.toThrow("LINE webhook mode requires a non-empty channel secret.");
@@ -159,7 +159,7 @@ describe("monitorLineProvider lifecycle", () => {
       monitorLineProvider({
         channelAccessToken: "   ",
         channelSecret: "secret",
-        config: {} as OpenClawConfig,
+        config: {} as FoxFangConfig,
         runtime: {} as RuntimeEnv,
       }),
     ).rejects.toThrow("LINE webhook mode requires a non-empty channel access token.");

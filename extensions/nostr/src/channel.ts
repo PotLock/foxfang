@@ -1,16 +1,16 @@
-import { describeAccountSnapshot } from "openclaw/plugin-sdk/account-helpers";
+import { describeAccountSnapshot } from "foxfang/plugin-sdk/account-helpers";
 import {
   createScopedDmSecurityResolver,
   createTopLevelChannelConfigAdapter,
-} from "openclaw/plugin-sdk/channel-config-helpers";
-import { createChannelPairingController } from "openclaw/plugin-sdk/channel-pairing";
-import { attachChannelToResult } from "openclaw/plugin-sdk/channel-send-result";
-import { createChatChannelPlugin } from "openclaw/plugin-sdk/core";
+} from "foxfang/plugin-sdk/channel-config-helpers";
+import { createChannelPairingController } from "foxfang/plugin-sdk/channel-pairing";
+import { attachChannelToResult } from "foxfang/plugin-sdk/channel-send-result";
+import { createChatChannelPlugin } from "foxfang/plugin-sdk/core";
 import {
   buildPassiveChannelStatusSummary,
   buildTrafficStatusSummary,
-} from "openclaw/plugin-sdk/extension-shared";
-import { createComputedAccountStatusAdapter } from "openclaw/plugin-sdk/status-helpers";
+} from "foxfang/plugin-sdk/extension-shared";
+import { createComputedAccountStatusAdapter } from "foxfang/plugin-sdk/status-helpers";
 import {
   buildChannelConfigSchema,
   collectStatusIssuesFromLastError,

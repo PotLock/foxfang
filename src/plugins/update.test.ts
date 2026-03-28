@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 
 const installPluginFromNpmSpecMock = vi.fn();
 const installPluginFromMarketplaceMock = vi.fn();
@@ -40,8 +40,8 @@ function createSuccessfulNpmUpdateResult(params?: {
 }) {
   return {
     ok: true,
-    pluginId: params?.pluginId ?? "opik-openclaw",
-    targetDir: params?.targetDir ?? "/tmp/opik-openclaw",
+    pluginId: params?.pluginId ?? "opik-foxfang",
+    targetDir: params?.targetDir ?? "/tmp/opik-foxfang",
     version: params?.version ?? "0.2.6",
     extensions: ["index.ts"],
     ...(params?.npmResolution ? { npmResolution: params.npmResolution } : {}),
@@ -78,7 +78,7 @@ function createMarketplaceInstallConfig(params: {
   marketplaceSource: string;
   marketplacePlugin: string;
   marketplaceName?: string;
-}): OpenClawConfig {
+}): FoxFangConfig {
   return {
     plugins: {
       installs: {
@@ -101,7 +101,7 @@ function createClawHubInstallConfig(params: {
   clawhubPackage: string;
   clawhubFamily: "bundle-plugin" | "code-plugin";
   clawhubChannel: "community" | "official" | "private";
-}): OpenClawConfig {
+}): FoxFangConfig {
   return {
     plugins: {
       installs: {
@@ -124,7 +124,7 @@ function createBundledPathInstallConfig(params: {
   installPath: string;
   sourcePath?: string;
   spec?: string;
-}): OpenClawConfig {
+}): FoxFangConfig {
   return {
     plugins: {
       load: { paths: params.loadPaths },
@@ -148,10 +148,10 @@ function createCodexAppServerInstallConfig(params: {
   return {
     plugins: {
       installs: {
-        "openclaw-codex-app-server": {
+        "foxfang-codex-app-server": {
           source: "npm" as const,
           spec: params.spec,
-          installPath: "/tmp/openclaw-codex-app-server",
+          installPath: "/tmp/foxfang-codex-app-server",
           ...(params.resolvedName ? { resolvedName: params.resolvedName } : {}),
           ...(params.resolvedSpec ? { resolvedSpec: params.resolvedSpec } : {}),
         },
@@ -179,7 +179,7 @@ function createBundledSource(params?: { pluginId?: string; localPath?: string; n
   return {
     pluginId,
     localPath: params?.localPath ?? `/app/extensions/${pluginId}`,
-    npmSpec: params?.npmSpec ?? `@openclaw/${pluginId}`,
+    npmSpec: params?.npmSpec ?? `@foxfang/${pluginId}`,
   };
 }
 
@@ -209,10 +209,10 @@ function expectCodexAppServerInstallState(params: {
   version: string;
   resolvedSpec?: string;
 }) {
-  expect(params.result.config.plugins?.installs?.["openclaw-codex-app-server"]).toMatchObject({
+  expect(params.result.config.plugins?.installs?.["foxfang-codex-app-server"]).toMatchObject({
     source: "npm",
     spec: params.spec,
-    installPath: "/tmp/openclaw-codex-app-server",
+    installPath: "/tmp/foxfang-codex-app-server",
     version: params.version,
     ...(params.resolvedSpec ? { resolvedSpec: params.resolvedSpec } : {}),
   });
@@ -230,52 +230,52 @@ describe("updateNpmInstalledPlugins", () => {
     {
       name: "skips integrity drift checks for unpinned npm specs during dry-run updates",
       config: createNpmInstallConfig({
-        pluginId: "opik-openclaw",
-        spec: "@opik/opik-openclaw",
+        pluginId: "opik-foxfang",
+        spec: "@opik/opik-foxfang",
         integrity: "sha512-old",
-        installPath: "/tmp/opik-openclaw",
+        installPath: "/tmp/opik-foxfang",
       }),
-      pluginIds: ["opik-openclaw"],
+      pluginIds: ["opik-foxfang"],
       dryRun: true,
       expectedCall: {
-        spec: "@opik/opik-openclaw",
+        spec: "@opik/opik-foxfang",
         expectedIntegrity: undefined,
       },
     },
     {
       name: "keeps integrity drift checks for exact-version npm specs during dry-run updates",
       config: createNpmInstallConfig({
-        pluginId: "opik-openclaw",
-        spec: "@opik/opik-openclaw@0.2.5",
+        pluginId: "opik-foxfang",
+        spec: "@opik/opik-foxfang@0.2.5",
         integrity: "sha512-old",
-        installPath: "/tmp/opik-openclaw",
+        installPath: "/tmp/opik-foxfang",
       }),
-      pluginIds: ["opik-openclaw"],
+      pluginIds: ["opik-foxfang"],
       dryRun: true,
       expectedCall: {
-        spec: "@opik/opik-openclaw@0.2.5",
+        spec: "@opik/opik-foxfang@0.2.5",
         expectedIntegrity: "sha512-old",
       },
     },
     {
       name: "skips recorded integrity checks when an explicit npm version override changes the spec",
       config: createNpmInstallConfig({
-        pluginId: "openclaw-codex-app-server",
-        spec: "openclaw-codex-app-server@0.2.0-beta.3",
+        pluginId: "foxfang-codex-app-server",
+        spec: "foxfang-codex-app-server@0.2.0-beta.3",
         integrity: "sha512-old",
-        installPath: "/tmp/openclaw-codex-app-server",
+        installPath: "/tmp/foxfang-codex-app-server",
       }),
-      pluginIds: ["openclaw-codex-app-server"],
+      pluginIds: ["foxfang-codex-app-server"],
       specOverrides: {
-        "openclaw-codex-app-server": "openclaw-codex-app-server@0.2.0-beta.4",
+        "foxfang-codex-app-server": "foxfang-codex-app-server@0.2.0-beta.4",
       },
       installerResult: createSuccessfulNpmUpdateResult({
-        pluginId: "openclaw-codex-app-server",
-        targetDir: "/tmp/openclaw-codex-app-server",
+        pluginId: "foxfang-codex-app-server",
+        targetDir: "/tmp/foxfang-codex-app-server",
         version: "0.2.0-beta.4",
       }),
       expectedCall: {
-        spec: "openclaw-codex-app-server@0.2.0-beta.4",
+        spec: "foxfang-codex-app-server@0.2.0-beta.4",
         expectedIntegrity: undefined,
       },
     },
@@ -303,15 +303,15 @@ describe("updateNpmInstalledPlugins", () => {
       installerResult: {
         ok: false,
         code: "npm_package_not_found",
-        error: "Package not found on npm: @openclaw/missing.",
+        error: "Package not found on npm: @foxfang/missing.",
       },
       config: createNpmInstallConfig({
         pluginId: "missing",
-        spec: "@openclaw/missing",
+        spec: "@foxfang/missing",
         installPath: "/tmp/missing",
       }),
       pluginId: "missing",
-      expectedMessage: "Failed to check missing: npm package not found for @openclaw/missing.",
+      expectedMessage: "Failed to check missing: npm package not found for @foxfang/missing.",
     },
     {
       name: "falls back to raw installer error for unknown error codes",
@@ -351,42 +351,42 @@ describe("updateNpmInstalledPlugins", () => {
       name: "reuses a recorded npm dist-tag spec for id-based updates",
       installerResult: {
         ok: true,
-        pluginId: "openclaw-codex-app-server",
-        targetDir: "/tmp/openclaw-codex-app-server",
+        pluginId: "foxfang-codex-app-server",
+        targetDir: "/tmp/foxfang-codex-app-server",
         version: "0.2.0-beta.4",
         extensions: ["index.ts"],
       },
       config: createCodexAppServerInstallConfig({
-        spec: "openclaw-codex-app-server@beta",
-        resolvedName: "openclaw-codex-app-server",
-        resolvedSpec: "openclaw-codex-app-server@0.2.0-beta.3",
+        spec: "foxfang-codex-app-server@beta",
+        resolvedName: "foxfang-codex-app-server",
+        resolvedSpec: "foxfang-codex-app-server@0.2.0-beta.3",
       }),
-      expectedSpec: "openclaw-codex-app-server@beta",
+      expectedSpec: "foxfang-codex-app-server@beta",
       expectedVersion: "0.2.0-beta.4",
     },
     {
       name: "uses and persists an explicit npm spec override during updates",
       installerResult: {
         ok: true,
-        pluginId: "openclaw-codex-app-server",
-        targetDir: "/tmp/openclaw-codex-app-server",
+        pluginId: "foxfang-codex-app-server",
+        targetDir: "/tmp/foxfang-codex-app-server",
         version: "0.2.0-beta.4",
         extensions: ["index.ts"],
         npmResolution: {
-          name: "openclaw-codex-app-server",
+          name: "foxfang-codex-app-server",
           version: "0.2.0-beta.4",
-          resolvedSpec: "openclaw-codex-app-server@0.2.0-beta.4",
+          resolvedSpec: "foxfang-codex-app-server@0.2.0-beta.4",
         },
       },
       config: createCodexAppServerInstallConfig({
-        spec: "openclaw-codex-app-server",
+        spec: "foxfang-codex-app-server",
       }),
       specOverrides: {
-        "openclaw-codex-app-server": "openclaw-codex-app-server@beta",
+        "foxfang-codex-app-server": "foxfang-codex-app-server@beta",
       },
-      expectedSpec: "openclaw-codex-app-server@beta",
+      expectedSpec: "foxfang-codex-app-server@beta",
       expectedVersion: "0.2.0-beta.4",
-      expectedResolvedSpec: "openclaw-codex-app-server@0.2.0-beta.4",
+      expectedResolvedSpec: "foxfang-codex-app-server@0.2.0-beta.4",
     },
   ] as const)(
     "$name",
@@ -402,13 +402,13 @@ describe("updateNpmInstalledPlugins", () => {
 
       const result = await updateNpmInstalledPlugins({
         config,
-        pluginIds: ["openclaw-codex-app-server"],
+        pluginIds: ["foxfang-codex-app-server"],
         ...(specOverrides ? { specOverrides } : {}),
       });
 
       expectNpmUpdateCall({
         spec: expectedSpec,
-        expectedPluginId: "openclaw-codex-app-server",
+        expectedPluginId: "foxfang-codex-app-server",
       });
       expectCodexAppServerInstallState({
         result,
@@ -471,8 +471,8 @@ describe("updateNpmInstalledPlugins", () => {
   it("migrates legacy unscoped install keys when a scoped npm package updates", async () => {
     installPluginFromNpmSpecMock.mockResolvedValue({
       ok: true,
-      pluginId: "@openclaw/voice-call",
-      targetDir: "/tmp/openclaw-voice-call",
+      pluginId: "@foxfang/voice-call",
+      targetDir: "/tmp/foxfang-voice-call",
       version: "0.0.2",
       extensions: ["index.ts"],
     });
@@ -492,7 +492,7 @@ describe("updateNpmInstalledPlugins", () => {
           installs: {
             "voice-call": {
               source: "npm",
-              spec: "@openclaw/voice-call",
+              spec: "@foxfang/voice-call",
               installPath: "/tmp/voice-call",
             },
           },
@@ -503,22 +503,22 @@ describe("updateNpmInstalledPlugins", () => {
 
     expect(installPluginFromNpmSpecMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        spec: "@openclaw/voice-call",
+        spec: "@foxfang/voice-call",
         expectedPluginId: "voice-call",
       }),
     );
-    expect(result.config.plugins?.allow).toEqual(["@openclaw/voice-call"]);
-    expect(result.config.plugins?.deny).toEqual(["@openclaw/voice-call"]);
-    expect(result.config.plugins?.slots?.memory).toBe("@openclaw/voice-call");
-    expect(result.config.plugins?.entries?.["@openclaw/voice-call"]).toEqual({
+    expect(result.config.plugins?.allow).toEqual(["@foxfang/voice-call"]);
+    expect(result.config.plugins?.deny).toEqual(["@foxfang/voice-call"]);
+    expect(result.config.plugins?.slots?.memory).toBe("@foxfang/voice-call");
+    expect(result.config.plugins?.entries?.["@foxfang/voice-call"]).toEqual({
       enabled: false,
       hooks: { allowPromptInjection: false },
     });
     expect(result.config.plugins?.entries?.["voice-call"]).toBeUndefined();
-    expect(result.config.plugins?.installs?.["@openclaw/voice-call"]).toMatchObject({
+    expect(result.config.plugins?.installs?.["@foxfang/voice-call"]).toMatchObject({
       source: "npm",
-      spec: "@openclaw/voice-call",
-      installPath: "/tmp/openclaw-voice-call",
+      spec: "@foxfang/voice-call",
+      installPath: "/tmp/foxfang-voice-call",
       version: "0.0.2",
     });
     expect(result.config.plugins?.installs?.["voice-call"]).toBeUndefined();
@@ -612,7 +612,7 @@ describe("syncPluginsForUpdateChannel", () => {
       config: createBundledPathInstallConfig({
         loadPaths: ["/app/extensions/feishu"],
         installPath: "/app/extensions/feishu",
-        spec: "@openclaw/feishu",
+        spec: "@foxfang/feishu",
       }),
       expectedChanged: false,
       expectedLoadPaths: ["/app/extensions/feishu"],
@@ -623,7 +623,7 @@ describe("syncPluginsForUpdateChannel", () => {
       config: createBundledPathInstallConfig({
         loadPaths: [],
         installPath: "/tmp/old-feishu",
-        spec: "@openclaw/feishu",
+        spec: "@foxfang/feishu",
       }),
       expectedChanged: true,
       expectedLoadPaths: ["/app/extensions/feishu"],
@@ -647,14 +647,14 @@ describe("syncPluginsForUpdateChannel", () => {
         install: result.config.plugins?.installs?.feishu,
         sourcePath: "/app/extensions/feishu",
         installPath: expectedInstallPath,
-        spec: "@openclaw/feishu",
+        spec: "@foxfang/feishu",
       });
     },
   );
 
   it("forwards an explicit env to bundled plugin source resolution", async () => {
     resolveBundledPluginSourcesMock.mockReturnValue(new Map());
-    const env = { OPENCLAW_HOME: "/srv/openclaw-home" } as NodeJS.ProcessEnv;
+    const env = { FOXFANG_HOME: "/srv/foxfang-home" } as NodeJS.ProcessEnv;
 
     await syncPluginsForUpdateChannel({
       channel: "beta",
@@ -670,7 +670,7 @@ describe("syncPluginsForUpdateChannel", () => {
   });
 
   it("uses the provided env when matching bundled load and install paths", async () => {
-    const bundledHome = "/tmp/openclaw-home";
+    const bundledHome = "/tmp/foxfang-home";
     mockBundledSources(
       createBundledSource({
         localPath: `${bundledHome}/plugins/feishu`,
@@ -684,7 +684,7 @@ describe("syncPluginsForUpdateChannel", () => {
         channel: "beta",
         env: {
           ...process.env,
-          OPENCLAW_HOME: bundledHome,
+          FOXFANG_HOME: bundledHome,
           HOME: "/tmp/ignored-home",
         },
         config: {
@@ -695,7 +695,7 @@ describe("syncPluginsForUpdateChannel", () => {
                 source: "path",
                 sourcePath: "~/plugins/feishu",
                 installPath: "~/plugins/feishu",
-                spec: "@openclaw/feishu",
+                spec: "@foxfang/feishu",
               },
             },
           },

@@ -3,8 +3,8 @@ import {
   listCombinedAccountIds,
   normalizeAccountId,
   resolveMergedAccountConfig,
-} from "openclaw/plugin-sdk/account-resolution";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
+} from "foxfang/plugin-sdk/account-resolution";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
 
 type TlonAccountConfig = {
   name?: string;
@@ -47,12 +47,12 @@ export type TlonResolvedAccount = {
   ownerShip: string | null;
 };
 
-function resolveTlonChannelConfig(cfg: OpenClawConfig): TlonAccountConfig | undefined {
+function resolveTlonChannelConfig(cfg: FoxFangConfig): TlonAccountConfig | undefined {
   return cfg.channels?.tlon as TlonAccountConfig | undefined;
 }
 
 function resolveMergedTlonAccountConfig(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   accountId: string,
 ): Record<string, unknown> & TlonAccountConfig {
   const channel = resolveTlonChannelConfig(cfg);
@@ -70,7 +70,7 @@ function resolveMergedTlonAccountConfig(
 }
 
 export function resolveTlonAccount(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   accountId?: string | null,
 ): TlonResolvedAccount {
   const resolvedAccountId = normalizeAccountId(accountId);
@@ -135,7 +135,7 @@ export function resolveTlonAccount(
   };
 }
 
-export function listTlonAccountIds(cfg: OpenClawConfig): string[] {
+export function listTlonAccountIds(cfg: FoxFangConfig): string[] {
   const base = resolveTlonChannelConfig(cfg);
   if (!base) {
     return [];

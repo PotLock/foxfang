@@ -1,5 +1,5 @@
 import { formatCliCommand } from "../cli/command-format.js";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import { CONFIG_PATH } from "../config/config.js";
 import { applyPluginAutoEnable } from "../config/plugin-auto-enable.js";
 import { note } from "../terminal/note.js";
@@ -37,11 +37,11 @@ export async function loadAndMaybeMigrateDoctorConfig(params: {
   const preflight = await runDoctorConfigPreflight();
   let snapshot = preflight.snapshot;
   const baseCfg = preflight.baseConfig;
-  let cfg: OpenClawConfig = baseCfg;
+  let cfg: FoxFangConfig = baseCfg;
   let candidate = structuredClone(baseCfg);
   let pendingChanges = false;
   let fixHints: string[] = [];
-  const doctorFixCommand = formatCliCommand("openclaw doctor --fix");
+  const doctorFixCommand = formatCliCommand("foxfang doctor --fix");
 
   const legacyStep = applyLegacyCompatibilityStep({
     snapshot,

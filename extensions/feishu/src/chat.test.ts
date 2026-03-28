@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createTestPluginApi } from "../../../test/helpers/extensions/plugin-api.js";
 import { createPluginRuntimeMock } from "../../../test/helpers/extensions/plugin-runtime-mock.js";
-import type { OpenClawPluginApi } from "../runtime-api.js";
+import type { FoxFangPluginApi } from "../runtime-api.js";
 
 const createFeishuClientMock = vi.hoisted(() => vi.fn());
 const chatGetMock = vi.hoisted(() => vi.fn());
@@ -16,9 +16,9 @@ let registerFeishuChatTools: typeof import("./chat.js").registerFeishuChatTools;
 
 describe("registerFeishuChatTools", () => {
   function createChatToolApi(params: {
-    config: OpenClawPluginApi["config"];
-    registerTool: OpenClawPluginApi["registerTool"];
-  }): OpenClawPluginApi {
+    config: FoxFangPluginApi["config"];
+    registerTool: FoxFangPluginApi["registerTool"];
+  }): FoxFangPluginApi {
     return createTestPluginApi({
       id: "feishu-test",
       name: "Feishu Test",

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { clearPluginDiscoveryCache, discoverOpenClawPlugins } from "./discovery.js";
+import { clearPluginDiscoveryCache, discoverFoxFangPlugins } from "./discovery.js";
 import {
   cleanupTrackedTempDirs,
   makeTrackedTempDir,
@@ -11,7 +11,7 @@ import {
 const tempDirs: string[] = [];
 
 function makeTempDir() {
-  return makeTrackedTempDir("openclaw-plugins", tempDirs);
+  return makeTrackedTempDir("foxfang-plugins", tempDirs);
 }
 
 const mkdirSafe = mkdirSafeDir;
@@ -35,9 +35,9 @@ function hasDiagnosticSourceSuffix(
 
 function buildDiscoveryEnv(stateDir: string): NodeJS.ProcessEnv {
   return {
-    OPENCLAW_STATE_DIR: stateDir,
-    OPENCLAW_HOME: undefined,
-    OPENCLAW_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins",
+    FOXFANG_STATE_DIR: stateDir,
+    FOXFANG_HOME: undefined,
+    FOXFANG_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins",
   };
 }
 
@@ -47,20 +47,20 @@ function buildCachedDiscoveryEnv(
 ): NodeJS.ProcessEnv {
   return {
     ...buildDiscoveryEnv(stateDir),
-    OPENCLAW_PLUGIN_DISCOVERY_CACHE_MS: "5000",
+    FOXFANG_PLUGIN_DISCOVERY_CACHE_MS: "5000",
     ...overrides,
   };
 }
 
 async function discoverWithStateDir(
   stateDir: string,
-  params: Parameters<typeof discoverOpenClawPlugins>[0],
+  params: Parameters<typeof discoverFoxFangPlugins>[0],
 ) {
-  return discoverOpenClawPlugins({ ...params, env: buildDiscoveryEnv(stateDir) });
+  return discoverFoxFangPlugins({ ...params, env: buildDiscoveryEnv(stateDir) });
 }
 
-function discoverWithCachedEnv(params: Parameters<typeof discoverOpenClawPlugins>[0]) {
-  return discoverOpenClawPlugins(params);
+function discoverWithCachedEnv(params: Parameters<typeof discoverFoxFangPlugins>[0]) {
+  return discoverFoxFangPlugins(params);
 }
 
 function writePluginPackageManifest(params: {
@@ -72,7 +72,7 @@ function writePluginPackageManifest(params: {
     path.join(params.packageDir, "package.json"),
     JSON.stringify({
       name: params.packageName,
-      openclaw: { extensions: params.extensions },
+      foxfang: { extensions: params.extensions },
     }),
     "utf-8",
   );
@@ -80,7 +80,7 @@ function writePluginPackageManifest(params: {
 
 function writePluginManifest(params: { pluginDir: string; id: string }) {
   fs.writeFileSync(
-    path.join(params.pluginDir, "openclaw.plugin.json"),
+    path.join(params.pluginDir, "foxfang.plugin.json"),
     JSON.stringify({
       id: params.id,
       configSchema: { type: "object" },
@@ -173,7 +173,7 @@ function expectEscapesPackageDiagnostic(diagnostics: Array<{ message: string }>)
 }
 
 function expectCandidatePresence(
-  result: Awaited<ReturnType<typeof discoverOpenClawPlugins>>,
+  result: Awaited<ReturnType<typeof discoverFoxFangPlugins>>,
   params: { present?: readonly string[]; absent?: readonly string[] },
 ) {
   const ids = result.candidates.map((candidate) => candidate.idHint);
@@ -261,7 +261,7 @@ afterEach(() => {
   cleanupTrackedTempDirs(tempDirs);
 });
 
-describe("discoverOpenClawPlugins", () => {
+describe("discoverFoxFangPlugins", () => {
   it("discovers global and workspace extensions", async () => {
     const stateDir = makeTempDir();
     const workspaceDir = path.join(stateDir, "workspace");
@@ -286,7 +286,7 @@ describe("discoverOpenClawPlugins", () => {
     mkdirSafe(workspaceExt);
     fs.writeFileSync(path.join(workspaceExt, "tilde-workspace.ts"), "export default {}", "utf-8");
 
-    const result = discoverOpenClawPlugins({
+    const result = discoverFoxFangPlugins({
       workspaceDir: "~/workspace",
       env: {
         ...buildDiscoveryEnv(stateDir),
@@ -344,11 +344,11 @@ describe("discoverOpenClawPlugins", () => {
 
   it("does not discover nested node_modules copies under installed plugins", async () => {
     const stateDir = makeTempDir();
-    const pluginDir = path.join(stateDir, "extensions", "opik-openclaw");
+    const pluginDir = path.join(stateDir, "extensions", "opik-foxfang");
     const nestedDiffsDir = path.join(
       pluginDir,
       "node_modules",
-      "openclaw",
+      "foxfang",
       "dist",
       "extensions",
       "diffs",
@@ -358,10 +358,10 @@ describe("discoverOpenClawPlugins", () => {
 
     writePluginPackageManifest({
       packageDir: pluginDir,
-      packageName: "@opik/opik-openclaw",
+      packageName: "@opik/opik-foxfang",
       extensions: ["./src/index.ts"],
     });
-    writePluginManifest({ pluginDir, id: "opik-openclaw" });
+    writePluginManifest({ pluginDir, id: "opik-foxfang" });
     fs.writeFileSync(
       path.join(pluginDir, "src", "index.ts"),
       "export default function () {}",
@@ -369,8 +369,8 @@ describe("discoverOpenClawPlugins", () => {
     );
 
     writePluginPackageManifest({
-      packageDir: path.join(pluginDir, "node_modules", "openclaw"),
-      packageName: "openclaw",
+      packageDir: path.join(pluginDir, "node_modules", "foxfang"),
+      packageName: "foxfang",
       extensions: ["./dist/extensions/diffs/index.js"],
     });
     writePluginManifest({ pluginDir: nestedDiffsDir, id: "diffs" });
@@ -381,7 +381,7 @@ describe("discoverOpenClawPlugins", () => {
     );
 
     const { candidates } = await discoverWithStateDir(stateDir, {});
-    expectCandidateOrder(candidates, ["opik-openclaw"]);
+    expectCandidateOrder(candidates, ["opik-foxfang"]);
   });
 
   it.each([
@@ -391,7 +391,7 @@ describe("discoverOpenClawPlugins", () => {
         const packageDir = path.join(stateDir, "extensions", "voice-call-pack");
         createPackagePluginWithEntry({
           packageDir,
-          packageName: "@openclaw/voice-call",
+          packageName: "@foxfang/voice-call",
           entryPath: "src/index.ts",
         });
         return {};
@@ -404,7 +404,7 @@ describe("discoverOpenClawPlugins", () => {
         const packageDir = path.join(stateDir, "extensions", "ollama-provider-pack");
         createPackagePluginWithEntry({
           packageDir,
-          packageName: "@openclaw/ollama-provider",
+          packageName: "@foxfang/ollama-provider",
           pluginId: "ollama",
           entryPath: "src/index.ts",
         });
@@ -417,8 +417,8 @@ describe("discoverOpenClawPlugins", () => {
       name: "normalizes bundled speech package ids to canonical plugin ids",
       setup: (stateDir: string) => {
         for (const [dirName, packageName, pluginId] of [
-          ["elevenlabs-speech-pack", "@openclaw/elevenlabs-speech", "elevenlabs"],
-          ["microsoft-speech-pack", "@openclaw/microsoft-speech", "microsoft"],
+          ["elevenlabs-speech-pack", "@foxfang/elevenlabs-speech", "elevenlabs"],
+          ["microsoft-speech-pack", "@foxfang/microsoft-speech", "microsoft"],
         ] as const) {
           const packageDir = path.join(stateDir, "extensions", dirName);
           createPackagePluginWithEntry({
@@ -439,7 +439,7 @@ describe("discoverOpenClawPlugins", () => {
         const packageDir = path.join(stateDir, "packs", "demo-plugin-dir");
         createPackagePluginWithEntry({
           packageDir,
-          packageName: "@openclaw/demo-plugin-dir",
+          packageName: "@foxfang/demo-plugin-dir",
           entryPath: "index.js",
         });
         return { extraPaths: [packageDir] };
@@ -539,7 +539,7 @@ describe("discoverOpenClawPlugins", () => {
     const result = await discoverWithStateDir(stateDir, setup(stateDir));
     const legacy = findCandidateById(result.candidates, "legacy-with-bad-bundle");
 
-    expect(legacy?.format).toBe("openclaw");
+    expect(legacy?.format).toBe("foxfang");
     expect(hasDiagnosticSourceSuffix(result.diagnostics, bundleMarker)).toBe(true);
   });
 
@@ -553,7 +553,7 @@ describe("discoverOpenClawPlugins", () => {
         mkdirSafe(globalExt);
         writePluginPackageManifest({
           packageDir: globalExt,
-          packageName: "@openclaw/escape-pack",
+          packageName: "@foxfang/escape-pack",
           extensions: ["../../outside.js"],
         });
         fs.writeFileSync(outside, "export default function () {}", "utf-8");
@@ -567,7 +567,7 @@ describe("discoverOpenClawPlugins", () => {
         mkdirSafe(globalExt);
         writePluginPackageManifest({
           packageDir: globalExt,
-          packageName: "@openclaw/missing-entry-pack",
+          packageName: "@foxfang/missing-entry-pack",
           extensions: ["./missing.ts"],
         });
       },
@@ -590,7 +590,7 @@ describe("discoverOpenClawPlugins", () => {
         }
         writePluginPackageManifest({
           packageDir: globalExt,
-          packageName: "@openclaw/pack",
+          packageName: "@foxfang/pack",
           extensions: ["./linked/escape.ts"],
         });
       },
@@ -620,7 +620,7 @@ describe("discoverOpenClawPlugins", () => {
         }
         writePluginPackageManifest({
           packageDir: globalExt,
-          packageName: "@openclaw/pack",
+          packageName: "@foxfang/pack",
           extensions: ["./escape.ts"],
         });
       },
@@ -650,8 +650,8 @@ describe("discoverOpenClawPlugins", () => {
     fs.writeFileSync(
       outsideManifest,
       JSON.stringify({
-        name: "@openclaw/pack",
-        openclaw: { extensions: ["./entry.ts"] },
+        name: "@foxfang/pack",
+        foxfang: { extensions: ["./entry.ts"] },
       }),
       "utf-8",
     );
@@ -695,11 +695,11 @@ describe("discoverOpenClawPlugins", () => {
       fs.writeFileSync(path.join(packDir, "index.ts"), "export default function () {}", "utf-8");
       fs.chmodSync(packDir, 0o777);
 
-      const result = discoverOpenClawPlugins({
+      const result = discoverFoxFangPlugins({
         env: {
           ...process.env,
-          OPENCLAW_STATE_DIR: stateDir,
-          OPENCLAW_BUNDLED_PLUGINS_DIR: bundledDir,
+          FOXFANG_STATE_DIR: stateDir,
+          FOXFANG_BUNDLED_PLUGINS_DIR: bundledDir,
         },
       });
 

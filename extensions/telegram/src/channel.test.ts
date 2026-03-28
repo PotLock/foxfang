@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../src/config/config.js";
 import type { PluginApprovalRequest } from "../../../src/infra/plugin-approvals.js";
 import type { PluginRuntime } from "../../../src/plugins/runtime/types.js";
 import { createStartAccountContext } from "../../../test/helpers/extensions/start-account-context.js";
@@ -40,7 +40,7 @@ vi.mock("./monitor.js", async (importOriginal) => {
   };
 });
 
-function createCfg(): OpenClawConfig {
+function createCfg(): FoxFangConfig {
   return {
     channels: {
       telegram: {
@@ -52,21 +52,21 @@ function createCfg(): OpenClawConfig {
         },
       },
     },
-  } as OpenClawConfig;
+  } as FoxFangConfig;
 }
 
-function resolveAccount(cfg: OpenClawConfig, accountId: string): ResolvedTelegramAccount {
+function resolveAccount(cfg: FoxFangConfig, accountId: string): ResolvedTelegramAccount {
   return telegramPlugin.config.resolveAccount(cfg, accountId) as ResolvedTelegramAccount;
 }
 
-function createStartTelegramContext(cfg: OpenClawConfig, accountId: string) {
+function createStartTelegramContext(cfg: FoxFangConfig, accountId: string) {
   return createStartAccountContext({
     account: resolveAccount(cfg, accountId),
     cfg,
   });
 }
 
-function startTelegramAccount(cfg: OpenClawConfig, accountId: string) {
+function startTelegramAccount(cfg: FoxFangConfig, accountId: string) {
   return telegramPlugin.gateway!.startAccount!(createStartTelegramContext(cfg, accountId));
 }
 
@@ -133,7 +133,7 @@ function installGatewayRuntime(params?: {
   };
 }
 
-function configureOpsProxyNetwork(cfg: OpenClawConfig) {
+function configureOpsProxyNetwork(cfg: FoxFangConfig) {
   cfg.channels!.telegram!.accounts!.ops = {
     ...cfg.channels!.telegram!.accounts!.ops,
     proxy: "http://127.0.0.1:8888",
@@ -206,7 +206,7 @@ describe("telegramPlugin groups", () => {
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
 
     expect(
       telegramPlugin.groups?.resolveRequireMention?.({
@@ -616,7 +616,7 @@ describe("telegramPlugin duplicate token guard", () => {
     expect(await telegramPlugin.config.isConfigured!(alertsAccount, cfg)).toBe(true);
   });
 
-  // Regression: https://github.com/openclaw/openclaw/issues/53876
+  // Regression: https://github.com/foxfang/foxfang/issues/53876
   // Single-bot setup with channel-level token should report configured.
   it("reports configured for single-bot setup with channel-level token", async () => {
     const cfg = {
@@ -626,13 +626,13 @@ describe("telegramPlugin duplicate token guard", () => {
           enabled: true,
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
 
     const account = resolveAccount(cfg, "default");
     expect(await telegramPlugin.config.isConfigured!(account, cfg)).toBe(true);
   });
 
-  // Regression: https://github.com/openclaw/openclaw/issues/53876
+  // Regression: https://github.com/foxfang/foxfang/issues/53876
   // Binding-created non-default accountId in single-bot setup should report configured.
   it("reports configured for binding-created accountId in single-bot setup", async () => {
     const cfg = {
@@ -642,7 +642,7 @@ describe("telegramPlugin duplicate token guard", () => {
           enabled: true,
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
 
     const account = resolveAccount(cfg, "bot-main");
     expect(account.token).toBe("single-bot-token");
@@ -662,7 +662,7 @@ describe("telegramPlugin duplicate token guard", () => {
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
 
     const account = resolveAccount(cfg, "unknownBot");
     expect(await telegramPlugin.config.isConfigured!(account, cfg)).toBe(false);
@@ -682,7 +682,7 @@ describe("telegramPlugin duplicate token guard", () => {
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
 
     // "carey-notifications" is the normalized form of "Carey Notifications"
     const account = resolveAccount(cfg, "carey-notifications");
@@ -699,7 +699,7 @@ describe("telegramPlugin duplicate token guard", () => {
           enabled: true,
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
 
     const account = resolveAccount(cfg, "default");
     // tokenFile is configured but file doesn't exist → configured_unavailable

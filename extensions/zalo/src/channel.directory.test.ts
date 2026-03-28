@@ -3,7 +3,7 @@ import {
   createDirectoryTestRuntime,
   expectDirectorySurface,
 } from "../../../test/helpers/extensions/directory.js";
-import type { OpenClawConfig, RuntimeEnv } from "../runtime-api.js";
+import type { FoxFangConfig, RuntimeEnv } from "../runtime-api.js";
 import { zaloPlugin } from "./channel.js";
 
 describe("zalo directory", () => {
@@ -17,7 +17,7 @@ describe("zalo directory", () => {
           allowFrom,
         },
       },
-    } as unknown as OpenClawConfig;
+    } as unknown as FoxFangConfig;
 
     await expect(
       directory.listPeers({

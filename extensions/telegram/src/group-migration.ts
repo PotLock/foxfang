@@ -1,6 +1,6 @@
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import type { TelegramGroupConfig } from "openclaw/plugin-sdk/config-runtime";
-import { normalizeAccountId } from "openclaw/plugin-sdk/routing";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import type { TelegramGroupConfig } from "foxfang/plugin-sdk/config-runtime";
+import { normalizeAccountId } from "foxfang/plugin-sdk/routing";
 
 type TelegramGroups = Record<string, TelegramGroupConfig>;
 
@@ -13,7 +13,7 @@ export type TelegramGroupMigrationResult = {
 };
 
 function resolveAccountGroups(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   accountId?: string | null,
 ): { groups?: TelegramGroups } {
   if (!accountId) {
@@ -57,7 +57,7 @@ export function migrateTelegramGroupsInPlace(
 }
 
 export function migrateTelegramGroupConfig(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId?: string | null;
   oldChatId: string;
   newChatId: string;

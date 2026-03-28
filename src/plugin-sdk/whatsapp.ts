@@ -1,12 +1,12 @@
 export type { ChannelMessageActionName } from "../channels/plugins/types.js";
-export type { OpenClawConfig } from "../config/config.js";
+export type { FoxFangConfig } from "../config/config.js";
 export type { DmPolicy, GroupPolicy, WhatsAppAccountConfig } from "../config/types.js";
 export type { WebChannelStatus, WebMonitorTuning } from "./whatsapp-surface.js";
 export type { WebInboundMessage, WebListenerCloseReason } from "./whatsapp-surface.js";
 export type {
   ChannelMessageActionContext,
   ChannelPlugin,
-  OpenClawPluginApi,
+  FoxFangPluginApi,
   PluginRuntime,
 } from "./channel-plugin-common.js";
 export {

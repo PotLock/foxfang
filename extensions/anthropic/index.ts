@@ -1,11 +1,11 @@
-import { formatCliCommand } from "openclaw/plugin-sdk/cli-runtime";
-import { parseDurationMs } from "openclaw/plugin-sdk/cli-runtime";
+import { formatCliCommand } from "foxfang/plugin-sdk/cli-runtime";
+import { parseDurationMs } from "foxfang/plugin-sdk/cli-runtime";
 import {
   definePluginEntry,
   type ProviderAuthContext,
   type ProviderResolveDynamicModelContext,
   type ProviderRuntimeModel,
-} from "openclaw/plugin-sdk/plugin-entry";
+} from "foxfang/plugin-sdk/plugin-entry";
 import {
   CLAUDE_CLI_PROFILE_ID,
   applyAuthProfileConfig,
@@ -23,10 +23,10 @@ import {
   upsertAuthProfile,
   validateAnthropicSetupToken,
   validateApiKeyInput,
-} from "openclaw/plugin-sdk/provider-auth";
-import { createProviderApiKeyAuthMethod } from "openclaw/plugin-sdk/provider-auth-api-key";
-import { cloneFirstTemplateModel } from "openclaw/plugin-sdk/provider-model-shared";
-import { fetchClaudeUsage } from "openclaw/plugin-sdk/provider-usage";
+} from "foxfang/plugin-sdk/provider-auth";
+import { createProviderApiKeyAuthMethod } from "foxfang/plugin-sdk/provider-auth-api-key";
+import { cloneFirstTemplateModel } from "foxfang/plugin-sdk/provider-model-shared";
+import { fetchClaudeUsage } from "foxfang/plugin-sdk/provider-usage";
 import { buildAnthropicCliBackend } from "./cli-backend.js";
 import { buildAnthropicCliMigrationResult, hasClaudeCliAuth } from "./cli-migration.js";
 import { anthropicMediaUnderstandingProvider } from "./media-understanding-provider.js";
@@ -149,7 +149,7 @@ function buildAnthropicAuthDoctorHint(params: {
     }`,
     `- auth store oauth profiles: ${storeOauthProfiles || "(none)"}`,
     `- suggested profile: ${suggested}`,
-    `Fix: run "${formatCliCommand("openclaw doctor --yes")}"`,
+    `Fix: run "${formatCliCommand("foxfang doctor --yes")}"`,
   ].join("\n");
 }
 

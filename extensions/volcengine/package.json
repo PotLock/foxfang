@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/volcengine-provider",
+  "name": "@foxfang/volcengine-provider",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw Volcengine provider plugin",
+  "description": "FoxFang Volcengine provider plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

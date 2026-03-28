@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: openclaw
+  name: foxfang
   labels:
-    app: openclaw
+    app: foxfang
 spec:
   type: ClusterIP
   selector:
-    app: openclaw
+    app: foxfang
   ports:
     - name: gateway
       port: 18789

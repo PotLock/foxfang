@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { OpenClawConfig } from "../../../config/config.js";
+import type { FoxFangConfig } from "../../../config/config.js";
 import type { DoctorConfigPreflightResult } from "../../doctor-config-preflight.js";
 import { applyLegacyCompatibilityStep, applyUnknownConfigKeyStep } from "./config-flow-steps.js";
 
@@ -25,13 +25,13 @@ describe("doctor config flow steps", () => {
         fixHints: [],
       },
       shouldRepair: false,
-      doctorFixCommand: "openclaw doctor --fix",
+      doctorFixCommand: "foxfang doctor --fix",
     });
 
     expect(result.issueLines).toEqual([expect.stringContaining("- heartbeat:")]);
     expect(result.changeLines).not.toEqual([]);
     expect(result.state.fixHints).toContain(
-      'Run "openclaw doctor --fix" to apply compatibility migrations.',
+      'Run "foxfang doctor --fix" to apply compatibility migrations.',
     );
   });
 
@@ -39,16 +39,16 @@ describe("doctor config flow steps", () => {
     const result = applyUnknownConfigKeyStep({
       state: {
         cfg: {},
-        candidate: { bogus: true } as unknown as OpenClawConfig,
+        candidate: { bogus: true } as unknown as FoxFangConfig,
         pendingChanges: false,
         fixHints: [],
       },
       shouldRepair: false,
-      doctorFixCommand: "openclaw doctor --fix",
+      doctorFixCommand: "foxfang doctor --fix",
     });
 
     expect(result.removed).toEqual(["bogus"]);
     expect(result.state.candidate).toEqual({});
-    expect(result.state.fixHints).toContain('Run "openclaw doctor --fix" to remove these keys.');
+    expect(result.state.fixHints).toContain('Run "foxfang doctor --fix" to remove these keys.');
   });
 });

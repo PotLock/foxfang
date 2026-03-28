@@ -17,23 +17,23 @@ export {
   ssrfPolicyFromAllowPrivateNetwork,
   type LookupFn,
   type SsrFPolicy,
-} from "openclaw/plugin-sdk/ssrf-runtime";
+} from "foxfang/plugin-sdk/ssrf-runtime";
 export {
   setMatrixThreadBindingIdleTimeoutBySessionKey,
   setMatrixThreadBindingMaxAgeBySessionKey,
 } from "./src/matrix/thread-bindings-shared.js";
 export { setMatrixRuntime } from "./src/runtime.js";
-export { writeJsonFileAtomically } from "openclaw/plugin-sdk/json-store";
+export { writeJsonFileAtomically } from "foxfang/plugin-sdk/json-store";
 export type {
   ChannelDirectoryEntry,
   ChannelMessageActionContext,
-  OpenClawConfig,
+  FoxFangConfig,
   PluginRuntime,
   RuntimeLogger,
   RuntimeEnv,
   WizardPrompter,
-} from "openclaw/plugin-sdk/matrix-runtime-shared";
-export { formatZonedTimestamp } from "openclaw/plugin-sdk/matrix-runtime-shared";
+} from "foxfang/plugin-sdk/matrix-runtime-shared";
+export { formatZonedTimestamp } from "foxfang/plugin-sdk/matrix-runtime-shared";
 
 export function chunkTextForOutbound(text: string, limit: number): string[] {
   const chunks: string[] = [];

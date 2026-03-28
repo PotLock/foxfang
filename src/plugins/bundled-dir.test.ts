@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveBundledPluginsDir } from "./bundled-dir.js";
 
 const tempDirs: string[] = [];
-const originalBundledDir = process.env.OPENCLAW_BUNDLED_PLUGINS_DIR;
+const originalBundledDir = process.env.FOXFANG_BUNDLED_PLUGINS_DIR;
 const originalVitest = process.env.VITEST;
 const originalArgv1 = process.argv[1];
 
@@ -15,7 +15,7 @@ function makeRepoRoot(prefix: string): string {
   return repoRoot;
 }
 
-function createOpenClawRoot(params: {
+function createFoxFangRoot(params: {
   prefix: string;
   hasExtensions?: boolean;
   hasSrc?: boolean;
@@ -41,7 +41,7 @@ function createOpenClawRoot(params: {
   }
   fs.writeFileSync(
     path.join(repoRoot, "package.json"),
-    `${JSON.stringify({ name: "openclaw" }, null, 2)}\n`,
+    `${JSON.stringify({ name: "foxfang" }, null, 2)}\n`,
     "utf8",
   );
   return repoRoot;
@@ -62,9 +62,9 @@ function expectResolvedBundledDir(params: {
     process.env.VITEST = params.vitest;
   }
   if (params.bundledDirOverride === undefined) {
-    delete process.env.OPENCLAW_BUNDLED_PLUGINS_DIR;
+    delete process.env.FOXFANG_BUNDLED_PLUGINS_DIR;
   } else {
-    process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = params.bundledDirOverride;
+    process.env.FOXFANG_BUNDLED_PLUGINS_DIR = params.bundledDirOverride;
   }
 
   expect(fs.realpathSync(resolveBundledPluginsDir() ?? "")).toBe(
@@ -118,9 +118,9 @@ function expectInstalledBundledDirScenarioCase(
 afterEach(() => {
   vi.restoreAllMocks();
   if (originalBundledDir === undefined) {
-    delete process.env.OPENCLAW_BUNDLED_PLUGINS_DIR;
+    delete process.env.FOXFANG_BUNDLED_PLUGINS_DIR;
   } else {
-    process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = originalBundledDir;
+    process.env.FOXFANG_BUNDLED_PLUGINS_DIR = originalBundledDir;
   }
   if (originalVitest === undefined) {
     delete process.env.VITEST;
@@ -138,7 +138,7 @@ describe("resolveBundledPluginsDir", () => {
     [
       "prefers the staged runtime bundled plugin tree from the package root",
       {
-        prefix: "openclaw-bundled-dir-runtime-",
+        prefix: "foxfang-bundled-dir-runtime-",
         hasDistRuntimeExtensions: true,
         hasDistExtensions: true,
       },
@@ -149,7 +149,7 @@ describe("resolveBundledPluginsDir", () => {
     [
       "falls back to built dist/extensions in installed package roots",
       {
-        prefix: "openclaw-bundled-dir-dist-",
+        prefix: "foxfang-bundled-dir-dist-",
         hasDistExtensions: true,
       },
       {
@@ -159,7 +159,7 @@ describe("resolveBundledPluginsDir", () => {
     [
       "prefers source extensions under vitest to avoid stale staged plugins",
       {
-        prefix: "openclaw-bundled-dir-vitest-",
+        prefix: "foxfang-bundled-dir-vitest-",
         hasExtensions: true,
         hasDistRuntimeExtensions: true,
         hasDistExtensions: true,
@@ -172,7 +172,7 @@ describe("resolveBundledPluginsDir", () => {
     [
       "prefers source extensions in a git checkout even without vitest env",
       {
-        prefix: "openclaw-bundled-dir-git-",
+        prefix: "foxfang-bundled-dir-git-",
         hasExtensions: true,
         hasSrc: true,
         hasDistRuntimeExtensions: true,
@@ -184,7 +184,7 @@ describe("resolveBundledPluginsDir", () => {
       },
     ],
   ] as const)("%s", (_name, layout, expectation) => {
-    const repoRoot = createOpenClawRoot(layout);
+    const repoRoot = createFoxFangRoot(layout);
     expectResolvedBundledDirFromRoot({
       repoRoot,
       expectedRelativeDir: expectation.expectedRelativeDir,
@@ -196,12 +196,12 @@ describe("resolveBundledPluginsDir", () => {
     {
       name: "prefers the running CLI package root over an unrelated cwd checkout",
       createScenario: () => {
-        const installedRoot = createOpenClawRoot({
-          prefix: "openclaw-bundled-dir-installed-",
+        const installedRoot = createFoxFangRoot({
+          prefix: "foxfang-bundled-dir-installed-",
           hasDistExtensions: true,
         });
-        const cwdRepoRoot = createOpenClawRoot({
-          prefix: "openclaw-bundled-dir-cwd-",
+        const cwdRepoRoot = createFoxFangRoot({
+          prefix: "foxfang-bundled-dir-cwd-",
           hasExtensions: true,
           hasSrc: true,
           hasGitCheckout: true,
@@ -216,8 +216,8 @@ describe("resolveBundledPluginsDir", () => {
     {
       name: "falls back to the running installed package when the override path is stale",
       createScenario: () => {
-        const installedRoot = createOpenClawRoot({
-          prefix: "openclaw-bundled-dir-override-",
+        const installedRoot = createFoxFangRoot({
+          prefix: "foxfang-bundled-dir-override-",
           hasDistExtensions: true,
         });
         return {

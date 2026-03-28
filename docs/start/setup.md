@@ -1,5 +1,5 @@
 ---
-summary: "Advanced setup and development workflows for OpenClaw"
+summary: "Advanced setup and development workflows for FoxFang"
 read_when:
   - Setting up a new machine
   - You want “latest + greatest” without breaking your personal setup
@@ -15,7 +15,7 @@ For onboarding details, see [Onboarding (CLI)](/start/wizard).
 
 ## TL;DR
 
-- **Tailoring lives outside the repo:** `~/.foxfang/workspace` (workspace) + `~/.foxfang/openclaw.json` (config).
+- **Tailoring lives outside the repo:** `~/.foxfang/workspace` (workspace) + `~/.foxfang/foxfang.json` (config).
 - **Stable workflow:** install the macOS app; let it run the bundled Gateway.
 - **Bleeding edge workflow:** run the Gateway yourself via `pnpm gateway:watch`, then let the macOS app attach in Local mode.
 
@@ -29,22 +29,22 @@ For onboarding details, see [Onboarding (CLI)](/start/wizard).
 
 If you want “100% tailored to me” _and_ easy updates, keep your customization in:
 
-- **Config:** `~/.foxfang/openclaw.json` (JSON/JSON5-ish)
+- **Config:** `~/.foxfang/foxfang.json` (JSON/JSON5-ish)
 - **Workspace:** `~/.foxfang/workspace` (skills, prompts, memories; make it a private git repo)
 
 Bootstrap once:
 
 ```bash
-openclaw setup
+foxfang setup
 ```
 
 From inside this repo, use the local CLI entry:
 
 ```bash
-openclaw setup
+foxfang setup
 ```
 
-If you don’t have a global install yet, run it via `pnpm openclaw setup`.
+If you don’t have a global install yet, run it via `pnpm foxfang setup`.
 
 ## Run the Gateway from this repo
 
@@ -56,24 +56,24 @@ node foxfang.mjs gateway --port 18789 --verbose
 
 ## Stable workflow (macOS app first)
 
-1. Install + launch **OpenClaw.app** (menu bar).
+1. Install + launch **FoxFang.app** (menu bar).
 2. Complete the onboarding/permissions checklist (TCC prompts).
 3. Ensure Gateway is **Local** and running (the app manages it).
 4. Link surfaces (example: WhatsApp):
 
 ```bash
-openclaw channels login
+foxfang channels login
 ```
 
 5. Sanity check:
 
 ```bash
-openclaw health
+foxfang health
 ```
 
 If onboarding is not available in your build:
 
-- Run `openclaw setup`, then `openclaw channels login`, then start the Gateway manually (`openclaw gateway`).
+- Run `foxfang setup`, then `foxfang channels login`, then start the Gateway manually (`foxfang gateway`).
 
 ## Bleeding edge workflow (Gateway in a terminal)
 
@@ -99,7 +99,7 @@ config, and bundled-plugin metadata changes.
 
 ### 2) Point the macOS app at your running Gateway
 
-In **OpenClaw.app**:
+In **FoxFang.app**:
 
 - Connection Mode: **Local**
   The app will attach to the running gateway on the configured port.
@@ -110,7 +110,7 @@ In **OpenClaw.app**:
 - Or via CLI:
 
 ```bash
-openclaw health
+foxfang health
 ```
 
 ### Common footguns
@@ -119,7 +119,7 @@ openclaw health
 - **Where state lives:**
   - Credentials: `~/.foxfang/credentials/`
   - Sessions: `~/.foxfang/agents/<agentId>/sessions/`
-  - Logs: `/tmp/openclaw/`
+  - Logs: `/tmp/foxfang/`
 
 ## Credential storage map
 
@@ -139,7 +139,7 @@ Use this when debugging auth or deciding what to back up:
 
 ## Updating (without wrecking your setup)
 
-- Keep `~/.foxfang/workspace` and `~/.foxfang/` as “your stuff”; don’t put personal prompts/config into the `openclaw` repo.
+- Keep `~/.foxfang/workspace` and `~/.foxfang/` as “your stuff”; don’t put personal prompts/config into the `foxfang` repo.
 - Updating source: `git pull` + `pnpm install` (when lockfile changed) + keep using `pnpm gateway:watch`.
 
 ## Linux (systemd user service)
@@ -160,5 +160,5 @@ user service (no lingering needed). See [Gateway runbook](/gateway) for the syst
 - [Gateway runbook](/gateway) (flags, supervision, ports)
 - [Gateway configuration](/gateway/configuration) (config schema + examples)
 - [Discord](/channels/discord) and [Telegram](/channels/telegram) (reply tags + replyToMode settings)
-- [OpenClaw assistant setup](/start/openclaw)
+- [FoxFang assistant setup](/start/foxfang)
 - [macOS app](/platforms/macos) (gateway lifecycle)

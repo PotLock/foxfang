@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setDefaultChannelPluginRegistryForTests } from "../../../src/commands/channel-test-helpers.js";
-import type { OpenClawConfig } from "../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../src/config/config.js";
 import {
   __testing as sessionBindingTesting,
   registerSessionBindingAdapter,
@@ -12,7 +12,7 @@ const baseCfg = {
   agents: {
     list: [{ id: "main" }, { id: "codex" }],
   },
-} satisfies OpenClawConfig;
+} satisfies FoxFangConfig;
 
 describe("resolveIMessageConversationRoute", () => {
   beforeEach(() => {

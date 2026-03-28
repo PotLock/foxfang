@@ -1,1 +1,1 @@
-export { resolveLoggerBackedRuntime } from "openclaw/plugin-sdk/extension-shared";
+export { resolveLoggerBackedRuntime } from "foxfang/plugin-sdk/extension-shared";

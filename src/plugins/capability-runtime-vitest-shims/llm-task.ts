@@ -1,1 +1,1 @@
-export { resolvePreferredOpenClawTmpDir } from "../../infra/tmp-openclaw-dir.js";
+export { resolvePreferredFoxFangTmpDir } from "../../infra/tmp-foxfang-dir.js";

@@ -3,15 +3,15 @@ import {
   type ProviderAuthContext,
   type ProviderAuthResult,
   type ProviderCatalogContext,
-} from "openclaw/plugin-sdk/plugin-entry";
+} from "foxfang/plugin-sdk/plugin-entry";
 import {
   MINIMAX_OAUTH_MARKER,
   ensureAuthProfileStore,
   listProfilesForProvider,
-} from "openclaw/plugin-sdk/provider-auth";
-import { buildOauthProviderAuthResult } from "openclaw/plugin-sdk/provider-auth";
-import { createProviderApiKeyAuthMethod } from "openclaw/plugin-sdk/provider-auth-api-key";
-import { fetchMinimaxUsage } from "openclaw/plugin-sdk/provider-usage";
+} from "foxfang/plugin-sdk/provider-auth";
+import { buildOauthProviderAuthResult } from "foxfang/plugin-sdk/provider-auth";
+import { createProviderApiKeyAuthMethod } from "foxfang/plugin-sdk/provider-auth-api-key";
+import { fetchMinimaxUsage } from "foxfang/plugin-sdk/provider-usage";
 import { isMiniMaxModernModelId, MINIMAX_DEFAULT_MODEL_ID } from "./api.js";
 import {
   buildMinimaxImageGenerationProvider,

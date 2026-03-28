@@ -1,13 +1,13 @@
-import { buildDmGroupAccountAllowlistAdapter } from "openclaw/plugin-sdk/allowlist-config-edit";
-import { createChatChannelPlugin } from "openclaw/plugin-sdk/core";
-import { buildPassiveProbedChannelStatusSummary } from "openclaw/plugin-sdk/extension-shared";
-import { createLazyRuntimeModule } from "openclaw/plugin-sdk/lazy-runtime";
-import { resolveOutboundSendDep } from "openclaw/plugin-sdk/outbound-runtime";
-import { buildOutboundBaseSessionKey, type RoutePeer } from "openclaw/plugin-sdk/routing";
+import { buildDmGroupAccountAllowlistAdapter } from "foxfang/plugin-sdk/allowlist-config-edit";
+import { createChatChannelPlugin } from "foxfang/plugin-sdk/core";
+import { buildPassiveProbedChannelStatusSummary } from "foxfang/plugin-sdk/extension-shared";
+import { createLazyRuntimeModule } from "foxfang/plugin-sdk/lazy-runtime";
+import { resolveOutboundSendDep } from "foxfang/plugin-sdk/outbound-runtime";
+import { buildOutboundBaseSessionKey, type RoutePeer } from "foxfang/plugin-sdk/routing";
 import {
   createComputedAccountStatusAdapter,
   createDefaultChannelRuntimeState,
-} from "openclaw/plugin-sdk/status-helpers";
+} from "foxfang/plugin-sdk/status-helpers";
 import {
   chunkTextForOutbound,
   collectStatusIssuesFromLastError,
@@ -219,7 +219,7 @@ export const imessagePlugin: ChannelPlugin<ResolvedIMessageAccount, IMessageProb
     pairing: {
       text: {
         idLabel: "imessageSenderId",
-        message: "OpenClaw: your access has been approved.",
+        message: "FoxFang: your access has been approved.",
         notify: async ({ id }) =>
           await (await loadIMessageChannelRuntime()).notifyIMessageApproval(id),
       },

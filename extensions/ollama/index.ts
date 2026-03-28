@@ -1,11 +1,11 @@
 import {
   definePluginEntry,
-  type OpenClawPluginApi,
+  type FoxFangPluginApi,
   type ProviderAuthContext,
   type ProviderAuthMethodNonInteractiveContext,
   type ProviderAuthResult,
   type ProviderDiscoveryContext,
-} from "openclaw/plugin-sdk/plugin-entry";
+} from "foxfang/plugin-sdk/plugin-entry";
 import { OLLAMA_DEFAULT_BASE_URL } from "./src/defaults.js";
 import {
   DEFAULT_OLLAMA_EMBEDDING_MODEL,
@@ -21,14 +21,14 @@ const PROVIDER_ID = "ollama";
 const DEFAULT_API_KEY = "ollama-local";
 
 async function loadProviderSetup() {
-  return await import("openclaw/plugin-sdk/provider-setup");
+  return await import("foxfang/plugin-sdk/provider-setup");
 }
 
 export default definePluginEntry({
   id: "ollama",
   name: "Ollama Provider",
   description: "Bundled Ollama provider plugin",
-  register(api: OpenClawPluginApi) {
+  register(api: FoxFangPluginApi) {
     api.registerProvider({
       id: PROVIDER_ID,
       label: "Ollama",
@@ -174,8 +174,8 @@ export default definePluginEntry({
       },
       buildUnknownModelHint: () =>
         "Ollama requires authentication to be registered as a provider. " +
-        'Set OLLAMA_API_KEY="ollama-local" (any value works) or run "openclaw configure". ' +
-        "See: https://docs.openclaw.ai/providers/ollama",
+        'Set OLLAMA_API_KEY="ollama-local" (any value works) or run "foxfang configure". ' +
+        "See: https://docs.foxfang.ai/providers/ollama",
     });
   },
 });

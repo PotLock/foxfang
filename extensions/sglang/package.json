@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/sglang-provider",
+  "name": "@foxfang/sglang-provider",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw SGLang provider plugin",
+  "description": "FoxFang SGLang provider plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

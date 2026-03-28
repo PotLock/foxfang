@@ -1,7 +1,7 @@
 {
-  "name": "@openclaw/discord",
+  "name": "@foxfang/discord",
   "version": "2026.3.27",
-  "description": "OpenClaw Discord channel plugin",
+  "description": "FoxFang Discord channel plugin",
   "type": "module",
   "dependencies": {
     "@buape/carbon": "0.0.0-beta-20260327000044",
@@ -11,17 +11,17 @@
     "opusscript": "^0.1.1"
   },
   "devDependencies": {
-    "openclaw": "workspace:*"
+    "foxfang": "workspace:*"
   },
   "peerDependencies": {
-    "openclaw": ">=2026.3.27"
+    "foxfang": ">=2026.3.27"
   },
   "peerDependenciesMeta": {
-    "openclaw": {
+    "foxfang": {
       "optional": true
     }
   },
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ],
@@ -37,7 +37,7 @@
       "systemImage": "bubble.left.and.bubble.right"
     },
     "install": {
-      "npmSpec": "@openclaw/discord",
+      "npmSpec": "@foxfang/discord",
       "localPath": "extensions/discord",
       "defaultChoice": "npm",
       "minHostVersion": ">=2026.3.27"

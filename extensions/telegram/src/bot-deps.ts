@@ -1,14 +1,14 @@
-import { enqueueSystemEvent } from "openclaw/plugin-sdk/channel-runtime";
+import { enqueueSystemEvent } from "foxfang/plugin-sdk/channel-runtime";
 import {
   buildModelsProviderData,
   listSkillCommandsForAgents,
-} from "openclaw/plugin-sdk/command-auth";
-import { loadConfig, resolveStorePath } from "openclaw/plugin-sdk/config-runtime";
-import { loadSessionStore } from "openclaw/plugin-sdk/config-runtime";
-import { readChannelAllowFromStore } from "openclaw/plugin-sdk/conversation-runtime";
-import { upsertChannelPairingRequest } from "openclaw/plugin-sdk/conversation-runtime";
-import { dispatchReplyWithBufferedBlockDispatcher } from "openclaw/plugin-sdk/reply-runtime";
-import { loadWebMedia } from "openclaw/plugin-sdk/web-media";
+} from "foxfang/plugin-sdk/command-auth";
+import { loadConfig, resolveStorePath } from "foxfang/plugin-sdk/config-runtime";
+import { loadSessionStore } from "foxfang/plugin-sdk/config-runtime";
+import { readChannelAllowFromStore } from "foxfang/plugin-sdk/conversation-runtime";
+import { upsertChannelPairingRequest } from "foxfang/plugin-sdk/conversation-runtime";
+import { dispatchReplyWithBufferedBlockDispatcher } from "foxfang/plugin-sdk/reply-runtime";
+import { loadWebMedia } from "foxfang/plugin-sdk/web-media";
 import { deliverReplies, emitInternalMessageSentHook } from "./bot/delivery.js";
 import { createTelegramDraftStream } from "./draft-stream.js";
 import { editMessageTelegram } from "./send.js";

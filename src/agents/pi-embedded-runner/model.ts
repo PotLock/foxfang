@@ -1,6 +1,6 @@
 import type { Api, Model } from "@mariozechner/pi-ai";
 import type { AuthStorage, ModelRegistry } from "@mariozechner/pi-coding-agent";
-import type { OpenClawConfig } from "../../config/config.js";
+import type { FoxFangConfig } from "../../config/config.js";
 import type { ModelDefinitionConfig } from "../../config/types.js";
 import { normalizeModelCompat } from "../../plugins/provider-model-compat.js";
 import {
@@ -11,7 +11,7 @@ import {
   runProviderDynamicModel,
   normalizeProviderResolvedModelWithPlugin,
 } from "../../plugins/provider-runtime.js";
-import { resolveOpenClawAgentDir } from "../agent-paths.js";
+import { resolveFoxFangAgentDir } from "../agent-paths.js";
 import { DEFAULT_CONTEXT_TOKENS } from "../defaults.js";
 import { buildModelAliasLines } from "../model-alias-lines.js";
 import { isSecretRefHeaderValueMarker } from "../model-auth-markers.js";
@@ -99,7 +99,7 @@ function sanitizeModelHeaders(
 function normalizeResolvedModel(params: {
   provider: string;
   model: Model<Api>;
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   agentDir?: string;
   runtimeHooks?: ProviderRuntimeHooks;
 }): Model<Api> {
@@ -135,7 +135,7 @@ function resolveProviderTransport(params: {
   provider: string;
   api?: Api | null;
   baseUrl?: string;
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   runtimeHooks?: ProviderRuntimeHooks;
 }): {
   api?: Api;
@@ -180,7 +180,7 @@ function findInlineModelMatch(params: {
 export { buildModelAliasLines };
 
 function resolveConfiguredProviderConfig(
-  cfg: OpenClawConfig | undefined,
+  cfg: FoxFangConfig | undefined,
   provider: string,
 ): InlineProviderConfig | undefined {
   const configuredProviders = cfg?.models?.providers;
@@ -199,7 +199,7 @@ function applyConfiguredProviderOverrides(params: {
   discoveredModel: Model<Api>;
   providerConfig?: InlineProviderConfig;
   modelId: string;
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   runtimeHooks?: ProviderRuntimeHooks;
 }): Model<Api> {
   const { discoveredModel, providerConfig, modelId } = params;
@@ -306,7 +306,7 @@ function resolveExplicitModelWithRegistry(params: {
   provider: string;
   modelId: string;
   modelRegistry: ModelRegistry;
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   agentDir?: string;
   runtimeHooks?: ProviderRuntimeHooks;
 }): { kind: "resolved"; model: Model<Api> } | { kind: "suppressed" } | undefined {
@@ -380,7 +380,7 @@ function resolvePluginDynamicModelWithRegistry(params: {
   provider: string;
   modelId: string;
   modelRegistry: ModelRegistry;
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   agentDir?: string;
   runtimeHooks?: ProviderRuntimeHooks;
 }): Model<Api> | undefined {
@@ -422,7 +422,7 @@ function resolvePluginDynamicModelWithRegistry(params: {
 function resolveConfiguredFallbackModel(params: {
   provider: string;
   modelId: string;
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   agentDir?: string;
   runtimeHooks?: ProviderRuntimeHooks;
 }): Model<Api> | undefined {
@@ -477,7 +477,7 @@ export function resolveModelWithRegistry(params: {
   provider: string;
   modelId: string;
   modelRegistry: ModelRegistry;
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   agentDir?: string;
   runtimeHooks?: ProviderRuntimeHooks;
 }): Model<Api> | undefined {
@@ -501,7 +501,7 @@ export function resolveModel(
   provider: string,
   modelId: string,
   agentDir?: string,
-  cfg?: OpenClawConfig,
+  cfg?: FoxFangConfig,
   options?: {
     authStorage?: AuthStorage;
     modelRegistry?: ModelRegistry;
@@ -513,7 +513,7 @@ export function resolveModel(
   authStorage: AuthStorage;
   modelRegistry: ModelRegistry;
 } {
-  const resolvedAgentDir = agentDir ?? resolveOpenClawAgentDir();
+  const resolvedAgentDir = agentDir ?? resolveFoxFangAgentDir();
   const authStorage = options?.authStorage ?? discoverAuthStorage(resolvedAgentDir);
   const modelRegistry = options?.modelRegistry ?? discoverModels(authStorage, resolvedAgentDir);
   const model = resolveModelWithRegistry({
@@ -545,7 +545,7 @@ export async function resolveModelAsync(
   provider: string,
   modelId: string,
   agentDir?: string,
-  cfg?: OpenClawConfig,
+  cfg?: FoxFangConfig,
   options?: {
     authStorage?: AuthStorage;
     modelRegistry?: ModelRegistry;
@@ -558,7 +558,7 @@ export async function resolveModelAsync(
   authStorage: AuthStorage;
   modelRegistry: ModelRegistry;
 }> {
-  const resolvedAgentDir = agentDir ?? resolveOpenClawAgentDir();
+  const resolvedAgentDir = agentDir ?? resolveFoxFangAgentDir();
   const authStorage = options?.authStorage ?? discoverAuthStorage(resolvedAgentDir);
   const modelRegistry = options?.modelRegistry ?? discoverModels(authStorage, resolvedAgentDir);
   const explicitModel = resolveExplicitModelWithRegistry({
@@ -642,12 +642,12 @@ export async function resolveModelAsync(
  * providers before setup, the raw `Unknown model` error is too vague. Provider
  * plugins can append a targeted recovery hint here.
  *
- * See: https://github.com/openclaw/openclaw/issues/17328
+ * See: https://github.com/foxfang/foxfang/issues/17328
  */
 function buildUnknownModelError(params: {
   provider: string;
   modelId: string;
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   agentDir?: string;
   runtimeHooks?: ProviderRuntimeHooks;
 }): string {

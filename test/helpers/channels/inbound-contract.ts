@@ -10,7 +10,7 @@ import { buildTelegramMessageContextForTest } from "../../../extensions/telegram
 import type { MsgContext } from "../../../src/auto-reply/templating.js";
 import { inboundCtxCapture } from "../../../src/channels/plugins/contracts/inbound-testkit.js";
 import { expectChannelInboundContextContract } from "../../../src/channels/plugins/contracts/suites.js";
-import type { OpenClawConfig } from "../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../src/config/config.js";
 import { withTempHome } from "../temp-home.js";
 
 const dispatchInboundMessageMock = vi.hoisted(() =>
@@ -25,8 +25,8 @@ const dispatchInboundMessageMock = vi.hoisted(() =>
   ),
 );
 
-vi.mock("openclaw/plugin-sdk/reply-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/reply-runtime")>();
+vi.mock("foxfang/plugin-sdk/reply-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/reply-runtime")>();
   return {
     ...actual,
     dispatchInboundMessage: vi.fn(async (params: { ctx: MsgContext }) => {
@@ -44,8 +44,8 @@ vi.mock("openclaw/plugin-sdk/reply-runtime", async (importOriginal) => {
   };
 });
 
-vi.mock("openclaw/plugin-sdk/conversation-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/conversation-runtime")>();
+vi.mock("foxfang/plugin-sdk/conversation-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/conversation-runtime")>();
   return {
     ...actual,
     recordInboundSession: vi.fn(async (params: { ctx: MsgContext }) => {
@@ -150,7 +150,7 @@ export function installSlackInboundContractSuite() {
       const ctx = createInboundSlackTestContext({
         cfg: {
           channels: { slack: { enabled: true } },
-        } as OpenClawConfig,
+        } as FoxFangConfig,
       });
       ctx.resolveUserName = async () => ({ name: "Alice" }) as never;
 
@@ -182,7 +182,7 @@ export function installTelegramInboundContractSuite() {
             groups: { "*": { requireMention: false } },
           },
         },
-      } satisfies OpenClawConfig,
+      } satisfies FoxFangConfig,
       message: {
         chat: { id: 42, type: "group", title: "Ops" },
         text: "hello",

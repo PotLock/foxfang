@@ -120,7 +120,7 @@ describe("resolveNpmRunner", () => {
         existsSync: () => false,
         platform: "win32",
       }),
-    ).toThrow("OpenClaw refuses to shell out to bare npm on Windows");
+    ).toThrow("FoxFang refuses to shell out to bare npm on Windows");
   });
 });
 
@@ -129,7 +129,7 @@ describe("stageBundledPluginRuntimeDeps", () => {
     packageJson: Record<string, unknown>;
     pluginId?: string;
   }) {
-    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "openclaw-runtime-deps-"));
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "foxfang-runtime-deps-"));
     const pluginId = params.pluginId ?? "fixture-plugin";
     const pluginDir = path.join(repoRoot, "dist", "extensions", pluginId);
     fs.mkdirSync(pluginDir, { recursive: true });
@@ -144,13 +144,13 @@ describe("stageBundledPluginRuntimeDeps", () => {
   it("skips restaging when runtime deps stamp matches the sanitized manifest", () => {
     const { pluginDir, repoRoot } = createBundledPluginFixture({
       packageJson: {
-        name: "@openclaw/fixture-plugin",
+        name: "@foxfang/fixture-plugin",
         version: "1.0.0",
         dependencies: { "left-pad": "1.3.0" },
-        peerDependencies: { openclaw: "^1.0.0" },
-        peerDependenciesMeta: { openclaw: { optional: true } },
-        devDependencies: { openclaw: "^1.0.0" },
-        openclaw: { bundle: { stageRuntimeDependencies: true } },
+        peerDependencies: { foxfang: "^1.0.0" },
+        peerDependenciesMeta: { foxfang: { optional: true } },
+        devDependencies: { foxfang: "^1.0.0" },
+        foxfang: { bundle: { stageRuntimeDependencies: true } },
       },
     });
     const nodeModulesDir = path.join(pluginDir, "node_modules");
@@ -163,7 +163,7 @@ describe("stageBundledPluginRuntimeDeps", () => {
       installPluginRuntimeDepsImpl: ({ fingerprint }: { fingerprint: string }) => {
         installCount += 1;
         fs.writeFileSync(
-          path.join(pluginDir, ".openclaw-runtime-deps-stamp.json"),
+          path.join(pluginDir, ".foxfang-runtime-deps-stamp.json"),
           `${JSON.stringify({ fingerprint }, null, 2)}\n`,
           "utf8",
         );
@@ -179,20 +179,20 @@ describe("stageBundledPluginRuntimeDeps", () => {
     expect(installCount).toBe(1);
     expect(fs.existsSync(path.join(nodeModulesDir, "marker.txt"))).toBe(true);
     expect(JSON.parse(fs.readFileSync(path.join(pluginDir, "package.json"), "utf8"))).toEqual({
-      name: "@openclaw/fixture-plugin",
+      name: "@foxfang/fixture-plugin",
       version: "1.0.0",
       dependencies: { "left-pad": "1.3.0" },
-      openclaw: { bundle: { stageRuntimeDependencies: true } },
+      foxfang: { bundle: { stageRuntimeDependencies: true } },
     });
   });
 
   it("restages when the manifest-owned runtime deps change", () => {
     const { pluginDir, repoRoot } = createBundledPluginFixture({
       packageJson: {
-        name: "@openclaw/fixture-plugin",
+        name: "@foxfang/fixture-plugin",
         version: "1.0.0",
         dependencies: { "left-pad": "1.3.0" },
-        openclaw: { bundle: { stageRuntimeDependencies: true } },
+        foxfang: { bundle: { stageRuntimeDependencies: true } },
       },
     });
 
@@ -206,7 +206,7 @@ describe("stageBundledPluginRuntimeDeps", () => {
           fs.mkdirSync(nodeModulesDir, { recursive: true });
           fs.writeFileSync(path.join(nodeModulesDir, "marker.txt"), `${installCount}\n`, "utf8");
           fs.writeFileSync(
-            path.join(pluginDir, ".openclaw-runtime-deps-stamp.json"),
+            path.join(pluginDir, ".foxfang-runtime-deps-stamp.json"),
             `${JSON.stringify({ fingerprint }, null, 2)}\n`,
             "utf8",
           );

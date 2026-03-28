@@ -1,4 +1,4 @@
-import { finalizeInboundContext } from "openclaw/plugin-sdk/reply-runtime";
+import { finalizeInboundContext } from "foxfang/plugin-sdk/reply-runtime";
 import { buildDiscordInboundAccessContext } from "./inbound-context.js";
 
 export function buildFinalizedDiscordDirectInboundContext() {

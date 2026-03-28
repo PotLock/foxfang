@@ -11,7 +11,7 @@ import { createHookRunner } from "./hooks.js";
 import {
   __testing,
   clearPluginLoaderCache,
-  loadOpenClawPlugins,
+  loadFoxFangPlugins,
   resolveRuntimePluginRegistry,
 } from "./loader.js";
 import { clearPluginManifestRegistryCache } from "./manifest-registry.js";
@@ -37,8 +37,8 @@ import {
 } from "./runtime.js";
 
 type TempPlugin = { dir: string; file: string; id: string };
-type PluginLoadConfig = NonNullable<Parameters<typeof loadOpenClawPlugins>[0]>["config"];
-type PluginRegistry = ReturnType<typeof loadOpenClawPlugins>;
+type PluginLoadConfig = NonNullable<Parameters<typeof loadFoxFangPlugins>[0]>["config"];
+type PluginRegistry = ReturnType<typeof loadFoxFangPlugins>;
 
 function chmodSafeDir(dir: string) {
   if (process.platform === "win32") {
@@ -58,9 +58,9 @@ function mkdirSafe(dir: string) {
   chmodSafeDir(dir);
 }
 
-const fixtureRoot = mkdtempSafe(path.join(os.tmpdir(), "openclaw-plugin-"));
+const fixtureRoot = mkdtempSafe(path.join(os.tmpdir(), "foxfang-plugin-"));
 let tempDirIndex = 0;
-const prevBundledDir = process.env.OPENCLAW_BUNDLED_PLUGINS_DIR;
+const prevBundledDir = process.env.FOXFANG_BUNDLED_PLUGINS_DIR;
 const EMPTY_PLUGIN_SCHEMA = { type: "object", additionalProperties: false, properties: {} };
 let cachedBundledTelegramDir = "";
 let cachedBundledMemoryDir = "";
@@ -106,7 +106,7 @@ function writePlugin(params: {
   const file = path.join(dir, filename);
   fs.writeFileSync(file, params.body, "utf-8");
   fs.writeFileSync(
-    path.join(dir, "openclaw.plugin.json"),
+    path.join(dir, "foxfang.plugin.json"),
     JSON.stringify(
       {
         id: params.id,
@@ -141,7 +141,7 @@ function writeBundledPlugin(params: {
     filename: params.filename ?? "index.cjs",
     body: params.body ?? simplePluginBody(params.id),
   });
-  process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = bundledDir;
+  process.env.FOXFANG_BUNDLED_PLUGINS_DIR = bundledDir;
   return { bundledDir, plugin };
 }
 
@@ -165,7 +165,7 @@ function writeWorkspacePlugin(params: {
 
 function withStateDir<T>(run: (stateDir: string) => T) {
   const stateDir = makeTempDir();
-  return withEnv({ OPENCLAW_STATE_DIR: stateDir }, () => run(stateDir));
+  return withEnv({ FOXFANG_STATE_DIR: stateDir }, () => run(stateDir));
 }
 
 function loadBundledMemoryPluginRegistry(options?: {
@@ -174,8 +174,8 @@ function loadBundledMemoryPluginRegistry(options?: {
   pluginFilename?: string;
 }) {
   if (!options && cachedBundledMemoryDir) {
-    process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = cachedBundledMemoryDir;
-    return loadOpenClawPlugins({
+    process.env.FOXFANG_BUNDLED_PLUGINS_DIR = cachedBundledMemoryDir;
+    return loadFoxFangPlugins({
       cache: false,
       workspaceDir: cachedBundledMemoryDir,
       config: {
@@ -203,7 +203,7 @@ function loadBundledMemoryPluginRegistry(options?: {
           name: options.packageMeta.name,
           version: options.packageMeta.version,
           description: options.packageMeta.description,
-          openclaw: { extensions: [`./${pluginFilename}`] },
+          foxfang: { extensions: [`./${pluginFilename}`] },
         },
         null,
         2,
@@ -223,9 +223,9 @@ function loadBundledMemoryPluginRegistry(options?: {
   if (!options) {
     cachedBundledMemoryDir = bundledDir;
   }
-  process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = bundledDir;
+  process.env.FOXFANG_BUNDLED_PLUGINS_DIR = bundledDir;
 
-  return loadOpenClawPlugins({
+  return loadFoxFangPlugins({
     cache: false,
     workspaceDir: bundledDir,
     config: {
@@ -248,27 +248,27 @@ function setupBundledTelegramPlugin() {
       filename: "telegram.cjs",
     });
   }
-  process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = cachedBundledTelegramDir;
+  process.env.FOXFANG_BUNDLED_PLUGINS_DIR = cachedBundledTelegramDir;
 }
 
-function expectTelegramLoaded(registry: ReturnType<typeof loadOpenClawPlugins>) {
+function expectTelegramLoaded(registry: ReturnType<typeof loadFoxFangPlugins>) {
   const telegram = registry.plugins.find((entry) => entry.id === "telegram");
   expect(telegram?.status).toBe("loaded");
   expect(registry.channels.some((entry) => entry.plugin.id === "telegram")).toBe(true);
 }
 
 function useNoBundledPlugins() {
-  process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = "/nonexistent/bundled/plugins";
+  process.env.FOXFANG_BUNDLED_PLUGINS_DIR = "/nonexistent/bundled/plugins";
 }
 
 function loadRegistryFromSinglePlugin(params: {
   plugin: TempPlugin;
   pluginConfig?: Record<string, unknown>;
   includeWorkspaceDir?: boolean;
-  options?: Omit<Parameters<typeof loadOpenClawPlugins>[0], "cache" | "workspaceDir" | "config">;
+  options?: Omit<Parameters<typeof loadFoxFangPlugins>[0], "cache" | "workspaceDir" | "config">;
 }) {
   const pluginConfig = params.pluginConfig ?? {};
-  return loadOpenClawPlugins({
+  return loadFoxFangPlugins({
     cache: false,
     ...(params.includeWorkspaceDir === false ? {} : { workspaceDir: params.plugin.dir }),
     ...params.options,
@@ -283,9 +283,9 @@ function loadRegistryFromSinglePlugin(params: {
 
 function loadRegistryFromAllowedPlugins(
   plugins: TempPlugin[],
-  options?: Omit<Parameters<typeof loadOpenClawPlugins>[0], "cache" | "config">,
+  options?: Omit<Parameters<typeof loadFoxFangPlugins>[0], "cache" | "config">,
 ) {
-  return loadOpenClawPlugins({
+  return loadFoxFangPlugins({
     cache: false,
     ...options,
     config: {
@@ -498,7 +498,7 @@ function createEscapingEntryFixture(params: { id: string; sourceBody: string }) 
   const linkedEntry = path.join(pluginDir, "entry.cjs");
   fs.writeFileSync(outsideEntry, params.sourceBody, "utf-8");
   fs.writeFileSync(
-    path.join(pluginDir, "openclaw.plugin.json"),
+    path.join(pluginDir, "foxfang.plugin.json"),
     JSON.stringify(
       {
         id: params.id,
@@ -523,8 +523,8 @@ function loadBundleFixture(params: {
   const stateDir = makeTempDir();
   const bundleRoot = path.join(workspaceDir, ".foxfang", "extensions", params.pluginId);
   params.build(bundleRoot);
-  return withEnv({ OPENCLAW_STATE_DIR: stateDir, ...params.env }, () =>
-    loadOpenClawPlugins({
+  return withEnv({ FOXFANG_STATE_DIR: stateDir, ...params.env }, () =>
+    loadFoxFangPlugins({
       workspaceDir,
       onlyPluginIds: params.onlyPluginIds ?? [params.pluginId],
       config: {
@@ -542,7 +542,7 @@ function loadBundleFixture(params: {
 }
 
 function expectNoUnwiredBundleDiagnostic(
-  registry: ReturnType<typeof loadOpenClawPlugins>,
+  registry: ReturnType<typeof loadFoxFangPlugins>,
   pluginId: string,
 ) {
   expect(
@@ -555,7 +555,7 @@ function expectNoUnwiredBundleDiagnostic(
 }
 
 function resolveLoadedPluginSource(
-  registry: ReturnType<typeof loadOpenClawPlugins>,
+  registry: ReturnType<typeof loadFoxFangPlugins>,
   pluginId: string,
 ) {
   return fs.realpathSync(registry.plugins.find((entry) => entry.id === pluginId)?.source ?? "");
@@ -563,8 +563,8 @@ function resolveLoadedPluginSource(
 
 function expectCachePartitionByPluginSource(params: {
   pluginId: string;
-  loadFirst: () => ReturnType<typeof loadOpenClawPlugins>;
-  loadSecond: () => ReturnType<typeof loadOpenClawPlugins>;
+  loadFirst: () => ReturnType<typeof loadFoxFangPlugins>;
+  loadSecond: () => ReturnType<typeof loadFoxFangPlugins>;
   expectedFirstSource: string;
   expectedSecondSource: string;
 }) {
@@ -581,8 +581,8 @@ function expectCachePartitionByPluginSource(params: {
 }
 
 function expectCacheMissThenHit(params: {
-  loadFirst: () => ReturnType<typeof loadOpenClawPlugins>;
-  loadVariant: () => ReturnType<typeof loadOpenClawPlugins>;
+  loadFirst: () => ReturnType<typeof loadFoxFangPlugins>;
+  loadVariant: () => ReturnType<typeof loadFoxFangPlugins>;
 }) {
   const first = params.loadFirst();
   const second = params.loadVariant();
@@ -615,7 +615,7 @@ function createSetupEntryChannelPluginFixture(params: {
     JSON.stringify(
       {
         name: params.packageName,
-        openclaw: {
+        foxfang: {
           extensions: ["./index.cjs"],
           setupEntry: "./setup-entry.cjs",
           ...(params.startupDeferConfiguredChannelFullLoadUntilAfterListen
@@ -633,7 +633,7 @@ function createSetupEntryChannelPluginFixture(params: {
     "utf-8",
   );
   fs.writeFileSync(
-    path.join(pluginDir, "openclaw.plugin.json"),
+    path.join(pluginDir, "foxfang.plugin.json"),
     JSON.stringify(
       {
         id: params.id,
@@ -702,10 +702,10 @@ module.exports = {
 
 function createEnvResolvedPluginFixture(pluginId: string) {
   useNoBundledPlugins();
-  const openclawHome = makeTempDir();
+  const foxfangHome = makeTempDir();
   const ignoredHome = makeTempDir();
   const stateDir = makeTempDir();
-  const pluginDir = path.join(openclawHome, "plugins", pluginId);
+  const pluginDir = path.join(foxfangHome, "plugins", pluginId);
   mkdirSafe(pluginDir);
   const plugin = writePlugin({
     id: pluginId,
@@ -715,10 +715,10 @@ function createEnvResolvedPluginFixture(pluginId: string) {
   });
   const env = {
     ...process.env,
-    OPENCLAW_HOME: openclawHome,
+    FOXFANG_HOME: foxfangHome,
     HOME: ignoredHome,
-    OPENCLAW_STATE_DIR: stateDir,
-    OPENCLAW_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins",
+    FOXFANG_STATE_DIR: stateDir,
+    FOXFANG_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins",
   };
   return { plugin, env };
 }
@@ -749,7 +749,7 @@ function expectEscapingEntryRejected(params: {
     throw err;
   }
 
-  const registry = loadOpenClawPlugins({
+  const registry = loadFoxFangPlugins({
     cache: false,
     config: {
       plugins: {
@@ -772,9 +772,9 @@ afterEach(() => {
   resetPluginRuntimeStateForTest();
   resetDiagnosticEventsForTest();
   if (prevBundledDir === undefined) {
-    delete process.env.OPENCLAW_BUNDLED_PLUGINS_DIR;
+    delete process.env.FOXFANG_BUNDLED_PLUGINS_DIR;
   } else {
-    process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = prevBundledDir;
+    process.env.FOXFANG_BUNDLED_PLUGINS_DIR = prevBundledDir;
   }
 });
 
@@ -800,8 +800,8 @@ describe("bundle plugins", () => {
       "---\ndescription: fixture\n---\n",
     );
 
-    const registry = withEnv({ OPENCLAW_STATE_DIR: stateDir }, () =>
-      loadOpenClawPlugins({
+    const registry = withEnv({ FOXFANG_STATE_DIR: stateDir }, () =>
+      loadFoxFangPlugins({
         workspaceDir,
         onlyPluginIds: ["sample-bundle"],
         config: {
@@ -907,7 +907,7 @@ describe("bundle plugins", () => {
     const registry = loadBundleFixture({
       pluginId: "claude-mcp-url",
       env: {
-        OPENCLAW_HOME: stateDir,
+        FOXFANG_HOME: stateDir,
       },
       build: (bundleRoot) => {
         mkdirSafe(path.join(bundleRoot, ".claude-plugin"));
@@ -957,7 +957,7 @@ afterAll(() => {
   }
 });
 
-describe("loadOpenClawPlugins", () => {
+describe("loadFoxFangPlugins", () => {
   it("disables bundled plugins by default", () => {
     const bundledDir = makeTempDir();
     writePlugin({
@@ -966,9 +966,9 @@ describe("loadOpenClawPlugins", () => {
       dir: bundledDir,
       filename: "bundled.cjs",
     });
-    process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = bundledDir;
+    process.env.FOXFANG_BUNDLED_PLUGINS_DIR = bundledDir;
 
-    const registry = loadOpenClawPlugins({
+    const registry = loadFoxFangPlugins({
       cache: false,
       config: {
         plugins: {
@@ -992,7 +992,7 @@ describe("loadOpenClawPlugins", () => {
           },
         },
       } satisfies PluginLoadConfig,
-      assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+      assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
         expectTelegramLoaded(registry);
       },
     },
@@ -1008,7 +1008,7 @@ describe("loadOpenClawPlugins", () => {
           enabled: true,
         },
       } satisfies PluginLoadConfig,
-      assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+      assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
         expectTelegramLoaded(registry);
       },
     },
@@ -1026,7 +1026,7 @@ describe("loadOpenClawPlugins", () => {
           },
         },
       } satisfies PluginLoadConfig,
-      assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+      assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
         const telegram = registry.plugins.find((entry) => entry.id === "telegram");
         expect(telegram?.status).toBe("disabled");
         expect(telegram?.error).toBe("disabled in config");
@@ -1036,7 +1036,7 @@ describe("loadOpenClawPlugins", () => {
     "handles bundled telegram plugin enablement and override rules: $name",
     ({ config, assert }) => {
       setupBundledTelegramPlugin();
-      const registry = loadOpenClawPlugins({
+      const registry = loadFoxFangPlugins({
         cache: false,
         workspaceDir: cachedBundledTelegramDir,
         config,
@@ -1048,7 +1048,7 @@ describe("loadOpenClawPlugins", () => {
   it("preserves package.json metadata for bundled memory plugins", () => {
     const registry = loadBundledMemoryPluginRegistry({
       packageMeta: {
-        name: "@openclaw/memory-core",
+        name: "@foxfang/memory-core",
         version: "1.2.3",
         description: "Memory plugin package",
       },
@@ -1066,7 +1066,7 @@ describe("loadOpenClawPlugins", () => {
     {
       label: "loads plugins from config paths",
       run: () => {
-        process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = "/nonexistent/bundled/plugins";
+        process.env.FOXFANG_BUNDLED_PLUGINS_DIR = "/nonexistent/bundled/plugins";
         const plugin = writePlugin({
           id: "allowed-config-path",
           filename: "allowed-config-path.cjs",
@@ -1078,7 +1078,7 @@ describe("loadOpenClawPlugins", () => {
 };`,
         });
 
-        const registry = loadOpenClawPlugins({
+        const registry = loadFoxFangPlugins({
           cache: false,
           workspaceDir: plugin.dir,
           config: {
@@ -1111,7 +1111,7 @@ describe("loadOpenClawPlugins", () => {
 module.exports = { id: "skipped-scoped-only", register() { throw new Error("skipped plugin should not load"); } };`,
         });
 
-        const registry = loadOpenClawPlugins({
+        const registry = loadFoxFangPlugins({
           cache: false,
           config: {
             plugins: {
@@ -1149,12 +1149,12 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
           },
         };
 
-        const full = loadOpenClawPlugins(options);
-        const scoped = loadOpenClawPlugins({
+        const full = loadFoxFangPlugins(options);
+        const scoped = loadFoxFangPlugins({
           ...options,
           onlyPluginIds: ["allowed-cache-scope"],
         });
-        const scopedAgain = loadOpenClawPlugins({
+        const scopedAgain = loadFoxFangPlugins({
           ...options,
           onlyPluginIds: ["allowed-cache-scope"],
         });
@@ -1181,7 +1181,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
         setActivePluginRegistry(previousRegistry, "existing-registry");
         resetGlobalHookRunner();
 
-        const scoped = loadOpenClawPlugins({
+        const scoped = loadFoxFangPlugins({
           cache: false,
           activate: false,
           workspaceDir: plugin.dir,
@@ -1223,7 +1223,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
     });
     clearPluginCommands();
 
-    const scoped = loadOpenClawPlugins({
+    const scoped = loadFoxFangPlugins({
       cache: false,
       activate: false,
       workspaceDir: plugin.dir,
@@ -1240,7 +1240,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
     expect(scoped.commands.map((entry) => entry.command.name)).toEqual(["pair"]);
     expect(getPluginCommandSpecs("telegram")).toEqual([]);
 
-    const active = loadOpenClawPlugins({
+    const active = loadFoxFangPlugins({
       cache: false,
       workspaceDir: plugin.dir,
       config: {
@@ -1266,12 +1266,12 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
 
   it("can scope bundled provider loads to deepseek without hanging", () => {
     if (prevBundledDir === undefined) {
-      delete process.env.OPENCLAW_BUNDLED_PLUGINS_DIR;
+      delete process.env.FOXFANG_BUNDLED_PLUGINS_DIR;
     } else {
-      process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = prevBundledDir;
+      process.env.FOXFANG_BUNDLED_PLUGINS_DIR = prevBundledDir;
     }
 
-    const scoped = loadOpenClawPlugins({
+    const scoped = loadFoxFangPlugins({
       cache: false,
       activate: false,
       pluginSdkResolution: "dist",
@@ -1345,7 +1345,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
       };`,
     });
 
-    const scoped = loadOpenClawPlugins({
+    const scoped = loadFoxFangPlugins({
       cache: false,
       activate: false,
       workspaceDir: plugin.dir,
@@ -1403,7 +1403,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
       };`,
     });
 
-    const registry = loadOpenClawPlugins({
+    const registry = loadFoxFangPlugins({
       cache: false,
       workspaceDir: plugin.dir,
       config: {
@@ -1424,16 +1424,16 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
   });
 
   it("throws when activate:false is used without cache:false", () => {
-    expect(() => loadOpenClawPlugins({ activate: false })).toThrow(
+    expect(() => loadFoxFangPlugins({ activate: false })).toThrow(
       "activate:false requires cache:false",
     );
-    expect(() => loadOpenClawPlugins({ activate: false, cache: true })).toThrow(
+    expect(() => loadFoxFangPlugins({ activate: false, cache: true })).toThrow(
       "activate:false requires cache:false",
     );
   });
 
   it("re-initializes global hook runner when serving registry from cache", () => {
-    process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = "/nonexistent/bundled/plugins";
+    process.env.FOXFANG_BUNDLED_PLUGINS_DIR = "/nonexistent/bundled/plugins";
     const plugin = writePlugin({
       id: "cache-hook-runner",
       filename: "cache-hook-runner.cjs",
@@ -1450,13 +1450,13 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
       },
     };
 
-    const first = loadOpenClawPlugins(options);
+    const first = loadFoxFangPlugins(options);
     expect(getGlobalHookRunner()).not.toBeNull();
 
     resetGlobalHookRunner();
     expect(getGlobalHookRunner()).toBeNull();
 
-    const second = loadOpenClawPlugins(options);
+    const second = loadFoxFangPlugins(options);
     expect(second).toBe(first);
     expect(getGlobalHookRunner()).not.toBeNull();
 
@@ -1498,19 +1498,19 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
           expectedFirstSource: pluginA.file,
           expectedSecondSource: pluginB.file,
           loadFirst: () =>
-            loadOpenClawPlugins({
+            loadFoxFangPlugins({
               ...options,
               env: {
                 ...process.env,
-                OPENCLAW_BUNDLED_PLUGINS_DIR: bundledA,
+                FOXFANG_BUNDLED_PLUGINS_DIR: bundledA,
               },
             }),
           loadSecond: () =>
-            loadOpenClawPlugins({
+            loadFoxFangPlugins({
               ...options,
               env: {
                 ...process.env,
-                OPENCLAW_BUNDLED_PLUGINS_DIR: bundledB,
+                FOXFANG_BUNDLED_PLUGINS_DIR: bundledB,
               },
             }),
         };
@@ -1555,25 +1555,25 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
           expectedFirstSource: pluginA.file,
           expectedSecondSource: pluginB.file,
           loadFirst: () =>
-            loadOpenClawPlugins({
+            loadFoxFangPlugins({
               ...options,
               env: {
                 ...process.env,
                 HOME: homeA,
-                OPENCLAW_HOME: undefined,
-                OPENCLAW_STATE_DIR: stateDir,
-                OPENCLAW_BUNDLED_PLUGINS_DIR: bundledDir,
+                FOXFANG_HOME: undefined,
+                FOXFANG_STATE_DIR: stateDir,
+                FOXFANG_BUNDLED_PLUGINS_DIR: bundledDir,
               },
             }),
           loadSecond: () =>
-            loadOpenClawPlugins({
+            loadFoxFangPlugins({
               ...options,
               env: {
                 ...process.env,
                 HOME: homeB,
-                OPENCLAW_HOME: undefined,
-                OPENCLAW_STATE_DIR: stateDir,
-                OPENCLAW_BUNDLED_PLUGINS_DIR: bundledDir,
+                FOXFANG_HOME: undefined,
+                FOXFANG_STATE_DIR: stateDir,
+                FOXFANG_BUNDLED_PLUGINS_DIR: bundledDir,
               },
             }),
         };
@@ -1595,10 +1595,10 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
       name: "does not reuse cached registries when env-resolved install paths change",
       setup: () => {
         useNoBundledPlugins();
-        const openclawHome = makeTempDir();
+        const foxfangHome = makeTempDir();
         const ignoredHome = makeTempDir();
         const stateDir = makeTempDir();
-        const pluginDir = path.join(openclawHome, "plugins", "tracked-install-cache");
+        const pluginDir = path.join(foxfangHome, "plugins", "tracked-install-cache");
         mkdirSafe(pluginDir);
         const plugin = writePlugin({
           id: "tracked-install-cache",
@@ -1626,25 +1626,25 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
         const secondHome = makeTempDir();
         return {
           loadFirst: () =>
-            loadOpenClawPlugins({
+            loadFoxFangPlugins({
               ...options,
               env: {
                 ...process.env,
-                OPENCLAW_HOME: openclawHome,
+                FOXFANG_HOME: foxfangHome,
                 HOME: ignoredHome,
-                OPENCLAW_STATE_DIR: stateDir,
-                OPENCLAW_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins",
+                FOXFANG_STATE_DIR: stateDir,
+                FOXFANG_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins",
               },
             }),
           loadVariant: () =>
-            loadOpenClawPlugins({
+            loadFoxFangPlugins({
               ...options,
               env: {
                 ...process.env,
-                OPENCLAW_HOME: secondHome,
+                FOXFANG_HOME: secondHome,
                 HOME: ignoredHome,
-                OPENCLAW_STATE_DIR: stateDir,
-                OPENCLAW_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins",
+                FOXFANG_STATE_DIR: stateDir,
+                FOXFANG_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins",
               },
             }),
         };
@@ -1673,9 +1673,9 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
         };
 
         return {
-          loadFirst: () => loadOpenClawPlugins(options),
+          loadFirst: () => loadFoxFangPlugins(options),
           loadVariant: () =>
-            loadOpenClawPlugins({
+            loadFoxFangPlugins({
               ...options,
               runtimeOptions: {
                 allowGatewaySubagentBinding: true,
@@ -1702,11 +1702,11 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
     );
 
     const loadWithStateDir = (stateDir: string) =>
-      loadOpenClawPlugins({
+      loadFoxFangPlugins({
         env: {
           ...process.env,
-          OPENCLAW_STATE_DIR: stateDir,
-          OPENCLAW_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins",
+          FOXFANG_STATE_DIR: stateDir,
+          FOXFANG_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins",
         },
         config: {
           plugins: {
@@ -1746,12 +1746,12 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
       body: `module.exports = { id: "tilde-bundled", register() {} };`,
     });
 
-    const registry = loadOpenClawPlugins({
+    const registry = loadFoxFangPlugins({
       env: {
         ...process.env,
         HOME: homeDir,
-        OPENCLAW_HOME: undefined,
-        OPENCLAW_BUNDLED_PLUGINS_DIR: override,
+        FOXFANG_HOME: undefined,
+        FOXFANG_BUNDLED_PLUGINS_DIR: override,
       },
       config: {
         plugins: {
@@ -1768,34 +1768,34 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
     ).toBe(fs.realpathSync(plugin.file));
   });
 
-  it("prefers OPENCLAW_HOME over HOME for env-expanded load paths", () => {
+  it("prefers FOXFANG_HOME over HOME for env-expanded load paths", () => {
     const ignoredHome = makeTempDir();
-    const openclawHome = makeTempDir();
+    const foxfangHome = makeTempDir();
     const stateDir = makeTempDir();
     const bundledDir = makeTempDir();
     const plugin = writePlugin({
-      id: "openclaw-home-demo",
-      dir: path.join(openclawHome, "plugins", "openclaw-home-demo"),
+      id: "foxfang-home-demo",
+      dir: path.join(foxfangHome, "plugins", "foxfang-home-demo"),
       filename: "index.cjs",
-      body: `module.exports = { id: "openclaw-home-demo", register() {} };`,
+      body: `module.exports = { id: "foxfang-home-demo", register() {} };`,
     });
 
-    const registry = loadOpenClawPlugins({
+    const registry = loadFoxFangPlugins({
       env: {
         ...process.env,
         HOME: ignoredHome,
-        OPENCLAW_HOME: openclawHome,
-        OPENCLAW_STATE_DIR: stateDir,
-        OPENCLAW_BUNDLED_PLUGINS_DIR: bundledDir,
+        FOXFANG_HOME: foxfangHome,
+        FOXFANG_STATE_DIR: stateDir,
+        FOXFANG_BUNDLED_PLUGINS_DIR: bundledDir,
       },
       config: {
         plugins: {
-          allow: ["openclaw-home-demo"],
+          allow: ["foxfang-home-demo"],
           entries: {
-            "openclaw-home-demo": { enabled: true },
+            "foxfang-home-demo": { enabled: true },
           },
           load: {
-            paths: ["~/plugins/openclaw-home-demo"],
+            paths: ["~/plugins/foxfang-home-demo"],
           },
         },
       },
@@ -1803,7 +1803,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
 
     expect(
       fs.realpathSync(
-        registry.plugins.find((entry) => entry.id === "openclaw-home-demo")?.source ?? "",
+        registry.plugins.find((entry) => entry.id === "foxfang-home-demo")?.source ?? "",
       ),
     ).toBe(fs.realpathSync(plugin.file));
   });
@@ -1883,7 +1883,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
     });
 
     expect(() =>
-      loadOpenClawPlugins({
+      loadFoxFangPlugins({
         cache: false,
         throwOnLoadError: true,
         config: {
@@ -1960,7 +1960,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
     }
   });
 } };`,
-        assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+        assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
           const channel = registry.channels.find((entry) => entry.plugin.id === "demo");
           expect(channel).toBeDefined();
         },
@@ -2006,7 +2006,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
     }
   });
 } };`,
-        assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+        assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
           expect(registry.channels.filter((entry) => entry.plugin.id === "demo")).toHaveLength(1);
           expectRegistryErrorDiagnostic({
             registry,
@@ -2021,7 +2021,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
         body: `module.exports = { id: "context-engine-core-collision", register(api) {
   api.registerContextEngine("legacy", () => ({}));
 } };`,
-        assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+        assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
           expectRegistryErrorDiagnostic({
             registry,
             pluginId: "context-engine-core-collision",
@@ -2035,7 +2035,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
         body: `module.exports = { id: "cli-missing-metadata", register(api) {
   api.registerCli(() => {});
 } };`,
-        assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+        assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
           expect(registry.cliRegistrars).toHaveLength(0);
           expectRegistryErrorDiagnostic({
             registry,
@@ -2050,7 +2050,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
         body: `module.exports = { id: "cli-backend-missing-id", register(api) {
   api.registerCliBackend({ id: "   ", config: { command: "claude" } });
 } };`,
-        assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+        assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
           expect(registry.cliBackends).toHaveLength(0);
           expectRegistryErrorDiagnostic({
             registry,
@@ -2109,7 +2109,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
         buildBody: (ownerId: string) => `module.exports = { id: "${ownerId}", register(api) {
   api.registerHook("gateway:startup", () => {}, { name: "shared-hook" });
 } };`,
-        selectCount: (registry: ReturnType<typeof loadOpenClawPlugins>) =>
+        selectCount: (registry: ReturnType<typeof loadFoxFangPlugins>) =>
           registry.hooks.filter((entry) => entry.entry.hook.name === "shared-hook").length,
         duplicateMessage: "hook already registered: shared-hook (hook-owner-a)",
         assert: expectDuplicateRegistrationResult,
@@ -2121,7 +2121,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
         buildBody: (ownerId: string) => `module.exports = { id: "${ownerId}", register(api) {
   api.registerService({ id: "shared-service", start() {} });
 } };`,
-        selectCount: (registry: ReturnType<typeof loadOpenClawPlugins>) =>
+        selectCount: (registry: ReturnType<typeof loadFoxFangPlugins>) =>
           registry.services.filter((entry) => entry.service.id === "shared-service").length,
         duplicateMessage: "service already registered: shared-service (service-owner-a)",
         assert: expectDuplicateRegistrationResult,
@@ -2145,10 +2145,10 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
         buildBody: (ownerId: string) => `module.exports = { id: "${ownerId}", register(api) {
   api.registerCli(() => {}, { commands: ["shared-cli"] });
 } };`,
-        selectCount: (registry: ReturnType<typeof loadOpenClawPlugins>) =>
+        selectCount: (registry: ReturnType<typeof loadFoxFangPlugins>) =>
           registry.cliRegistrars.length,
         duplicateMessage: "cli command already registered: shared-cli (cli-owner-a)",
-        assertPrimaryOwner: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+        assertPrimaryOwner: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
           expect(registry.cliRegistrars[0]?.pluginId).toBe("cli-owner-a");
         },
         assert: expectDuplicateRegistrationResult,
@@ -2160,11 +2160,11 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
         buildBody: (ownerId: string) => `module.exports = { id: "${ownerId}", register(api) {
   api.registerCliBackend({ id: "shared-cli-backend", config: { command: "backend-${ownerId}" } });
 } };`,
-        selectCount: (registry: ReturnType<typeof loadOpenClawPlugins>) =>
+        selectCount: (registry: ReturnType<typeof loadFoxFangPlugins>) =>
           registry.cliBackends?.length ?? 0,
         duplicateMessage:
           "cli backend already registered: shared-cli-backend (cli-backend-owner-a)",
-        assertPrimaryOwner: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+        assertPrimaryOwner: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
           expect(registry.cliBackends?.[0]?.pluginId).toBe("cli-backend-owner-a");
         },
         assert: expectDuplicateRegistrationResult,
@@ -2259,7 +2259,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
 } };`,
           }),
         ],
-        assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+        assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
           expect(
             registry.httpRoutes.find((entry) => entry.pluginId === "http-route-missing-auth"),
           ).toBeUndefined();
@@ -2282,7 +2282,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
 } };`,
           }),
         ],
-        assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+        assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
           const routes = registry.httpRoutes.filter(
             (entry) => entry.pluginId === "http-route-replace-self",
           );
@@ -2309,7 +2309,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
 } };`,
           }),
         ],
-        assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+        assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
           const route = registry.httpRoutes.find((entry) => entry.path === "/demo");
           expect(route?.pluginId).toBe("http-route-owner-a");
           expect(
@@ -2331,7 +2331,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
 } };`,
           }),
         ],
-        assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+        assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
           const routes = registry.httpRoutes.filter(
             (entry) => entry.pluginId === "http-route-overlap",
           );
@@ -2356,7 +2356,7 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
 } };`,
           }),
         ],
-        assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+        assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
           const routes = registry.httpRoutes.filter(
             (entry) => entry.pluginId === "http-route-overlap-same-auth",
           );
@@ -2372,13 +2372,13 @@ module.exports = { id: "skipped-scoped-only", register() { throw new Error("skip
   });
 
   it("respects explicit disable in config", () => {
-    process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = "/nonexistent/bundled/plugins";
+    process.env.FOXFANG_BUNDLED_PLUGINS_DIR = "/nonexistent/bundled/plugins";
     const plugin = writePlugin({
       id: "config-disable",
       body: `module.exports = { id: "config-disable", register() {} };`,
     });
 
-    const registry = loadOpenClawPlugins({
+    const registry = loadFoxFangPlugins({
       cache: false,
       config: {
         plugins: {
@@ -2426,7 +2426,7 @@ module.exports = {
 };`,
     });
     fs.writeFileSync(
-      path.join(plugin.dir, "openclaw.plugin.json"),
+      path.join(plugin.dir, "foxfang.plugin.json"),
       JSON.stringify(
         {
           id: "lazy-channel",
@@ -2448,7 +2448,7 @@ module.exports = {
       },
     };
 
-    const registry = loadOpenClawPlugins({
+    const registry = loadFoxFangPlugins({
       cache: false,
       config,
     });
@@ -2457,7 +2457,7 @@ module.exports = {
     expect(registry.channelSetups).toHaveLength(0);
     expect(registry.plugins.find((entry) => entry.id === "lazy-channel")?.status).toBe("disabled");
 
-    const setupRegistry = loadOpenClawPlugins({
+    const setupRegistry = loadFoxFangPlugins({
       cache: false,
       config,
       includeSetupOnlyChannelPlugins: true,
@@ -2477,13 +2477,13 @@ module.exports = {
       fixture: {
         id: "setup-entry-test",
         label: "Setup Entry Test",
-        packageName: "@openclaw/setup-entry-test",
+        packageName: "@foxfang/setup-entry-test",
         fullBlurb: "full entry should not run in setup-only mode",
         setupBlurb: "setup entry",
         configured: false,
       },
       load: ({ pluginDir }: { pluginDir: string }) =>
-        loadOpenClawPlugins({
+        loadFoxFangPlugins({
           cache: false,
           config: {
             plugins: {
@@ -2505,13 +2505,13 @@ module.exports = {
       fixture: {
         id: "setup-runtime-test",
         label: "Setup Runtime Test",
-        packageName: "@openclaw/setup-runtime-test",
+        packageName: "@foxfang/setup-runtime-test",
         fullBlurb: "full entry should not run while unconfigured",
         setupBlurb: "setup runtime",
         configured: false,
       },
       load: ({ pluginDir }: { pluginDir: string }) =>
-        loadOpenClawPlugins({
+        loadFoxFangPlugins({
           cache: false,
           config: {
             plugins: {
@@ -2529,14 +2529,14 @@ module.exports = {
       fixture: {
         id: "setup-runtime-preferred-test",
         label: "Setup Runtime Preferred Test",
-        packageName: "@openclaw/setup-runtime-preferred-test",
+        packageName: "@foxfang/setup-runtime-preferred-test",
         fullBlurb: "full entry should be deferred while startup is still cold",
         setupBlurb: "setup runtime preferred",
         configured: true,
         startupDeferConfiguredChannelFullLoadUntilAfterListen: true,
       },
       load: ({ pluginDir }: { pluginDir: string }) =>
-        loadOpenClawPlugins({
+        loadFoxFangPlugins({
           cache: false,
           preferSetupRuntimeForChannelPlugins: true,
           config: {
@@ -2561,13 +2561,13 @@ module.exports = {
       fixture: {
         id: "setup-runtime-not-preferred-test",
         label: "Setup Runtime Not Preferred Test",
-        packageName: "@openclaw/setup-runtime-not-preferred-test",
+        packageName: "@foxfang/setup-runtime-not-preferred-test",
         fullBlurb: "full entry should still load without explicit startup opt-in",
         setupBlurb: "setup runtime not preferred",
         configured: true,
       },
       load: ({ pluginDir }: { pluginDir: string }) =>
-        loadOpenClawPlugins({
+        loadFoxFangPlugins({
           cache: false,
           preferSetupRuntimeForChannelPlugins: true,
           config: {
@@ -2718,7 +2718,7 @@ module.exports = {
       {
         label: "enforces memory slot selection",
         loadRegistry: () => {
-          process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = "/nonexistent/bundled/plugins";
+          process.env.FOXFANG_BUNDLED_PLUGINS_DIR = "/nonexistent/bundled/plugins";
           const memoryA = writePlugin({
             id: "memory-a",
             body: memoryPluginBody("memory-a"),
@@ -2728,7 +2728,7 @@ module.exports = {
             body: memoryPluginBody("memory-b"),
           });
 
-          return loadOpenClawPlugins({
+          return loadFoxFangPlugins({
             cache: false,
             config: {
               plugins: {
@@ -2738,7 +2738,7 @@ module.exports = {
             },
           });
         },
-        assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+        assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
           const a = registry.plugins.find((entry) => entry.id === "memory-a");
           const b = registry.plugins.find((entry) => entry.id === "memory-b");
           expect(b?.status).toBe("loaded");
@@ -2766,7 +2766,7 @@ module.exports = {
             body: memoryPluginBody("memory-b"),
           });
           fs.writeFileSync(
-            path.join(memoryADir, "openclaw.plugin.json"),
+            path.join(memoryADir, "foxfang.plugin.json"),
             JSON.stringify(
               {
                 id: "memory-a",
@@ -2779,7 +2779,7 @@ module.exports = {
             "utf-8",
           );
           fs.writeFileSync(
-            path.join(memoryBDir, "openclaw.plugin.json"),
+            path.join(memoryBDir, "foxfang.plugin.json"),
             JSON.stringify(
               {
                 id: "memory-b",
@@ -2791,9 +2791,9 @@ module.exports = {
             ),
             "utf-8",
           );
-          process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = bundledDir;
+          process.env.FOXFANG_BUNDLED_PLUGINS_DIR = bundledDir;
 
-          return loadOpenClawPlugins({
+          return loadFoxFangPlugins({
             cache: false,
             config: {
               plugins: {
@@ -2807,7 +2807,7 @@ module.exports = {
             },
           });
         },
-        assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+        assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
           const a = registry.plugins.find((entry) => entry.id === "memory-a");
           const b = registry.plugins.find((entry) => entry.id === "memory-b");
           expect(a?.status).toBe("disabled");
@@ -2818,13 +2818,13 @@ module.exports = {
       {
         label: "disables memory plugins when slot is none",
         loadRegistry: () => {
-          process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = "/nonexistent/bundled/plugins";
+          process.env.FOXFANG_BUNDLED_PLUGINS_DIR = "/nonexistent/bundled/plugins";
           const memory = writePlugin({
             id: "memory-off",
             body: memoryPluginBody("memory-off"),
           });
 
-          return loadOpenClawPlugins({
+          return loadFoxFangPlugins({
             cache: false,
             config: {
               plugins: {
@@ -2834,7 +2834,7 @@ module.exports = {
             },
           });
         },
-        assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+        assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
           const entry = registry.plugins.find((item) => item.id === "memory-off");
           expect(entry?.status).toBe("disabled");
         },
@@ -2862,7 +2862,7 @@ module.exports = {
             body: simplePluginBody("shadow"),
           });
 
-          return loadOpenClawPlugins({
+          return loadFoxFangPlugins({
             cache: false,
             config: {
               plugins: {
@@ -2897,7 +2897,7 @@ module.exports = {
               filename: "index.cjs",
             });
 
-            return loadOpenClawPlugins({
+            return loadFoxFangPlugins({
               cache: false,
               config: {
                 plugins: {
@@ -2934,7 +2934,7 @@ module.exports = {
               filename: "index.cjs",
             });
 
-            return loadOpenClawPlugins({
+            return loadFoxFangPlugins({
               cache: false,
               config: {
                 plugins: {
@@ -2977,7 +2977,7 @@ module.exports = {
             id: "warn-open-allow-config",
             body: simplePluginBody("warn-open-allow-config"),
           });
-          return loadOpenClawPlugins({
+          return loadFoxFangPlugins({
             cache: false,
             logger: createWarningLogger(warnings),
             config: {
@@ -2998,7 +2998,7 @@ module.exports = {
             id: "warn-open-allow-workspace",
           });
           return (warnings: string[]) =>
-            loadOpenClawPlugins({
+            loadFoxFangPlugins({
               cache: false,
               workspaceDir,
               logger: createWarningLogger(warnings),
@@ -3039,7 +3039,7 @@ module.exports = {
             id: "workspace-helper",
           });
 
-          return loadOpenClawPlugins({
+          return loadFoxFangPlugins({
             cache: false,
             workspaceDir,
             config: {
@@ -3049,7 +3049,7 @@ module.exports = {
             },
           });
         },
-        assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+        assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
           expectPluginOriginAndStatus({
             registry,
             pluginId: "workspace-helper",
@@ -3068,7 +3068,7 @@ module.exports = {
             id: "workspace-helper",
           });
 
-          return loadOpenClawPlugins({
+          return loadFoxFangPlugins({
             cache: false,
             workspaceDir,
             config: {
@@ -3079,7 +3079,7 @@ module.exports = {
             },
           });
         },
-        assert: (registry: ReturnType<typeof loadOpenClawPlugins>) => {
+        assert: (registry: ReturnType<typeof loadFoxFangPlugins>) => {
           expectPluginOriginAndStatus({
             registry,
             pluginId: "workspace-helper",
@@ -3103,7 +3103,7 @@ module.exports = {
             id: "shadowed",
           });
 
-          return loadOpenClawPlugins({
+          return loadFoxFangPlugins({
             cache: false,
             workspaceDir,
             config: {
@@ -3138,7 +3138,7 @@ module.exports = {
       body: simplePluginBody("profile-aware"),
     });
     fs.writeFileSync(
-      path.join(plugin.dir, "openclaw.plugin.json"),
+      path.join(plugin.dir, "foxfang.plugin.json"),
       JSON.stringify(
         {
           id: "profile-aware",
@@ -3151,7 +3151,7 @@ module.exports = {
       "utf-8",
     );
 
-    const registry = loadOpenClawPlugins({
+    const registry = loadFoxFangPlugins({
       cache: false,
       workspaceDir: bundledDir,
       config: {
@@ -3179,7 +3179,7 @@ module.exports = {
       filename: "unscoped.cjs",
     });
 
-    const registry = loadOpenClawPlugins({
+    const registry = loadFoxFangPlugins({
       cache: false,
       config: {
         plugins: {
@@ -3213,7 +3213,7 @@ module.exports = {
             });
 
             const warnings: string[] = [];
-            const registry = loadOpenClawPlugins({
+            const registry = loadFoxFangPlugins({
               cache: false,
               logger: createWarningLogger(warnings),
               config: {
@@ -3232,7 +3232,7 @@ module.exports = {
         loadRegistry: () => {
           const { plugin, env } = createEnvResolvedPluginFixture("tracked-load-path");
           const warnings: string[] = [];
-          const registry = loadOpenClawPlugins({
+          const registry = loadFoxFangPlugins({
             cache: false,
             logger: createWarningLogger(warnings),
             env,
@@ -3258,7 +3258,7 @@ module.exports = {
         loadRegistry: () => {
           const { plugin, env } = createEnvResolvedPluginFixture("tracked-install-path");
           const warnings: string[] = [];
-          const registry = loadOpenClawPlugins({
+          const registry = loadFoxFangPlugins({
             cache: false,
             logger: createWarningLogger(warnings),
             env,
@@ -3356,8 +3356,8 @@ module.exports = {
       throw err;
     }
 
-    process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = bundledDir;
-    const registry = loadOpenClawPlugins({
+    process.env.FOXFANG_BUNDLED_PLUGINS_DIR = bundledDir;
+    const registry = loadFoxFangPlugins({
       cache: false,
       workspaceDir: bundledDir,
       config: {
@@ -3398,7 +3398,7 @@ module.exports = {
 } };`,
     });
 
-    const registry = withEnv({ OPENCLAW_STATE_DIR: stateDir }, () =>
+    const registry = withEnv({ FOXFANG_STATE_DIR: stateDir }, () =>
       loadRegistryFromSinglePlugin({
         plugin,
         pluginConfig: {
@@ -3421,13 +3421,13 @@ module.exports = {
       filename: "legacy-root-import.cjs",
       body: `module.exports = {
   id: "legacy-root-import",
-  configSchema: (require("openclaw/plugin-sdk").emptyPluginConfigSchema)(),
+  configSchema: (require("foxfang/plugin-sdk").emptyPluginConfigSchema)(),
         register() {},
       };`,
     });
 
-    const registry = withEnv({ OPENCLAW_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins" }, () =>
-      loadOpenClawPlugins({
+    const registry = withEnv({ FOXFANG_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins" }, () =>
+      loadFoxFangPlugins({
         cache: false,
         workspaceDir: plugin.dir,
         config: {
@@ -3444,7 +3444,7 @@ module.exports = {
 
   it("supports legacy plugins subscribing to diagnostic events from the root sdk", async () => {
     useNoBundledPlugins();
-    const seenKey = "__openclawLegacyRootDiagnosticSeen";
+    const seenKey = "__foxfangLegacyRootDiagnosticSeen";
     delete (globalThis as Record<string, unknown>)[seenKey];
 
     const plugin = writePlugin({
@@ -3452,9 +3452,9 @@ module.exports = {
       filename: "legacy-root-diagnostic-listener.cjs",
       body: `module.exports = {
   id: "legacy-root-diagnostic-listener",
-  configSchema: (require("openclaw/plugin-sdk").emptyPluginConfigSchema)(),
+  configSchema: (require("foxfang/plugin-sdk").emptyPluginConfigSchema)(),
   register() {
-    const { onDiagnosticEvent } = require("openclaw/plugin-sdk");
+    const { onDiagnosticEvent } = require("foxfang/plugin-sdk");
     if (typeof onDiagnosticEvent !== "function") {
       throw new Error("missing onDiagnosticEvent root export");
     }
@@ -3471,9 +3471,9 @@ module.exports = {
 
     try {
       const registry = withEnv(
-        { OPENCLAW_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins" },
+        { FOXFANG_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins" },
         () =>
-          loadOpenClawPlugins({
+          loadFoxFangPlugins({
             cache: false,
             workspaceDir: plugin.dir,
             config: {
@@ -3530,7 +3530,7 @@ export const runtimeValue = helperValue;`,
       "utf-8",
     );
 
-    const registry = loadOpenClawPlugins({
+    const registry = loadFoxFangPlugins({
       cache: false,
       workspaceDir: plugin.dir,
       config: {

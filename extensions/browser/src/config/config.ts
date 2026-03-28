@@ -5,5 +5,5 @@ export {
   writeConfigFile,
   type BrowserConfig,
   type BrowserProfileConfig,
-  type OpenClawConfig,
-} from "openclaw/plugin-sdk/browser-support";
+  type FoxFangConfig,
+} from "foxfang/plugin-sdk/browser-support";

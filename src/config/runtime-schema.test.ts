@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ConfigFileSnapshot, OpenClawConfig } from "./types.js";
+import type { ConfigFileSnapshot, FoxFangConfig } from "./types.js";
 
-const mockLoadConfig = vi.hoisted(() => vi.fn<() => OpenClawConfig>());
+const mockLoadConfig = vi.hoisted(() => vi.fn<() => FoxFangConfig>());
 const mockReadConfigFileSnapshot = vi.hoisted(() => vi.fn<() => Promise<ConfigFileSnapshot>>());
 const mockLoadPluginManifestRegistry = vi.hoisted(() => vi.fn());
 
@@ -18,9 +18,9 @@ vi.mock("../plugins/manifest-registry.js", () => ({
   loadPluginManifestRegistry: (...args: unknown[]) => mockLoadPluginManifestRegistry(...args),
 }));
 
-function makeSnapshot(params: { valid: boolean; config?: OpenClawConfig }): ConfigFileSnapshot {
+function makeSnapshot(params: { valid: boolean; config?: FoxFangConfig }): ConfigFileSnapshot {
   return {
-    path: "/tmp/openclaw.json",
+    path: "/tmp/foxfang.json",
     exists: true,
     raw: "{}",
     parsed: params.config ?? {},

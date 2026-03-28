@@ -1,19 +1,19 @@
 export type {
   ChannelMessageActionAdapter,
   ChannelPlugin,
-  OpenClawConfig,
-  OpenClawPluginApi,
+  FoxFangConfig,
+  FoxFangPluginApi,
   PluginRuntime,
   TelegramAccountConfig,
   TelegramActionConfig,
   TelegramNetworkConfig,
-} from "openclaw/plugin-sdk/telegram-core";
+} from "foxfang/plugin-sdk/telegram-core";
 export type { TelegramApiOverride } from "./src/send.js";
 export type {
-  OpenClawPluginService,
-  OpenClawPluginServiceContext,
+  FoxFangPluginService,
+  FoxFangPluginServiceContext,
   PluginLogger,
-} from "openclaw/plugin-sdk/core";
+} from "foxfang/plugin-sdk/core";
 export type {
   AcpRuntime,
   AcpRuntimeCapabilities,
@@ -25,8 +25,8 @@ export type {
   AcpRuntimeTurnInput,
   AcpRuntimeErrorCode,
   AcpSessionUpdateTag,
-} from "openclaw/plugin-sdk/acp-runtime";
-export { AcpRuntimeError } from "openclaw/plugin-sdk/acp-runtime";
+} from "foxfang/plugin-sdk/acp-runtime";
+export { AcpRuntimeError } from "foxfang/plugin-sdk/acp-runtime";
 
 export {
   buildTokenChannelStatusSummary,
@@ -38,7 +38,7 @@ export {
   projectCredentialSnapshotFields,
   resolveConfiguredFromCredentialStatuses,
   resolveTelegramPollVisibility,
-} from "openclaw/plugin-sdk/telegram-core";
+} from "foxfang/plugin-sdk/telegram-core";
 export {
   buildChannelConfigSchema,
   getChatChannelMeta,
@@ -50,7 +50,7 @@ export {
   readStringParam,
   resolvePollMaxSelections,
   TelegramConfigSchema,
-} from "openclaw/plugin-sdk/telegram-core";
+} from "foxfang/plugin-sdk/telegram-core";
 export type { TelegramProbe } from "./src/probe.js";
 export { auditTelegramGroupMembership, collectTelegramUnmentionedGroupIds } from "./src/audit.js";
 export { resolveTelegramRuntimeGroupPolicy } from "./src/group-access.js";

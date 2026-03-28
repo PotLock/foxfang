@@ -1,10 +1,10 @@
-import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "openclaw/plugin-sdk/account-id";
-import { listCombinedAccountIds } from "openclaw/plugin-sdk/account-resolution";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
+import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "foxfang/plugin-sdk/account-id";
+import { listCombinedAccountIds } from "foxfang/plugin-sdk/account-resolution";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
 import {
   hasConfiguredSecretInput,
   normalizeSecretInputString,
-} from "openclaw/plugin-sdk/secret-input";
+} from "foxfang/plugin-sdk/secret-input";
 import { mergeDiscordAccountConfig, resolveDiscordAccountConfig } from "./accounts.js";
 import type { DiscordAccountConfig } from "./runtime-api.js";
 import { resolveDiscordToken } from "./token.js";
@@ -42,7 +42,7 @@ function inspectConfiguredToken(value: unknown): {
   return null;
 }
 
-export function listDiscordSetupAccountIds(cfg: OpenClawConfig): string[] {
+export function listDiscordSetupAccountIds(cfg: FoxFangConfig): string[] {
   const accounts = cfg.channels?.discord?.accounts;
   return listCombinedAccountIds({
     configuredAccountIds:
@@ -53,12 +53,12 @@ export function listDiscordSetupAccountIds(cfg: OpenClawConfig): string[] {
   });
 }
 
-export function resolveDefaultDiscordSetupAccountId(cfg: OpenClawConfig): string {
+export function resolveDefaultDiscordSetupAccountId(cfg: FoxFangConfig): string {
   return listDiscordSetupAccountIds(cfg)[0] ?? DEFAULT_ACCOUNT_ID;
 }
 
 export function resolveDiscordSetupAccountConfig(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId?: string | null;
 }): { accountId: string; config: DiscordAccountConfig } {
   const accountId = normalizeAccountId(params.accountId ?? DEFAULT_ACCOUNT_ID);
@@ -69,7 +69,7 @@ export function resolveDiscordSetupAccountConfig(params: {
 }
 
 export function inspectDiscordSetupAccount(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId?: string | null;
 }): InspectedDiscordSetupAccount {
   const { accountId, config } = resolveDiscordSetupAccountConfig(params);

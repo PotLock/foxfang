@@ -1,29 +1,29 @@
 ---
-summary: "Updating OpenClaw safely (global install or source), plus rollback strategy"
+summary: "Updating FoxFang safely (global install or source), plus rollback strategy"
 read_when:
-  - Updating OpenClaw
+  - Updating FoxFang
   - Something breaks after an update
 title: "Updating"
 ---
 
 # Updating
 
-Keep OpenClaw up to date.
+Keep FoxFang up to date.
 
-## Recommended: `openclaw update`
+## Recommended: `foxfang update`
 
-The fastest way to update. It detects your install type (npm or git), fetches the latest version, runs `openclaw doctor`, and restarts the gateway.
+The fastest way to update. It detects your install type (npm or git), fetches the latest version, runs `foxfang doctor`, and restarts the gateway.
 
 ```bash
-openclaw update
+foxfang update
 ```
 
 To switch channels or target a specific version:
 
 ```bash
-openclaw update --channel beta
-openclaw update --tag main
-openclaw update --dry-run   # preview without applying
+foxfang update --channel beta
+foxfang update --tag main
+foxfang update --dry-run   # preview without applying
 ```
 
 See [Development channels](/install/development-channels) for channel semantics.
@@ -31,7 +31,7 @@ See [Development channels](/install/development-channels) for channel semantics.
 ## Alternative: re-run the installer
 
 ```bash
-curl -fsSL https://openclaw.ai/install.sh | bash
+curl -fsSL https://foxfang.ai/install.sh | bash
 ```
 
 Add `--no-onboard` to skip onboarding. For source installs, pass `--install-method git --no-onboard`.
@@ -39,16 +39,16 @@ Add `--no-onboard` to skip onboarding. For source installs, pass `--install-meth
 ## Alternative: manual npm or pnpm
 
 ```bash
-npm i -g openclaw@latest
+npm i -g foxfang@latest
 ```
 
 ```bash
-pnpm add -g openclaw@latest
+pnpm add -g foxfang@latest
 ```
 
 ## Auto-updater
 
-The auto-updater is off by default. Enable it in `~/.foxfang/openclaw.json`:
+The auto-updater is off by default. Enable it in `~/.foxfang/foxfang.json`:
 
 ```json5
 {
@@ -68,7 +68,7 @@ The auto-updater is off by default. Enable it in `~/.foxfang/openclaw.json`:
 | -------- | ------------------------------------------------------------------------------------------------------------- |
 | `stable` | Waits `stableDelayHours`, then applies with deterministic jitter across `stableJitterHours` (spread rollout). |
 | `beta`   | Checks every `betaCheckIntervalHours` (default: hourly) and applies immediately.                              |
-| `dev`    | No automatic apply. Use `openclaw update` manually.                                                           |
+| `dev`    | No automatic apply. Use `foxfang update` manually.                                                           |
 
 The gateway also logs an update hint on startup (disable with `update.checkOnStart: false`).
 
@@ -79,7 +79,7 @@ The gateway also logs an update hint on startup (disable with `update.checkOnSta
 ### Run doctor
 
 ```bash
-openclaw doctor
+foxfang doctor
 ```
 
 Migrates config, audits DM policies, and checks gateway health. Details: [Doctor](/gateway/doctor)
@@ -87,13 +87,13 @@ Migrates config, audits DM policies, and checks gateway health. Details: [Doctor
 ### Restart the gateway
 
 ```bash
-openclaw gateway restart
+foxfang gateway restart
 ```
 
 ### Verify
 
 ```bash
-openclaw health
+foxfang health
 ```
 
 </Steps>
@@ -103,12 +103,12 @@ openclaw health
 ### Pin a version (npm)
 
 ```bash
-npm i -g openclaw@<version>
-openclaw doctor
-openclaw gateway restart
+npm i -g foxfang@<version>
+foxfang doctor
+foxfang gateway restart
 ```
 
-Tip: `npm view openclaw version` shows the current published version.
+Tip: `npm view foxfang version` shows the current published version.
 
 ### Pin a commit (source)
 
@@ -116,13 +116,13 @@ Tip: `npm view openclaw version` shows the current published version.
 git fetch origin
 git checkout "$(git rev-list -n 1 --before=\"2026-01-01\" origin/main)"
 pnpm install && pnpm build
-openclaw gateway restart
+foxfang gateway restart
 ```
 
 To return to latest: `git checkout main && git pull`.
 
 ## If you are stuck
 
-- Run `openclaw doctor` again and read the output carefully.
+- Run `foxfang doctor` again and read the output carefully.
 - Check: [Troubleshooting](/gateway/troubleshooting)
 - Ask in Discord: [https://discord.gg/clawd](https://discord.gg/clawd)

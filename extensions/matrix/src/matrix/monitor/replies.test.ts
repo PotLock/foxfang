@@ -96,7 +96,7 @@ describe("deliverMatrixReplies", () => {
       runtime: runtimeEnv,
       textLimit: 4000,
       replyToMode: "all",
-      mediaLocalRoots: ["/tmp/openclaw-matrix-test"],
+      mediaLocalRoots: ["/tmp/foxfang-matrix-test"],
     });
 
     expect(sendMessageMatrixMock).toHaveBeenCalledTimes(3);
@@ -105,7 +105,7 @@ describe("deliverMatrixReplies", () => {
       "caption",
       expect.objectContaining({
         mediaUrl: "https://example.com/a.jpg",
-        mediaLocalRoots: ["/tmp/openclaw-matrix-test"],
+        mediaLocalRoots: ["/tmp/foxfang-matrix-test"],
         replyToId: "reply-media",
       }),
     ]);
@@ -114,7 +114,7 @@ describe("deliverMatrixReplies", () => {
       "",
       expect.objectContaining({
         mediaUrl: "https://example.com/b.jpg",
-        mediaLocalRoots: ["/tmp/openclaw-matrix-test"],
+        mediaLocalRoots: ["/tmp/foxfang-matrix-test"],
         replyToId: "reply-media",
       }),
     ]);

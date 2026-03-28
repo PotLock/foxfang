@@ -1,7 +1,7 @@
 import type { ChannelPlugin } from "../api.js";
 import {
   resolveLineAccount,
-  type OpenClawConfig,
+  type FoxFangConfig,
   type ResolvedLineAccount,
 } from "../runtime-api.js";
 import { hasLineCredentials, parseLineAllowFromId } from "./account-helpers.js";
@@ -50,7 +50,7 @@ export const lineChannelPluginCommon = {
   "meta" | "capabilities" | "reload" | "configSchema" | "config"
 >;
 
-export function isLineConfigured(cfg: OpenClawConfig, accountId: string): boolean {
+export function isLineConfigured(cfg: FoxFangConfig, accountId: string): boolean {
   return hasLineCredentials(resolveLineAccount({ cfg, accountId }));
 }
 

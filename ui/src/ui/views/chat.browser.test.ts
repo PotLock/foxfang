@@ -60,7 +60,7 @@ function createProps(overrides: Partial<ChatProps> = {}): ChatProps {
       ],
     },
     focusMode: false,
-    assistantName: "OpenClaw",
+    assistantName: "FoxFang",
     assistantAvatar: null,
     onRefresh: () => undefined,
     onToggleFocusMode: () => undefined,

@@ -1,5 +1,5 @@
 import { type Api, type Model } from "@mariozechner/pi-ai";
-import type { OpenClawConfig } from "../../config/config.js";
+import type { FoxFangConfig } from "../../config/config.js";
 import { appendLocalMediaParentRoots } from "../../media/local-roots.js";
 import { getDefaultLocalRoots } from "../../media/web-media.js";
 import type { ImageModelConfig } from "./image-tool.helpers.js";
@@ -20,24 +20,24 @@ type TextToolResult = {
 };
 
 export function applyImageModelConfigDefaults(
-  cfg: OpenClawConfig | undefined,
+  cfg: FoxFangConfig | undefined,
   imageModelConfig: ImageModelConfig,
-): OpenClawConfig | undefined {
+): FoxFangConfig | undefined {
   return applyAgentDefaultModelConfig(cfg, "imageModel", imageModelConfig);
 }
 
 export function applyImageGenerationModelConfigDefaults(
-  cfg: OpenClawConfig | undefined,
+  cfg: FoxFangConfig | undefined,
   imageGenerationModelConfig: ToolModelConfig,
-): OpenClawConfig | undefined {
+): FoxFangConfig | undefined {
   return applyAgentDefaultModelConfig(cfg, "imageGenerationModel", imageGenerationModelConfig);
 }
 
 function applyAgentDefaultModelConfig(
-  cfg: OpenClawConfig | undefined,
+  cfg: FoxFangConfig | undefined,
   key: "imageModel" | "imageGenerationModel",
   modelConfig: ToolModelConfig,
-): OpenClawConfig | undefined {
+): FoxFangConfig | undefined {
   if (!cfg) {
     return undefined;
   }
@@ -112,7 +112,7 @@ export function resolveModelFromRegistry(params: {
 
 export async function resolveModelRuntimeApiKey(params: {
   model: Model<Api>;
-  cfg: OpenClawConfig | undefined;
+  cfg: FoxFangConfig | undefined;
   agentDir: string;
   authStorage: {
     setRuntimeApiKey: (provider: string, apiKey: string) => void;

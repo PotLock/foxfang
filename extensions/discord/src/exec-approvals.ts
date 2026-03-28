@@ -1,10 +1,10 @@
-import { getExecApprovalReplyMetadata } from "openclaw/plugin-sdk/approval-runtime";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import type { ReplyPayload } from "openclaw/plugin-sdk/reply-runtime";
+import { getExecApprovalReplyMetadata } from "foxfang/plugin-sdk/approval-runtime";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import type { ReplyPayload } from "foxfang/plugin-sdk/reply-runtime";
 import { resolveDiscordAccount } from "./accounts.js";
 
 export function isDiscordExecApprovalClientEnabled(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId?: string | null;
 }): boolean {
   const config = resolveDiscordAccount(params).config.execApprovals;
@@ -12,7 +12,7 @@ export function isDiscordExecApprovalClientEnabled(params: {
 }
 
 export function isDiscordExecApprovalApprover(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId?: string | null;
   senderId?: string | null;
 }): boolean {
@@ -25,7 +25,7 @@ export function isDiscordExecApprovalApprover(params: {
 }
 
 export function shouldSuppressLocalDiscordExecApprovalPrompt(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId?: string | null;
   payload: ReplyPayload;
 }): boolean {

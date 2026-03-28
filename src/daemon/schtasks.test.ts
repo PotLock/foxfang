@@ -12,7 +12,7 @@ import {
 describe("schtasks runtime parsing", () => {
   it.each(["Ready", "Running"])("parses %s status", (status) => {
     const output = [
-      "TaskName: \\OpenClaw Gateway",
+      "TaskName: \\FoxFang Gateway",
       `Status: ${status}`,
       "Last Run Time: 1/8/2026 1:23:45 AM",
       "Last Run Result: 0x0",
@@ -26,7 +26,7 @@ describe("schtasks runtime parsing", () => {
 
   it("parses 'Last Result' key variant (without 'Run') (#47726)", () => {
     const output = [
-      "TaskName: \\OpenClaw Gateway",
+      "TaskName: \\FoxFang Gateway",
       "Status: Running",
       "Last Run Time: 2026/3/16 8:34:15",
       "Last Result: 267009",
@@ -126,27 +126,27 @@ describe("scheduled task runtime derivation", () => {
 describe("resolveTaskScriptPath", () => {
   it.each([
     {
-      name: "uses default path when OPENCLAW_PROFILE is unset",
+      name: "uses default path when FOXFANG_PROFILE is unset",
       env: { USERPROFILE: "C:\\Users\\test" },
       expected: path.join("C:\\Users\\test", ".foxfang", "gateway.cmd"),
     },
     {
-      name: "uses profile-specific path when OPENCLAW_PROFILE is set to a custom value",
-      env: { USERPROFILE: "C:\\Users\\test", OPENCLAW_PROFILE: "jbphoenix" },
-      expected: path.join("C:\\Users\\test", ".openclaw-jbphoenix", "gateway.cmd"),
+      name: "uses profile-specific path when FOXFANG_PROFILE is set to a custom value",
+      env: { USERPROFILE: "C:\\Users\\test", FOXFANG_PROFILE: "jbphoenix" },
+      expected: path.join("C:\\Users\\test", ".foxfang-jbphoenix", "gateway.cmd"),
     },
     {
-      name: "prefers OPENCLAW_STATE_DIR over profile-derived defaults",
+      name: "prefers FOXFANG_STATE_DIR over profile-derived defaults",
       env: {
         USERPROFILE: "C:\\Users\\test",
-        OPENCLAW_PROFILE: "rescue",
-        OPENCLAW_STATE_DIR: "C:\\State\\openclaw",
+        FOXFANG_PROFILE: "rescue",
+        FOXFANG_STATE_DIR: "C:\\State\\foxfang",
       },
-      expected: path.join("C:\\State\\openclaw", "gateway.cmd"),
+      expected: path.join("C:\\State\\foxfang", "gateway.cmd"),
     },
     {
       name: "falls back to HOME when USERPROFILE is not set",
-      env: { HOME: "/home/test", OPENCLAW_PROFILE: "default" },
+      env: { HOME: "/home/test", FOXFANG_PROFILE: "default" },
       expected: path.join("/home/test", ".foxfang", "gateway.cmd"),
     },
   ])("$name", ({ env, expected }) => {
@@ -164,12 +164,12 @@ describe("readScheduledTaskCommand", () => {
     },
     run: (env: Record<string, string | undefined>) => Promise<void>,
   ) {
-    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "openclaw-schtasks-test-"));
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "foxfang-schtasks-test-"));
     try {
       const extraEnv = typeof options.env === "function" ? options.env(tmpDir) : options.env;
       const env = {
         USERPROFILE: tmpDir,
-        OPENCLAW_PROFILE: "default",
+        FOXFANG_PROFILE: "default",
         ...extraEnv,
       };
       if (options.scriptLines) {
@@ -221,10 +221,10 @@ describe("readScheduledTaskCommand", () => {
       {
         scriptLines: [
           "@echo off",
-          "rem OpenClaw Gateway",
-          "cd /d C:\\Projects\\openclaw",
+          "rem FoxFang Gateway",
+          "cd /d C:\\Projects\\foxfang",
           "set NODE_ENV=production",
-          "set OPENCLAW_PORT=18789",
+          "set FOXFANG_PORT=18789",
           "node gateway.js --verbose",
         ],
       },
@@ -232,10 +232,10 @@ describe("readScheduledTaskCommand", () => {
         const result = await readScheduledTaskCommand(env);
         expect(result).toEqual({
           programArguments: ["node", "gateway.js", "--verbose"],
-          workingDirectory: "C:\\Projects\\openclaw",
+          workingDirectory: "C:\\Projects\\foxfang",
           environment: {
             NODE_ENV: "production",
-            OPENCLAW_PORT: "18789",
+            FOXFANG_PORT: "18789",
           },
           sourcePath: resolveTaskScriptPath(env),
         });
@@ -248,7 +248,7 @@ describe("readScheduledTaskCommand", () => {
       {
         scriptLines: [
           "@echo off",
-          '"C:\\Program Files\\nodejs\\node.exe" C:\\Users\\test\\AppData\\Roaming\\npm\\node_modules\\openclaw\\dist\\index.js gateway --port 18789',
+          '"C:\\Program Files\\nodejs\\node.exe" C:\\Users\\test\\AppData\\Roaming\\npm\\node_modules\\foxfang\\dist\\index.js gateway --port 18789',
         ],
       },
       async (env) => {
@@ -256,7 +256,7 @@ describe("readScheduledTaskCommand", () => {
         expect(result).toEqual({
           programArguments: [
             "C:\\Program Files\\nodejs\\node.exe",
-            "C:\\Users\\test\\AppData\\Roaming\\npm\\node_modules\\openclaw\\dist\\index.js",
+            "C:\\Users\\test\\AppData\\Roaming\\npm\\node_modules\\foxfang\\dist\\index.js",
             "gateway",
             "--port",
             "18789",
@@ -272,15 +272,15 @@ describe("readScheduledTaskCommand", () => {
       {
         scriptLines: [
           "@echo off",
-          '"\\\\fileserver\\OpenClaw Share\\node.exe" "\\\\fileserver\\OpenClaw Share\\dist\\index.js" gateway --port 18789',
+          '"\\\\fileserver\\FoxFang Share\\node.exe" "\\\\fileserver\\FoxFang Share\\dist\\index.js" gateway --port 18789',
         ],
       },
       async (env) => {
         const result = await readScheduledTaskCommand(env);
         expect(result).toEqual({
           programArguments: [
-            "\\\\fileserver\\OpenClaw Share\\node.exe",
-            "\\\\fileserver\\OpenClaw Share\\dist\\index.js",
+            "\\\\fileserver\\FoxFang Share\\node.exe",
+            "\\\\fileserver\\FoxFang Share\\dist\\index.js",
             "gateway",
             "--port",
             "18789",
@@ -291,10 +291,10 @@ describe("readScheduledTaskCommand", () => {
     );
   });
 
-  it("reads script from OPENCLAW_STATE_DIR override", async () => {
+  it("reads script from FOXFANG_STATE_DIR override", async () => {
     await withScheduledTaskScript(
       {
-        env: (tmpDir) => ({ OPENCLAW_STATE_DIR: path.join(tmpDir, "custom-state") }),
+        env: (tmpDir) => ({ FOXFANG_STATE_DIR: path.join(tmpDir, "custom-state") }),
         scriptLines: ["@echo off", "node gateway.js --from-state-dir"],
       },
       async (env) => {

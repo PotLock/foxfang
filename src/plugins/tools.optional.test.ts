@@ -7,7 +7,7 @@ type MockRegistryToolEntry = {
   factory: (ctx: unknown) => unknown;
 };
 
-const loadOpenClawPluginsMock = vi.fn();
+const loadFoxFangPluginsMock = vi.fn();
 const resolveRuntimePluginRegistryMock = vi.fn();
 const applyPluginAutoEnableMock = vi.fn();
 
@@ -73,7 +73,7 @@ function setRegistry(entries: MockRegistryToolEntry[]) {
       message: string;
     }>,
   };
-  loadOpenClawPluginsMock.mockReturnValue(registry);
+  loadFoxFangPluginsMock.mockReturnValue(registry);
   return registry;
 }
 
@@ -163,7 +163,7 @@ function expectResolvedToolNames(
 }
 
 function expectLoaderCall(overrides: Record<string, unknown>) {
-  expect(loadOpenClawPluginsMock).toHaveBeenCalledWith(expect.objectContaining(overrides));
+  expect(loadFoxFangPluginsMock).toHaveBeenCalledWith(expect.objectContaining(overrides));
 }
 
 function expectSingleDiagnosticMessage(
@@ -194,10 +194,10 @@ function expectConflictingCoreNameResolution(params: {
 describe("resolvePluginTools optional tools", () => {
   beforeEach(async () => {
     vi.resetModules();
-    loadOpenClawPluginsMock.mockClear();
+    loadFoxFangPluginsMock.mockClear();
     resolveRuntimePluginRegistryMock.mockReset();
     resolveRuntimePluginRegistryMock.mockImplementation((params) =>
-      loadOpenClawPluginsMock(params),
+      loadFoxFangPluginsMock(params),
     );
     applyPluginAutoEnableMock.mockReset();
     applyPluginAutoEnableMock.mockImplementation(({ config }: { config: unknown }) => ({
@@ -276,11 +276,11 @@ describe("resolvePluginTools optional tools", () => {
     {
       name: "forwards an explicit env to plugin loading",
       params: {
-        env: { OPENCLAW_HOME: "/srv/openclaw-home" } as NodeJS.ProcessEnv,
+        env: { FOXFANG_HOME: "/srv/foxfang-home" } as NodeJS.ProcessEnv,
         toolAllowlist: ["optional_tool"],
       },
       expectedLoaderCall: {
-        env: { OPENCLAW_HOME: "/srv/openclaw-home" },
+        env: { FOXFANG_HOME: "/srv/foxfang-home" },
       },
     },
     {
@@ -343,6 +343,6 @@ describe("resolvePluginTools optional tools", () => {
     );
 
     expectResolvedToolNames(tools, ["optional_tool"]);
-    expect(loadOpenClawPluginsMock).not.toHaveBeenCalled();
+    expect(loadFoxFangPluginsMock).not.toHaveBeenCalled();
   });
 });

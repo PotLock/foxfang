@@ -1,8 +1,8 @@
-import { resolveChannelGroupRequireMention } from "openclaw/plugin-sdk/channel-policy";
-import { resolveExactLineGroupConfigKey, type OpenClawConfig } from "../runtime-api.js";
+import { resolveChannelGroupRequireMention } from "foxfang/plugin-sdk/channel-policy";
+import { resolveExactLineGroupConfigKey, type FoxFangConfig } from "../runtime-api.js";
 
 type LineGroupContext = {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId?: string | null;
   groupId?: string | null;
 };

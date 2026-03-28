@@ -1,9 +1,9 @@
-import { resolveMessagePrefix } from "openclaw/plugin-sdk/agent-runtime";
+import { resolveMessagePrefix } from "foxfang/plugin-sdk/agent-runtime";
 import {
   formatInboundEnvelope,
   type EnvelopeFormatOptions,
-} from "openclaw/plugin-sdk/channel-inbound";
-import type { loadConfig } from "openclaw/plugin-sdk/config-runtime";
+} from "foxfang/plugin-sdk/channel-inbound";
+import type { loadConfig } from "foxfang/plugin-sdk/config-runtime";
 import { getPrimaryIdentityId, getReplyContext, getSenderIdentity } from "../../identity.js";
 import type { WebInboundMsg } from "../types.js";
 

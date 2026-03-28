@@ -1,10 +1,10 @@
 import type { Bot, Context } from "grammy";
-import { createChannelReplyPipeline } from "openclaw/plugin-sdk/channel-reply-pipeline";
+import { createChannelReplyPipeline } from "foxfang/plugin-sdk/channel-reply-pipeline";
 import {
   resolveCommandAuthorization,
   resolveCommandAuthorizedFromAuthorizers,
   resolveNativeCommandSessionTargets,
-} from "openclaw/plugin-sdk/command-auth";
+} from "foxfang/plugin-sdk/command-auth";
 import {
   buildCommandTextFromArgs,
   findCommandByNativeName,
@@ -13,40 +13,40 @@ import {
   parseCommandArgs,
   resolveCommandArgMenu,
   type CommandArgs,
-} from "openclaw/plugin-sdk/command-auth";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import type { ChannelGroupPolicy } from "openclaw/plugin-sdk/config-runtime";
-import { getRuntimeConfigSnapshot } from "openclaw/plugin-sdk/config-runtime";
-import { resolveMarkdownTableMode } from "openclaw/plugin-sdk/config-runtime";
+} from "foxfang/plugin-sdk/command-auth";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import type { ChannelGroupPolicy } from "foxfang/plugin-sdk/config-runtime";
+import { getRuntimeConfigSnapshot } from "foxfang/plugin-sdk/config-runtime";
+import { resolveMarkdownTableMode } from "foxfang/plugin-sdk/config-runtime";
 import {
   normalizeTelegramCommandName,
   resolveTelegramCustomCommands,
   TELEGRAM_COMMAND_NAME_PATTERN,
-} from "openclaw/plugin-sdk/config-runtime";
+} from "foxfang/plugin-sdk/config-runtime";
 import type {
   ReplyToMode,
   TelegramAccountConfig,
   TelegramDirectConfig,
   TelegramGroupConfig,
   TelegramTopicConfig,
-} from "openclaw/plugin-sdk/config-runtime";
+} from "foxfang/plugin-sdk/config-runtime";
 import {
   ensureConfiguredBindingRouteReady,
   recordInboundSessionMetaSafe,
-} from "openclaw/plugin-sdk/conversation-runtime";
-import { getAgentScopedMediaLocalRoots } from "openclaw/plugin-sdk/media-runtime";
+} from "foxfang/plugin-sdk/conversation-runtime";
+import { getAgentScopedMediaLocalRoots } from "foxfang/plugin-sdk/media-runtime";
 import {
   executePluginCommand,
   getPluginCommandSpecs,
   matchPluginCommand,
-} from "openclaw/plugin-sdk/plugin-runtime";
-import { resolveChunkMode } from "openclaw/plugin-sdk/reply-runtime";
-import { finalizeInboundContext } from "openclaw/plugin-sdk/reply-runtime";
-import { resolveAgentRoute } from "openclaw/plugin-sdk/routing";
-import { resolveThreadSessionKeys } from "openclaw/plugin-sdk/routing";
-import { danger, logVerbose } from "openclaw/plugin-sdk/runtime-env";
-import { getChildLogger } from "openclaw/plugin-sdk/runtime-env";
-import type { RuntimeEnv } from "openclaw/plugin-sdk/runtime-env";
+} from "foxfang/plugin-sdk/plugin-runtime";
+import { resolveChunkMode } from "foxfang/plugin-sdk/reply-runtime";
+import { finalizeInboundContext } from "foxfang/plugin-sdk/reply-runtime";
+import { resolveAgentRoute } from "foxfang/plugin-sdk/routing";
+import { resolveThreadSessionKeys } from "foxfang/plugin-sdk/routing";
+import { danger, logVerbose } from "foxfang/plugin-sdk/runtime-env";
+import { getChildLogger } from "foxfang/plugin-sdk/runtime-env";
+import type { RuntimeEnv } from "foxfang/plugin-sdk/runtime-env";
 import { resolveTelegramAccount } from "./accounts.js";
 import { withTelegramApiErrorLogging } from "./api-logging.js";
 import { isSenderAllowed, normalizeDmAllowFromWithStore } from "./bot-access.js";
@@ -101,7 +101,7 @@ type TelegramCommandAuthResult = {
 };
 
 export type RegisterTelegramHandlerParams = {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId: string;
   bot: Bot;
   mediaMaxBytes: number;
@@ -130,7 +130,7 @@ export type RegisterTelegramHandlerParams = {
 
 export type RegisterTelegramNativeCommandsParams = {
   bot: Bot;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   runtime: RuntimeEnv;
   accountId: string;
   telegramCfg: TelegramAccountConfig;
@@ -155,7 +155,7 @@ export type RegisterTelegramNativeCommandsParams = {
 async function resolveTelegramCommandAuth(params: {
   msg: NonNullable<TelegramNativeCommandContext["message"]>;
   bot: Bot;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId: string;
   telegramCfg: TelegramAccountConfig;
   readChannelAllowFromStore: TelegramBotDeps["readChannelAllowFromStore"];
@@ -437,8 +437,8 @@ export const registerTelegramNativeCommands = ({
   for (const issue of pluginCatalog.issues) {
     runtime.error?.(danger(issue));
   }
-  const loadFreshRuntimeConfig = (): OpenClawConfig => telegramDeps.loadConfig();
-  const resolveFreshTelegramConfig = (runtimeCfg: OpenClawConfig): TelegramAccountConfig => {
+  const loadFreshRuntimeConfig = (): FoxFangConfig => telegramDeps.loadConfig();
+  const resolveFreshTelegramConfig = (runtimeCfg: FoxFangConfig): TelegramAccountConfig => {
     try {
       return resolveTelegramAccount({
         cfg: runtimeCfg,
@@ -495,7 +495,7 @@ export const registerTelegramNativeCommands = ({
 
   const resolveCommandRuntimeContext = async (params: {
     msg: NonNullable<TelegramNativeCommandContext["message"]>;
-    runtimeCfg: OpenClawConfig;
+    runtimeCfg: FoxFangConfig;
     isGroup: boolean;
     isForum: boolean;
     resolvedThreadId?: number;

@@ -1,6 +1,6 @@
-import { resolveMarkdownTableMode } from "openclaw/plugin-sdk/config-runtime";
-import { convertMarkdownTables } from "openclaw/plugin-sdk/text-runtime";
-import { loadOutboundMediaFromUrl, type OpenClawConfig } from "../runtime-api.js";
+import { resolveMarkdownTableMode } from "foxfang/plugin-sdk/config-runtime";
+import { convertMarkdownTables } from "foxfang/plugin-sdk/text-runtime";
+import { loadOutboundMediaFromUrl, type FoxFangConfig } from "../runtime-api.js";
 import { getMattermostRuntime } from "../runtime.js";
 import { resolveMattermostAccount } from "./accounts.js";
 import {
@@ -25,7 +25,7 @@ import {
 import { isMattermostId, resolveMattermostOpaqueTarget } from "./target-resolution.js";
 
 export type MattermostSendOpts = {
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   botToken?: string;
   baseUrl?: string;
   accountId?: string;
@@ -299,7 +299,7 @@ async function resolveTargetChannelId(params: ResolveTargetChannelIdParams): Pro
 }
 
 type MattermostSendContext = {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId: string;
   token: string;
   baseUrl: string;

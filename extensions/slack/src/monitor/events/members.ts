@@ -1,6 +1,6 @@
 import type { SlackEventMiddlewareArgs } from "@slack/bolt";
-import { enqueueSystemEvent } from "openclaw/plugin-sdk/channel-runtime";
-import { danger } from "openclaw/plugin-sdk/runtime-env";
+import { enqueueSystemEvent } from "foxfang/plugin-sdk/channel-runtime";
+import { danger } from "foxfang/plugin-sdk/runtime-env";
 import type { SlackMonitorContext } from "../context.js";
 import type { SlackMemberChannelEvent } from "../types.js";
 import { authorizeAndResolveSlackSystemEventContext } from "./system-event-context.js";

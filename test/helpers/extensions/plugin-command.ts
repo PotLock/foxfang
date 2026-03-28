@@ -1,1 +1,1 @@
-export type { OpenClawPluginCommandDefinition } from "openclaw/plugin-sdk/core";
+export type { FoxFangPluginCommandDefinition } from "foxfang/plugin-sdk/core";

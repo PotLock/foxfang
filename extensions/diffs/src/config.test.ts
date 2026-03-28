@@ -181,7 +181,7 @@ describe("resolveDiffsPluginSecurity", () => {
 describe("diffs plugin schema surfaces", () => {
   it("keeps the runtime json schema in sync with the manifest config schema", () => {
     const manifest = JSON.parse(
-      fs.readFileSync(new URL("../openclaw.plugin.json", import.meta.url), "utf8"),
+      fs.readFileSync(new URL("../foxfang.plugin.json", import.meta.url), "utf8"),
     ) as { configSchema?: unknown };
 
     expect(diffsPluginConfigSchema.jsonSchema).toEqual(manifest.configSchema);
@@ -225,10 +225,10 @@ describe("diffs viewer URL helpers", () => {
     expect(
       buildViewerUrl({
         config: {},
-        baseUrl: "https://example.com/openclaw",
+        baseUrl: "https://example.com/foxfang",
         viewerPath: "/plugins/diffs/view/id/token",
       }),
-    ).toBe("https://example.com/openclaw/plugins/diffs/view/id/token");
+    ).toBe("https://example.com/foxfang/plugins/diffs/view/id/token");
   });
 
   it("rejects base URLs with query/hash", () => {
@@ -259,7 +259,7 @@ describe("renderDiffDocument", () => {
 
     expect(rendered.title).toBe("src/example.ts");
     expect(rendered.fileCount).toBe(1);
-    expect(rendered.html).toContain("data-openclaw-diff-root");
+    expect(rendered.html).toContain("data-foxfang-diff-root");
     expect(rendered.html).toContain("src/example.ts");
     expect(rendered.html).toContain("/plugins/diffs/assets/viewer.js");
     expect(rendered.imageHtml).toContain("/plugins/diffs/assets/viewer.js");
@@ -406,7 +406,7 @@ describe("viewer assets", () => {
     const runtime = await getServedViewerAsset(VIEWER_RUNTIME_PATH);
 
     expect(runtime?.contentType).toBe("text/javascript; charset=utf-8");
-    expect(String(runtime?.body)).toContain("openclawDiffsReady");
+    expect(String(runtime?.body)).toContain("foxfangDiffsReady");
   });
 
   it("returns null for unknown asset paths", async () => {

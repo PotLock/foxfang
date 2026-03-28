@@ -15,7 +15,7 @@ import type { ResolvedGatewayAuth } from "./auth.js";
 import { sendJson } from "./http-common.js";
 import { handleGatewayPostJsonEndpoint } from "./http-endpoint-helpers.js";
 import {
-  OPENCLAW_MODEL_ID,
+  FOXFANG_MODEL_ID,
   getHeader,
   resolveAgentIdForRequest,
   resolveAgentIdFromModel,
@@ -232,10 +232,10 @@ export async function handleOpenAiEmbeddingsHttpRequest(
   }
 
   const cfg = loadConfig();
-  if (requestModel !== OPENCLAW_MODEL_ID && !resolveAgentIdFromModel(requestModel, cfg)) {
+  if (requestModel !== FOXFANG_MODEL_ID && !resolveAgentIdFromModel(requestModel, cfg)) {
     sendJson(res, 400, {
       error: {
-        message: "Invalid `model`. Use `openclaw` or `openclaw/<agentId>`.",
+        message: "Invalid `model`. Use `foxfang` or `foxfang/<agentId>`.",
         type: "invalid_request_error",
       },
     });
@@ -264,7 +264,7 @@ export async function handleOpenAiEmbeddingsHttpRequest(
   const agentDir = resolveAgentDir(cfg, agentId);
   const memorySearch = resolveMemorySearchConfig(cfg, agentId);
   const configuredProvider = memorySearch?.provider ?? "openai";
-  const overrideModel = getHeader(req, "x-openclaw-model")?.trim() || memorySearch?.model || "";
+  const overrideModel = getHeader(req, "x-foxfang-model")?.trim() || memorySearch?.model || "";
   const target = resolveEmbeddingsTarget({ requestModel: overrideModel, configuredProvider });
   if ("errorMessage" in target) {
     sendJson(res, 400, {

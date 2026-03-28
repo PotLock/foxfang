@@ -1,1 +1,1 @@
-export { runStoppablePassiveMonitor } from "openclaw/plugin-sdk/extension-shared";
+export { runStoppablePassiveMonitor } from "foxfang/plugin-sdk/extension-shared";

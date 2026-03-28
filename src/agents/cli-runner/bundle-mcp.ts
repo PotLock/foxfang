@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { OpenClawConfig } from "../../config/config.js";
+import type { FoxFangConfig } from "../../config/config.js";
 import { applyMergePatch } from "../../config/merge-patch.js";
 import type { CliBackendConfig } from "../../config/types.js";
 import {
@@ -68,7 +68,7 @@ export async function prepareCliBundleMcpConfig(params: {
   enabled: boolean;
   backend: CliBackendConfig;
   workspaceDir: string;
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   warn?: (message: string) => void;
 }): Promise<PreparedCliBundleMcpConfig> {
   if (!params.enabled) {
@@ -101,7 +101,7 @@ export async function prepareCliBundleMcpConfig(params: {
   // Always pass an explicit strict MCP config for background claude-cli runs.
   // Otherwise Claude may inherit ambient user/global MCP servers (for example
   // Playwright) and spawn unexpected background processes.
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "openclaw-cli-mcp-"));
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "foxfang-cli-mcp-"));
   const mcpConfigPath = path.join(tempDir, "mcp.json");
   const serializedConfig = `${JSON.stringify(mergedConfig, null, 2)}\n`;
   await fs.writeFile(mcpConfigPath, serializedConfig, "utf-8");

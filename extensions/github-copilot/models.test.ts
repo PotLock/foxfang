@@ -17,23 +17,23 @@ vi.mock("@mariozechner/pi-ai/oauth", async () => {
   };
 });
 
-vi.mock("openclaw/plugin-sdk/provider-model-shared", () => ({
+vi.mock("foxfang/plugin-sdk/provider-model-shared", () => ({
   normalizeModelCompat: (model: Record<string, unknown>) => model,
 }));
 
 const loadJsonFile = vi.fn();
 const saveJsonFile = vi.fn();
 
-vi.mock("openclaw/plugin-sdk/json-store", () => ({
+vi.mock("foxfang/plugin-sdk/json-store", () => ({
   loadJsonFile,
   saveJsonFile,
 }));
 
-vi.mock("openclaw/plugin-sdk/state-paths", () => ({
-  resolveStateDir: () => "/tmp/openclaw-state",
+vi.mock("foxfang/plugin-sdk/state-paths", () => ({
+  resolveStateDir: () => "/tmp/foxfang-state",
 }));
 
-import type { ProviderResolveDynamicModelContext } from "openclaw/plugin-sdk/core";
+import type { ProviderResolveDynamicModelContext } from "foxfang/plugin-sdk/core";
 import { resolveCopilotForwardCompatModel } from "./models.js";
 
 let deriveCopilotApiBaseUrlFromToken: typeof import("./token.js").deriveCopilotApiBaseUrlFromToken;
@@ -238,7 +238,7 @@ describe("fetchCopilotUsage", () => {
 });
 
 describe("github-copilot token", () => {
-  const cachePath = "/tmp/openclaw-state/credentials/github-copilot.token.json";
+  const cachePath = "/tmp/foxfang-state/credentials/github-copilot.token.json";
 
   beforeEach(async () => {
     vi.resetModules();

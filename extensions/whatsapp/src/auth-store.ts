@@ -1,14 +1,14 @@
 import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { formatCliCommand } from "openclaw/plugin-sdk/cli-runtime";
-import { DEFAULT_ACCOUNT_ID } from "openclaw/plugin-sdk/routing";
-import { info, success } from "openclaw/plugin-sdk/runtime-env";
-import { getChildLogger } from "openclaw/plugin-sdk/runtime-env";
-import { defaultRuntime, type RuntimeEnv } from "openclaw/plugin-sdk/runtime-env";
-import { resolveOAuthDir } from "openclaw/plugin-sdk/state-paths";
-import type { WebChannel } from "openclaw/plugin-sdk/text-runtime";
-import { resolveUserPath } from "openclaw/plugin-sdk/text-runtime";
+import { formatCliCommand } from "foxfang/plugin-sdk/cli-runtime";
+import { DEFAULT_ACCOUNT_ID } from "foxfang/plugin-sdk/routing";
+import { info, success } from "foxfang/plugin-sdk/runtime-env";
+import { getChildLogger } from "foxfang/plugin-sdk/runtime-env";
+import { defaultRuntime, type RuntimeEnv } from "foxfang/plugin-sdk/runtime-env";
+import { resolveOAuthDir } from "foxfang/plugin-sdk/state-paths";
+import type { WebChannel } from "foxfang/plugin-sdk/text-runtime";
+import { resolveUserPath } from "foxfang/plugin-sdk/text-runtime";
 import { hasWebCredsSync, resolveWebCredsBackupPath, resolveWebCredsPath } from "./creds-files.js";
 import { resolveComparableIdentity, type WhatsAppSelfIdentity } from "./identity.js";
 export { hasWebCredsSync, resolveWebCredsBackupPath, resolveWebCredsPath };
@@ -227,7 +227,7 @@ export async function pickWebChannel(
   const hasWeb = await webAuthExists(authDir);
   if (!hasWeb) {
     throw new Error(
-      `No WhatsApp Web session found. Run \`${formatCliCommand("openclaw channels login --channel whatsapp --verbose")}\` to link.`,
+      `No WhatsApp Web session found. Run \`${formatCliCommand("foxfang channels login --channel whatsapp --verbose")}\` to link.`,
     );
   }
   return choice;

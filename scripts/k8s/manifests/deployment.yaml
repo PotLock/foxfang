@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: openclaw
+  name: foxfang
   labels:
-    app: openclaw
+    app: foxfang
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: openclaw
+      app: foxfang
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: openclaw
+        app: foxfang
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -29,7 +29,7 @@ spec:
             - sh
             - -c
             - |
-              cp /config/openclaw.json /home/node/.foxfang/openclaw.json
+              cp /config/foxfang.json /home/node/.foxfang/foxfang.json
               mkdir -p /home/node/.foxfang/workspace
               cp /config/AGENTS.md /home/node/.foxfang/workspace/AGENTS.md
           securityContext:
@@ -43,13 +43,13 @@ spec:
               memory: 64Mi
               cpu: 100m
           volumeMounts:
-            - name: openclaw-home
+            - name: foxfang-home
               mountPath: /home/node/.foxfang
             - name: config
               mountPath: /config
       containers:
         - name: gateway
-          image: ghcr.io/openclaw/openclaw:slim
+          image: ghcr.io/foxfang/foxfang:slim
           imagePullPolicy: IfNotPresent
           command:
             - node
@@ -63,37 +63,37 @@ spec:
           env:
             - name: HOME
               value: /home/node
-            - name: OPENCLAW_CONFIG_DIR
+            - name: FOXFANG_CONFIG_DIR
               value: /home/node/.foxfang
             - name: NODE_ENV
               value: production
-            - name: OPENCLAW_GATEWAY_TOKEN
+            - name: FOXFANG_GATEWAY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: openclaw-secrets
-                  key: OPENCLAW_GATEWAY_TOKEN
+                  name: foxfang-secrets
+                  key: FOXFANG_GATEWAY_TOKEN
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: openclaw-secrets
+                  name: foxfang-secrets
                   key: ANTHROPIC_API_KEY
                   optional: true
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: openclaw-secrets
+                  name: foxfang-secrets
                   key: OPENAI_API_KEY
                   optional: true
             - name: GEMINI_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: openclaw-secrets
+                  name: foxfang-secrets
                   key: GEMINI_API_KEY
                   optional: true
             - name: OPENROUTER_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: openclaw-secrets
+                  name: foxfang-secrets
                   key: OPENROUTER_API_KEY
                   optional: true
           resources:
@@ -122,7 +122,7 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
           volumeMounts:
-            - name: openclaw-home
+            - name: foxfang-home
               mountPath: /home/node/.foxfang
             - name: tmp-volume
               mountPath: /tmp
@@ -136,11 +136,11 @@ spec:
               drop:
                 - ALL
       volumes:
-        - name: openclaw-home
+        - name: foxfang-home
           persistentVolumeClaim:
-            claimName: openclaw-home-pvc
+            claimName: foxfang-home-pvc
         - name: config
           configMap:
-            name: openclaw-config
+            name: foxfang-config
         - name: tmp-volume
           emptyDir: {}

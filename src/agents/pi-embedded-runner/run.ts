@@ -9,7 +9,7 @@ import { computeBackoff, sleepWithAbort } from "../../infra/backoff.js";
 import { getGlobalHookRunner } from "../../plugins/hook-runner-global.js";
 import { enqueueCommandInLane } from "../../process/command-queue.js";
 import { isMarkdownCapableMessageChannel } from "../../utils/message-channel.js";
-import { resolveOpenClawAgentDir } from "../agent-paths.js";
+import { resolveFoxFangAgentDir } from "../agent-paths.js";
 import { hasConfiguredModelFallbacks } from "../agent-scope.js";
 import {
   type AuthProfileFailureReason,
@@ -37,7 +37,7 @@ import {
   resolveAuthProfileOrder,
 } from "../model-auth.js";
 import { normalizeProviderId } from "../model-selection.js";
-import { ensureOpenClawModelsJson } from "../models-config.js";
+import { ensureFoxFangModelsJson } from "../models-config.js";
 import {
   classifyFailoverReason,
   extractObservedOverflowTokenCount,
@@ -137,13 +137,13 @@ export async function runEmbeddedPiAgent(
 
       let provider = (params.provider ?? DEFAULT_PROVIDER).trim() || DEFAULT_PROVIDER;
       let modelId = (params.model ?? DEFAULT_MODEL).trim() || DEFAULT_MODEL;
-      const agentDir = params.agentDir ?? resolveOpenClawAgentDir();
+      const agentDir = params.agentDir ?? resolveFoxFangAgentDir();
       const fallbackConfigured = hasConfiguredModelFallbacks({
         cfg: params.config,
         agentId: params.agentId,
         sessionKey: params.sessionKey,
       });
-      await ensureOpenClawModelsJson(params.config, agentDir);
+      await ensureFoxFangModelsJson(params.config, agentDir);
       const hookRunner = getGlobalHookRunner();
       const hookCtx = {
         runId: params.runId,

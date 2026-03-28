@@ -1,8 +1,8 @@
 import {
   deliverTextOrMediaReply,
   resolveSendableOutboundReplyParts,
-} from "openclaw/plugin-sdk/reply-payload";
-import type { OpenClawConfig, PluginRuntime, ReplyPayload } from "../runtime-api.js";
+} from "foxfang/plugin-sdk/reply-payload";
+import type { FoxFangConfig, PluginRuntime, ReplyPayload } from "../runtime-api.js";
 import { getAgentScopedMediaLocalRoots } from "../runtime-api.js";
 
 type MarkdownTableMode = Parameters<PluginRuntime["channel"]["text"]["convertMarkdownTables"]>[1];
@@ -11,7 +11,7 @@ type SendMattermostMessage = (
   to: string,
   text: string,
   opts: {
-    cfg?: OpenClawConfig;
+    cfg?: FoxFangConfig;
     accountId?: string;
     mediaUrl?: string;
     mediaLocalRoots?: readonly string[];
@@ -21,7 +21,7 @@ type SendMattermostMessage = (
 
 export async function deliverMattermostReplyPayload(params: {
   core: PluginRuntime;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   payload: ReplyPayload;
   to: string;
   accountId: string;

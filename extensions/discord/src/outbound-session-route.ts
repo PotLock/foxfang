@@ -3,12 +3,12 @@ import {
   normalizeOutboundThreadId,
   resolveThreadSessionKeys,
   type RoutePeer,
-} from "openclaw/plugin-sdk/routing";
-import type { OpenClawConfig } from "./runtime-api.js";
+} from "foxfang/plugin-sdk/routing";
+import type { FoxFangConfig } from "./runtime-api.js";
 import { parseDiscordTarget } from "./targets.js";
 
 export type ResolveDiscordOutboundSessionRouteParams = {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   agentId: string;
   accountId?: string | null;
   target: string;

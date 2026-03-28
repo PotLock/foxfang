@@ -1,6 +1,6 @@
 import { ChannelType } from "discord-api-types/v10";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig, loadConfig } from "../../../../src/config/config.js";
+import type { FoxFangConfig, loadConfig } from "../../../../src/config/config.js";
 
 const { logVerboseMock } = vi.hoisted(() => ({
   logVerboseMock: vi.fn(),
@@ -9,9 +9,9 @@ const { loggerWarnMock } = vi.hoisted(() => ({
   loggerWarnMock: vi.fn(),
 }));
 
-vi.mock("openclaw/plugin-sdk/runtime-env", async () => {
-  const actual = await vi.importActual<typeof import("openclaw/plugin-sdk/runtime-env")>(
-    "openclaw/plugin-sdk/runtime-env",
+vi.mock("foxfang/plugin-sdk/runtime-env", async () => {
+  const actual = await vi.importActual<typeof import("foxfang/plugin-sdk/runtime-env")>(
+    "foxfang/plugin-sdk/runtime-env",
   );
   return {
     ...actual,
@@ -34,7 +34,7 @@ function createNativeCommand(
   name: string,
   opts?: {
     cfg?: ReturnType<typeof loadConfig>;
-    discordConfig?: NonNullable<OpenClawConfig["channels"]>["discord"];
+    discordConfig?: NonNullable<FoxFangConfig["channels"]>["discord"];
   },
 ): ReturnType<typeof import("./native-command.js").createDiscordNativeCommand> {
   const command = listNativeCommandSpecs({ provider: "discord" }).find(
@@ -45,7 +45,7 @@ function createNativeCommand(
   }
   const cfg = (opts?.cfg ?? {}) as ReturnType<typeof loadConfig>;
   const discordConfig = (opts?.discordConfig ?? {}) as NonNullable<
-    OpenClawConfig["channels"]
+    FoxFangConfig["channels"]
   >["discord"];
   return createDiscordNativeCommand({
     command,
@@ -202,7 +202,7 @@ describe("createDiscordNativeCommand option wiring", () => {
   it("truncates Discord command and option descriptions to Discord's limit", () => {
     const longDescription = "x".repeat(140);
     const cfg = {} as ReturnType<typeof loadConfig>;
-    const discordConfig = {} as NonNullable<OpenClawConfig["channels"]>["discord"];
+    const discordConfig = {} as NonNullable<FoxFangConfig["channels"]>["discord"];
     const command = createDiscordNativeCommand({
       command: {
         name: "longdesc",

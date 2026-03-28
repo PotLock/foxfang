@@ -1,1 +1,1 @@
-export { rawDataToString } from "openclaw/plugin-sdk/browser-support";
+export { rawDataToString } from "foxfang/plugin-sdk/browser-support";

@@ -15,7 +15,7 @@ import { resolveMatrixRoomKeyBackupIssue } from "./matrix/backup-health.js";
 import { resolveMatrixAuthContext } from "./matrix/client.js";
 import { setMatrixSdkConsoleLogging, setMatrixSdkLogMode } from "./matrix/client/logging.js";
 import { resolveMatrixConfigPath, updateMatrixAccountConfig } from "./matrix/config-update.js";
-import { isOpenClawManagedMatrixDevice } from "./matrix/device-health.js";
+import { isFoxFangManagedMatrixDevice } from "./matrix/device-health.js";
 import {
   inspectMatrixDirectRooms,
   repairMatrixDirectRooms,
@@ -83,7 +83,7 @@ function resolveMatrixCliAccountId(accountId?: string): string {
 function formatMatrixCliCommand(command: string, accountId?: string): string {
   const normalizedAccountId = normalizeAccountId(accountId);
   const suffix = normalizedAccountId === "default" ? "" : ` --account ${normalizedAccountId}`;
-  return `openclaw matrix ${command}${suffix}`;
+  return `foxfang matrix ${command}${suffix}`;
 }
 
 function printMatrixOwnDevices(
@@ -134,7 +134,7 @@ type MatrixCliAccountAddResult = {
   useEnv: boolean;
   deviceHealth: {
     currentDeviceId: string | null;
-    staleOpenClawDeviceIds: string[];
+    staleFoxFangDeviceIds: string[];
     error?: string;
   };
   verificationBootstrap: {
@@ -268,20 +268,20 @@ async function addMatrixAccount(params: {
 
   let deviceHealth: MatrixCliAccountAddResult["deviceHealth"] = {
     currentDeviceId: null,
-    staleOpenClawDeviceIds: [],
+    staleFoxFangDeviceIds: [],
   };
   try {
     const addedDevices = await listMatrixOwnDevices({ accountId });
     deviceHealth = {
       currentDeviceId: addedDevices.find((device) => device.current)?.deviceId ?? null,
-      staleOpenClawDeviceIds: addedDevices
-        .filter((device) => !device.current && isOpenClawManagedMatrixDevice(device.displayName))
+      staleFoxFangDeviceIds: addedDevices
+        .filter((device) => !device.current && isFoxFangManagedMatrixDevice(device.displayName))
         .map((device) => device.deviceId),
     };
   } catch (err) {
     deviceHealth = {
       currentDeviceId: null,
-      staleOpenClawDeviceIds: [],
+      staleFoxFangDeviceIds: [],
       error: toErrorMessage(err),
     };
   }
@@ -664,7 +664,7 @@ export function registerMatrixCli(params: { program: Command }): void {
   const root = params.program
     .command("matrix")
     .description("Matrix channel utilities")
-    .addHelpText("after", () => "\nDocs: https://docs.openclaw.ai/channels/matrix\n");
+    .addHelpText("after", () => "\nDocs: https://docs.foxfang.ai/channels/matrix\n");
 
   const account = root.command("account").description("Manage matrix channel accounts");
 
@@ -747,9 +747,9 @@ export function registerMatrixCli(params: { program: Command }): void {
             }
             if (result.deviceHealth.error) {
               console.error(`Matrix device health warning: ${result.deviceHealth.error}`);
-            } else if (result.deviceHealth.staleOpenClawDeviceIds.length > 0) {
+            } else if (result.deviceHealth.staleFoxFangDeviceIds.length > 0) {
               console.log(
-                `Matrix device hygiene warning: stale OpenClaw devices detected (${result.deviceHealth.staleOpenClawDeviceIds.join(", ")}). Run 'openclaw matrix devices prune-stale --account ${result.accountId}'.`,
+                `Matrix device hygiene warning: stale FoxFang devices detected (${result.deviceHealth.staleFoxFangDeviceIds.join(", ")}). Run 'foxfang matrix devices prune-stale --account ${result.accountId}'.`,
               );
             }
             if (result.profile.attempted) {
@@ -764,7 +764,7 @@ export function registerMatrixCli(params: { program: Command }): void {
                 }
               }
             }
-            const bindHint = `openclaw agents bind --agent <id> --bind matrix:${result.accountId}`;
+            const bindHint = `foxfang agents bind --agent <id> --bind matrix:${result.accountId}`;
             console.log(`Bind this account to an agent: ${bindHint}`);
           },
           errorPrefix: "Account setup failed",
@@ -1156,7 +1156,7 @@ export function registerMatrixCli(params: { program: Command }): void {
 
   devices
     .command("prune-stale")
-    .description("Delete stale OpenClaw-managed devices for this account")
+    .description("Delete stale FoxFang-managed devices for this account")
     .option("--account <id>", "Account ID (for multi-account setups)")
     .option("--verbose", "Show detailed diagnostics")
     .option("--json", "Output as JSON")
@@ -1169,7 +1169,7 @@ export function registerMatrixCli(params: { program: Command }): void {
         onText: (result, verbose) => {
           printAccountLabel(accountId);
           console.log(
-            `Deleted stale OpenClaw devices: ${result.deletedDeviceIds.length ? result.deletedDeviceIds.join(", ") : "none"}`,
+            `Deleted stale FoxFang devices: ${result.deletedDeviceIds.length ? result.deletedDeviceIds.join(", ") : "none"}`,
           );
           console.log(`Current device: ${result.currentDeviceId ?? "unknown"}`);
           console.log(`Remaining devices: ${result.remainingDevices.length}`);

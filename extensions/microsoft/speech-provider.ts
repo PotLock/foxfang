@@ -5,13 +5,13 @@ import {
   TRUSTED_CLIENT_TOKEN,
   generateSecMsGecToken,
 } from "node-edge-tts/dist/drm.js";
-import { resolvePreferredOpenClawTmpDir } from "openclaw/plugin-sdk/llm-task";
-import { isVoiceCompatibleAudio } from "openclaw/plugin-sdk/media-runtime";
+import { resolvePreferredFoxFangTmpDir } from "foxfang/plugin-sdk/llm-task";
+import { isVoiceCompatibleAudio } from "foxfang/plugin-sdk/media-runtime";
 import type {
   SpeechProviderConfig,
   SpeechProviderPlugin,
   SpeechVoiceOption,
-} from "openclaw/plugin-sdk/speech-core";
+} from "foxfang/plugin-sdk/speech-core";
 import { edgeTTS, inferEdgeExtension } from "./tts.js";
 
 const DEFAULT_EDGE_VOICE = "en-US-MichelleNeural";
@@ -201,7 +201,7 @@ export function buildMicrosoftSpeechProvider(): SpeechProviderPlugin {
     isConfigured: ({ providerConfig }) => readMicrosoftProviderConfig(providerConfig).enabled,
     synthesize: async (req) => {
       const config = readMicrosoftProviderConfig(req.providerConfig);
-      const tempRoot = resolvePreferredOpenClawTmpDir();
+      const tempRoot = resolvePreferredFoxFangTmpDir();
       mkdirSync(tempRoot, { recursive: true, mode: 0o700 });
       const tempDir = mkdtempSync(path.join(tempRoot, "tts-microsoft-"));
       const overrideVoice = trimToUndefined(req.providerOverrides?.voice);

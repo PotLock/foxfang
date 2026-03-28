@@ -1,9 +1,9 @@
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import { getPluginToolMeta } from "../plugins/tools.js";
 import { resolveAgentDir, resolveAgentWorkspaceDir, resolveSessionAgentId } from "./agent-scope.js";
 import { getChannelAgentToolMeta } from "./channel-tools.js";
 import { resolveModel } from "./pi-embedded-runner/model.js";
-import { createOpenClawCodingTools } from "./pi-tools.js";
+import { createFoxFangCodingTools } from "./pi-tools.js";
 import { resolveEffectiveToolPolicy } from "./pi-tools.policy.js";
 import { summarizeToolDescriptionText } from "./tool-description-summary.js";
 import { resolveToolDisplay } from "./tool-display.js";
@@ -35,7 +35,7 @@ export type EffectiveToolInventoryResult = {
 };
 
 export type ResolveEffectiveToolInventoryParams = {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   agentId?: string;
   sessionKey?: string;
   workspaceDir?: string;
@@ -122,7 +122,7 @@ function disambiguateLabels(entries: EffectiveToolInventoryEntry[]): EffectiveTo
 }
 
 function resolveEffectiveModelCompat(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   agentDir: string;
   modelProvider?: string;
   modelId?: string;
@@ -154,7 +154,7 @@ export function resolveEffectiveToolInventory(
     modelId: params.modelId,
   });
 
-  const effectiveTools = createOpenClawCodingTools({
+  const effectiveTools = createFoxFangCodingTools({
     agentId,
     sessionKey: params.sessionKey,
     workspaceDir,

@@ -1,8 +1,8 @@
-import { normalizeAccountId } from "openclaw/plugin-sdk/account-id";
+import { normalizeAccountId } from "foxfang/plugin-sdk/account-id";
 import {
   listConfiguredAccountIds,
   resolveNormalizedAccountEntry,
-} from "openclaw/plugin-sdk/account-resolution";
+} from "foxfang/plugin-sdk/account-resolution";
 import { DEFAULT_ACCOUNT_ID, hasConfiguredSecretInput } from "../runtime-api.js";
 import type { CoreConfig, MatrixAccountConfig, MatrixConfig } from "../types.js";
 

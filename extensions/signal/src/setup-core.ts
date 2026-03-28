@@ -9,14 +9,14 @@ import {
   promptParsedAllowFromForAccount,
   setAccountAllowFromForChannel,
   setSetupChannelEnabled,
-  type OpenClawConfig,
+  type FoxFangConfig,
   type WizardPrompter,
   type ChannelSetupAdapter,
   type ChannelSetupWizard,
   type ChannelSetupWizardTextInput,
-} from "openclaw/plugin-sdk/setup-runtime";
-import { formatCliCommand, formatDocsLink } from "openclaw/plugin-sdk/setup-tools";
-import { normalizeE164 } from "openclaw/plugin-sdk/text-runtime";
+} from "foxfang/plugin-sdk/setup-runtime";
+import { formatCliCommand, formatDocsLink } from "foxfang/plugin-sdk/setup-tools";
+import { normalizeE164 } from "foxfang/plugin-sdk/text-runtime";
 import {
   listSignalAccountIds,
   resolveDefaultSignalAccountId,
@@ -87,10 +87,10 @@ function buildSignalSetupPatch(input: {
 }
 
 export async function promptSignalAllowFrom(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   prompter: WizardPrompter;
   accountId?: string;
-}): Promise<OpenClawConfig> {
+}): Promise<FoxFangConfig> {
   return promptParsedAllowFromForAccount({
     cfg: params.cfg,
     accountId: params.accountId,
@@ -125,12 +125,12 @@ export const signalDmPolicy = createTopLevelChannelDmPolicy({
   channel,
   policyKey: "channels.signal.dmPolicy",
   allowFromKey: "channels.signal.allowFrom",
-  getCurrent: (cfg: OpenClawConfig) => cfg.channels?.signal?.dmPolicy ?? "pairing",
+  getCurrent: (cfg: FoxFangConfig) => cfg.channels?.signal?.dmPolicy ?? "pairing",
   promptAllowFrom: promptSignalAllowFrom,
 });
 
 function resolveSignalCliPath(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId: string;
   credentialValues: Record<string, unknown>;
 }) {
@@ -174,9 +174,9 @@ export const signalNumberTextInput: ChannelSetupWizardTextInput = {
 export const signalCompletionNote = {
   title: "Signal next steps",
   lines: [
-    'Link device with: signal-cli link -n "OpenClaw"',
+    'Link device with: signal-cli link -n "FoxFang"',
     "Scan QR in Signal -> Linked Devices",
-    `Then run: ${formatCliCommand("openclaw gateway call channels.status --params '{\"probe\":true}'")}`,
+    `Then run: ${formatCliCommand("foxfang gateway call channels.status --params '{\"probe\":true}'")}`,
     `Docs: ${formatDocsLink("/signal", "signal")}`,
   ],
 };
@@ -225,6 +225,6 @@ export function createSignalSetupWizardProxy(loadWizard: () => Promise<ChannelSe
     ],
     completionNote: signalCompletionNote,
     dmPolicy: signalDmPolicy,
-    disable: (cfg: OpenClawConfig) => setSetupChannelEnabled(cfg, channel, false),
+    disable: (cfg: FoxFangConfig) => setSetupChannelEnabled(cfg, channel, false),
   });
 }

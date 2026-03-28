@@ -18,10 +18,10 @@
     "target": "es2023",
     "useDefineForClassFields": false,
     "paths": {
-      "openclaw/extension-api": ["./src/extensionAPI.ts"],
-      "openclaw/plugin-sdk": ["./src/plugin-sdk/index.ts"],
-      "openclaw/plugin-sdk/*": ["./src/plugin-sdk/*.ts"],
-      "openclaw/plugin-sdk/account-id": ["./src/plugin-sdk/account-id.ts"]
+      "foxfang/extension-api": ["./src/extensionAPI.ts"],
+      "foxfang/plugin-sdk": ["./src/plugin-sdk/index.ts"],
+      "foxfang/plugin-sdk/*": ["./src/plugin-sdk/*.ts"],
+      "foxfang/plugin-sdk/account-id": ["./src/plugin-sdk/account-id.ts"]
     }
   },
   "include": ["src/**/*", "ui/**/*", "extensions/**/*", "packages/**/*"],

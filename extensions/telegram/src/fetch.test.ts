@@ -56,8 +56,8 @@ vi.mock("undici", () => ({
   setGlobalDispatcher,
 }));
 
-vi.mock("openclaw/plugin-sdk/runtime-env", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/runtime-env")>();
+vi.mock("foxfang/plugin-sdk/runtime-env", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/runtime-env")>();
   return {
     ...actual,
     createSubsystemLogger: () => ({
@@ -363,7 +363,7 @@ describe("resolveTelegramFetch", () => {
     );
   });
 
-  it("keeps resolver-scoped transport policy for OpenClaw proxy fetches", async () => {
+  it("keeps resolver-scoped transport policy for FoxFang proxy fetches", async () => {
     const { makeProxyFetch } = await import("./proxy.js");
     const proxyFetch = makeProxyFetch("http://127.0.0.1:7890");
     ProxyAgentCtor.mockClear();

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../src/config/config.js";
 
 const sendMessageSlackMock = vi.hoisted(() => vi.fn());
 const getGlobalHookRunnerMock = vi.hoisted(() => vi.fn());
@@ -8,7 +8,7 @@ vi.mock("./send.js", () => ({
   sendMessageSlack: sendMessageSlackMock,
 }));
 
-vi.mock("openclaw/plugin-sdk/plugin-runtime", () => ({
+vi.mock("foxfang/plugin-sdk/plugin-runtime", () => ({
   getGlobalHookRunner: getGlobalHookRunnerMock,
 }));
 
@@ -35,7 +35,7 @@ const BASE_SLACK_SEND_CTX = {
 const sendSlackText = async (ctx: SlackSendTextCtx) => {
   const sendText = slackOutbound.sendText as NonNullable<typeof slackOutbound.sendText>;
   return await sendText({
-    cfg: {} as OpenClawConfig,
+    cfg: {} as FoxFangConfig,
     ...ctx,
   });
 };

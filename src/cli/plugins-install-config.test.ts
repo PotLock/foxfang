@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../config/config.js";
-import type { ConfigFileSnapshot } from "../config/types.openclaw.js";
+import type { FoxFangConfig } from "../config/config.js";
+import type { ConfigFileSnapshot } from "../config/types.foxfang.js";
 
-const loadConfigMock = vi.fn<() => OpenClawConfig>();
+const loadConfigMock = vi.fn<() => FoxFangConfig>();
 const readConfigFileSnapshotMock = vi.fn<() => Promise<ConfigFileSnapshot>>();
 const cleanStaleMatrixPluginConfigMock = vi.fn();
 
@@ -12,7 +12,7 @@ vi.mock("../config/config.js", () => ({
 }));
 
 vi.mock("../commands/doctor/providers/matrix.js", () => ({
-  cleanStaleMatrixPluginConfig: (cfg: OpenClawConfig) => cleanStaleMatrixPluginConfigMock(cfg),
+  cleanStaleMatrixPluginConfig: (cfg: FoxFangConfig) => cleanStaleMatrixPluginConfigMock(cfg),
 }));
 
 const { loadConfigForInstall } = await import("./plugins-install-command.js");
@@ -23,9 +23,9 @@ function makeSnapshot(overrides: Partial<ConfigFileSnapshot> = {}): ConfigFileSn
     exists: true,
     raw: '{ "plugins": {} }',
     parsed: { plugins: {} },
-    resolved: { plugins: {} } as OpenClawConfig,
+    resolved: { plugins: {} } as FoxFangConfig,
     valid: false,
-    config: { plugins: {} } as OpenClawConfig,
+    config: { plugins: {} } as FoxFangConfig,
     hash: "abc",
     issues: [{ path: "plugins.installs.matrix", message: "stale path" }],
     warnings: [],
@@ -36,8 +36,8 @@ function makeSnapshot(overrides: Partial<ConfigFileSnapshot> = {}): ConfigFileSn
 
 describe("loadConfigForInstall", () => {
   const matrixNpmRequest = {
-    rawSpec: "@openclaw/matrix",
-    normalizedSpec: "@openclaw/matrix",
+    rawSpec: "@foxfang/matrix",
+    normalizedSpec: "@foxfang/matrix",
   };
 
   beforeEach(() => {
@@ -45,14 +45,14 @@ describe("loadConfigForInstall", () => {
     readConfigFileSnapshotMock.mockReset();
     cleanStaleMatrixPluginConfigMock.mockReset();
 
-    cleanStaleMatrixPluginConfigMock.mockImplementation((cfg: OpenClawConfig) => ({
+    cleanStaleMatrixPluginConfigMock.mockImplementation((cfg: FoxFangConfig) => ({
       config: cfg,
       changes: [],
     }));
   });
 
   it("returns the config directly when loadConfig succeeds", async () => {
-    const cfg = { plugins: { entries: { matrix: { enabled: true } } } } as OpenClawConfig;
+    const cfg = { plugins: { entries: { matrix: { enabled: true } } } } as FoxFangConfig;
     loadConfigMock.mockReturnValue(cfg);
 
     const result = await loadConfigForInstall(matrixNpmRequest);
@@ -61,7 +61,7 @@ describe("loadConfigForInstall", () => {
   });
 
   it("does not run stale Matrix cleanup on the happy path", async () => {
-    const cfg = { plugins: {} } as OpenClawConfig;
+    const cfg = { plugins: {} } as FoxFangConfig;
     loadConfigMock.mockReturnValue(cfg);
 
     const result = await loadConfigForInstall(matrixNpmRequest);
@@ -78,7 +78,7 @@ describe("loadConfigForInstall", () => {
 
     const snapshotCfg = {
       plugins: { installs: { matrix: { source: "path", installPath: "/gone" } } },
-    } as unknown as OpenClawConfig;
+    } as unknown as FoxFangConfig;
     readConfigFileSnapshotMock.mockResolvedValue(
       makeSnapshot({
         parsed: { plugins: { installs: { matrix: {} } } },
@@ -103,7 +103,7 @@ describe("loadConfigForInstall", () => {
       throw invalidConfigErr;
     });
 
-    const snapshotCfg = { plugins: {} } as OpenClawConfig;
+    const snapshotCfg = { plugins: {} } as FoxFangConfig;
     readConfigFileSnapshotMock.mockResolvedValue(
       makeSnapshot({
         config: snapshotCfg,
@@ -149,7 +149,7 @@ describe("loadConfigForInstall", () => {
         rawSpec: "alpha",
         normalizedSpec: "alpha",
       }),
-    ).rejects.toThrow("Config invalid; run `openclaw doctor --fix` before installing plugins.");
+    ).rejects.toThrow("Config invalid; run `foxfang doctor --fix` before installing plugins.");
     expect(readConfigFileSnapshotMock).not.toHaveBeenCalled();
   });
 
@@ -163,12 +163,12 @@ describe("loadConfigForInstall", () => {
     readConfigFileSnapshotMock.mockResolvedValue(
       makeSnapshot({
         parsed: {},
-        config: {} as OpenClawConfig,
+        config: {} as FoxFangConfig,
       }),
     );
 
     await expect(loadConfigForInstall(matrixNpmRequest)).rejects.toThrow(
-      "Config file could not be parsed; run `openclaw doctor` to repair it.",
+      "Config file could not be parsed; run `foxfang doctor` to repair it.",
     );
   });
 
@@ -182,7 +182,7 @@ describe("loadConfigForInstall", () => {
     readConfigFileSnapshotMock.mockResolvedValue(makeSnapshot({ exists: false, parsed: {} }));
 
     await expect(loadConfigForInstall(matrixNpmRequest)).rejects.toThrow(
-      "Config file could not be parsed; run `openclaw doctor` to repair it.",
+      "Config file could not be parsed; run `foxfang doctor` to repair it.",
     );
   });
 

@@ -11,9 +11,9 @@ import {
 } from "@buape/carbon";
 import type { APISelectMenuOption } from "discord-api-types/v10";
 import { ButtonStyle } from "discord-api-types/v10";
-import { normalizeProviderId } from "openclaw/plugin-sdk/agent-runtime";
-import { buildModelsProviderData, type ModelsProviderData } from "openclaw/plugin-sdk/command-auth";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
+import { normalizeProviderId } from "foxfang/plugin-sdk/agent-runtime";
+import { buildModelsProviderData, type ModelsProviderData } from "foxfang/plugin-sdk/command-auth";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
 
 export const DISCORD_MODEL_PICKER_CUSTOM_ID_KEY = "mdlpk";
 export const DISCORD_CUSTOM_ID_MAX_CHARS = 100;
@@ -538,7 +538,7 @@ function buildModelRows(params: {
  * same provider/model resolver used by text and Telegram model commands.
  */
 export async function loadDiscordModelPickerData(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   agentId?: string,
 ): Promise<ModelsProviderData> {
   return buildModelsProviderData(cfg, agentId);

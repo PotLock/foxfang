@@ -17,20 +17,20 @@ x-i18n:
 
 # 设置向导参考
 
-这是 `openclaw onboard` CLI 向导的完整参考。
+这是 `foxfang onboard` CLI 向导的完整参考。
 有关高层概览，请参阅 [设置向导](/start/wizard)。
 
 ## 流程详情（本地模式）
 
 <Steps>
   <Step title="现有配置检测">
-    - 如果 `~/.foxfang/openclaw.json` 存在，请选择 **Keep / Modify / Reset**。
+    - 如果 `~/.foxfang/foxfang.json` 存在，请选择 **Keep / Modify / Reset**。
     - 重新运行向导**不会**清除任何内容，除非你明确选择 **Reset**
       （或传入 `--reset`）。
     - CLI `--reset` 默认值为 `config+creds+sessions`；使用 `--reset-scope full`
       可额外移除工作区。
     - 如果配置无效或包含旧版键，向导会停止，并要求
-      你先运行 `openclaw doctor` 再继续。
+      你先运行 `foxfang doctor` 再继续。
     - 重置会使用 `trash`（绝不使用 `rm`），并提供以下范围：
       - 仅配置
       - 配置 + 凭证 + 会话
@@ -68,7 +68,7 @@ x-i18n:
     - 更多细节： [/concepts/oauth](/concepts/oauth)
     <Note>
     无头/服务器提示：在有浏览器的机器上完成 OAuth，然后将
-    `~/.foxfang/credentials/oauth.json`（或 `$OPENCLAW_STATE_DIR/credentials/oauth.json`）复制到
+    `~/.foxfang/credentials/oauth.json`（或 `$FOXFANG_STATE_DIR/credentials/oauth.json`）复制到
     Gateway 网关主机上。
     </Note>
   </Step>
@@ -101,13 +101,13 @@ x-i18n:
     - [Signal](/channels/signal)：可选安装 `signal-cli` + 账号配置。
     - [BlueBubbles](/channels/bluebubbles)：**iMessage 推荐方案**；server URL + password + webhook。
     - [iMessage](/channels/imessage)：旧版 `imsg` CLI 路径 + 数据库访问。
-    - 私信安全：默认为 pairing。首次私信会发送一个代码；通过 `openclaw pairing approve <channel> <code>` 批准，或使用允许列表。
+    - 私信安全：默认为 pairing。首次私信会发送一个代码；通过 `foxfang pairing approve <channel> <code>` 批准，或使用允许列表。
   </Step>
   <Step title="Web 搜索">
     - 选择一个提供商：Perplexity、Brave、Gemini、Grok 或 Kimi（也可跳过）。
     - 粘贴你的 API key（QuickStart 会自动从环境变量或现有配置中检测 key）。
     - 使用 `--skip-search` 跳过。
-    - 之后再配置：`openclaw configure --section web`。
+    - 之后再配置：`foxfang configure --section web`。
   </Step>
   <Step title="守护进程安装">
     - macOS：LaunchAgent
@@ -121,8 +121,8 @@ x-i18n:
     - 如果同时配置了 `gateway.auth.token` 和 `gateway.auth.password`，且 `gateway.auth.mode` 未设置，则会阻止守护进程安装，直到显式设置 mode。
   </Step>
   <Step title="健康检查">
-    - 启动 Gateway 网关（如果需要）并运行 `openclaw health`。
-    - 提示：`openclaw status --deep` 会在状态输出中添加 Gateway 网关健康探测（需要能访问到 Gateway 网关）。
+    - 启动 Gateway 网关（如果需要）并运行 `foxfang health`。
+    - 提示：`foxfang status --deep` 会在状态输出中添加 Gateway 网关健康探测（需要能访问到 Gateway 网关）。
   </Step>
   <Step title="Skills（推荐）">
     - 读取可用的 Skills 并检查要求。
@@ -144,7 +144,7 @@ x-i18n:
 使用 `--non-interactive` 自动化或脚本化新手引导：
 
 ```bash
-openclaw onboard --non-interactive \
+foxfang onboard --non-interactive \
   --mode local \
   --auth-choice apiKey \
   --anthropic-api-key "$ANTHROPIC_API_KEY" \
@@ -160,12 +160,12 @@ openclaw onboard --non-interactive \
 在非交互模式中使用 Gateway token SecretRef：
 
 ```bash
-export OPENCLAW_GATEWAY_TOKEN="your-token"
-openclaw onboard --non-interactive \
+export FOXFANG_GATEWAY_TOKEN="your-token"
+foxfang onboard --non-interactive \
   --mode local \
   --auth-choice skip \
   --gateway-auth token \
-  --gateway-token-ref-env OPENCLAW_GATEWAY_TOKEN
+  --gateway-token-ref-env FOXFANG_GATEWAY_TOKEN
 ```
 
 `--gateway-token` 和 `--gateway-token-ref-env` 互斥。
@@ -180,7 +180,7 @@ openclaw onboard --non-interactive \
 ### 添加智能体（非交互）
 
 ```bash
-openclaw agents add work \
+foxfang agents add work \
   --workspace ~/.foxfang/workspace-work \
   --model openai/gpt-5.2 \
   --bind whatsapp:biz \
@@ -209,7 +209,7 @@ Gateway 网关通过 RPC 暴露向导流程（`wizard.start`、`wizard.next`、`
 
 ## 向导会写入的内容
 
-`~/.foxfang/openclaw.json` 中的典型字段：
+`~/.foxfang/foxfang.json` 中的典型字段：
 
 - `agents.defaults.workspace`
 - `agents.defaults.model` / `models.providers`（如果选择了 Minimax）
@@ -225,7 +225,7 @@ Gateway 网关通过 RPC 暴露向导流程（`wizard.start`、`wizard.next`、`
 - `wizard.lastRunCommand`
 - `wizard.lastRunMode`
 
-`openclaw agents add` 会写入 `agents.list[]` 和可选的 `bindings`。
+`foxfang agents add` 会写入 `agents.list[]` 和可选的 `bindings`。
 
 WhatsApp 凭证位于 `~/.foxfang/credentials/whatsapp/<accountId>/` 下。
 会话存储在 `~/.foxfang/agents/<agentId>/sessions/` 下。

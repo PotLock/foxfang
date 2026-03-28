@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createTestPluginApi } from "../../test/helpers/extensions/plugin-api.js";
-import type { OpenClawPluginApi } from "./runtime-api.js";
+import type { FoxFangPluginApi } from "./runtime-api.js";
 
 const runtimeApiMocks = vi.hoisted(() => ({
   createBrowserPluginService: vi.fn(() => ({ id: "browser-control", start: vi.fn() })),
@@ -37,12 +37,12 @@ function createApi() {
     name: "Browser",
     source: "test",
     config: {},
-    runtime: {} as OpenClawPluginApi["runtime"],
+    runtime: {} as FoxFangPluginApi["runtime"],
     registerCli,
     registerGatewayMethod,
     registerService,
     registerTool,
-  }) as OpenClawPluginApi;
+  }) as FoxFangPluginApi;
   return { api, registerCli, registerGatewayMethod, registerService, registerTool };
 }
 

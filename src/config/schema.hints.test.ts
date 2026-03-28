@@ -4,7 +4,7 @@ import { buildSecretInputSchema } from "../plugin-sdk/secret-input-schema.js";
 import { FIELD_HELP } from "./schema.help.js";
 import { __test__, isPluginOwnedChannelHintPath, isSensitiveConfigPath } from "./schema.hints.js";
 import { FIELD_LABELS } from "./schema.labels.js";
-import { OpenClawSchema } from "./zod-schema.js";
+import { FoxFangSchema } from "./zod-schema.js";
 import { sensitive } from "./zod-schema.sensitive.js";
 
 const { mapSensitivePaths } = __test__;
@@ -154,12 +154,12 @@ describe("mapSensitivePaths", () => {
   });
 
   it("main schema yields correct hints (samples)", () => {
-    const schema = OpenClawSchema.toJSONSchema({
+    const schema = FoxFangSchema.toJSONSchema({
       target: "draft-07",
       unrepresentable: "any",
     });
-    schema.title = "OpenClawConfig";
-    const hints = mapSensitivePaths(OpenClawSchema, "", {});
+    schema.title = "FoxFangConfig";
+    const hints = mapSensitivePaths(FoxFangSchema, "", {});
 
     expect(hints["agents.defaults.memorySearch.remote.apiKey"]?.sensitive).toBe(true);
     expect(hints["agents.list[].memorySearch.remote.apiKey"]?.sensitive).toBe(true);

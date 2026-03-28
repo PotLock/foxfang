@@ -18,38 +18,38 @@ import {
 } from "@buape/carbon";
 import type { APIStringSelectComponent } from "discord-api-types/v10";
 import { ButtonStyle, ChannelType } from "discord-api-types/v10";
-import { resolveHumanDelayConfig } from "openclaw/plugin-sdk/agent-runtime";
+import { resolveHumanDelayConfig } from "foxfang/plugin-sdk/agent-runtime";
 import {
   formatInboundEnvelope,
   resolveEnvelopeFormatOptions,
-} from "openclaw/plugin-sdk/channel-inbound";
-import { createChannelReplyPipeline } from "openclaw/plugin-sdk/channel-reply-pipeline";
-import { enqueueSystemEvent } from "openclaw/plugin-sdk/channel-runtime";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import { isDangerousNameMatchingEnabled } from "openclaw/plugin-sdk/config-runtime";
-import { resolveMarkdownTableMode } from "openclaw/plugin-sdk/config-runtime";
-import { resolveOpenProviderRuntimeGroupPolicy } from "openclaw/plugin-sdk/config-runtime";
-import { readSessionUpdatedAt, resolveStorePath } from "openclaw/plugin-sdk/config-runtime";
-import type { DiscordAccountConfig } from "openclaw/plugin-sdk/config-runtime";
+} from "foxfang/plugin-sdk/channel-inbound";
+import { createChannelReplyPipeline } from "foxfang/plugin-sdk/channel-reply-pipeline";
+import { enqueueSystemEvent } from "foxfang/plugin-sdk/channel-runtime";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import { isDangerousNameMatchingEnabled } from "foxfang/plugin-sdk/config-runtime";
+import { resolveMarkdownTableMode } from "foxfang/plugin-sdk/config-runtime";
+import { resolveOpenProviderRuntimeGroupPolicy } from "foxfang/plugin-sdk/config-runtime";
+import { readSessionUpdatedAt, resolveStorePath } from "foxfang/plugin-sdk/config-runtime";
+import type { DiscordAccountConfig } from "foxfang/plugin-sdk/config-runtime";
 import {
   buildPluginBindingResolvedText,
   parsePluginBindingApprovalCustomId,
   resolvePluginConversationBindingApproval,
-} from "openclaw/plugin-sdk/conversation-runtime";
-import { recordInboundSession } from "openclaw/plugin-sdk/conversation-runtime";
-import { getAgentScopedMediaLocalRoots } from "openclaw/plugin-sdk/media-runtime";
+} from "foxfang/plugin-sdk/conversation-runtime";
+import { recordInboundSession } from "foxfang/plugin-sdk/conversation-runtime";
+import { getAgentScopedMediaLocalRoots } from "foxfang/plugin-sdk/media-runtime";
 import {
   dispatchPluginInteractiveHandler,
   type PluginInteractiveDiscordHandlerContext,
-} from "openclaw/plugin-sdk/plugin-runtime";
-import { resolveChunkMode, resolveTextChunkLimit } from "openclaw/plugin-sdk/reply-runtime";
-import { finalizeInboundContext } from "openclaw/plugin-sdk/reply-runtime";
-import { dispatchReplyWithBufferedBlockDispatcher } from "openclaw/plugin-sdk/reply-runtime";
-import { createReplyReferencePlanner } from "openclaw/plugin-sdk/reply-runtime";
-import { resolveAgentRoute } from "openclaw/plugin-sdk/routing";
-import { logVerbose } from "openclaw/plugin-sdk/runtime-env";
-import { createNonExitingRuntime, type RuntimeEnv } from "openclaw/plugin-sdk/runtime-env";
-import { logDebug, logError } from "openclaw/plugin-sdk/text-runtime";
+} from "foxfang/plugin-sdk/plugin-runtime";
+import { resolveChunkMode, resolveTextChunkLimit } from "foxfang/plugin-sdk/reply-runtime";
+import { finalizeInboundContext } from "foxfang/plugin-sdk/reply-runtime";
+import { dispatchReplyWithBufferedBlockDispatcher } from "foxfang/plugin-sdk/reply-runtime";
+import { createReplyReferencePlanner } from "foxfang/plugin-sdk/reply-runtime";
+import { resolveAgentRoute } from "foxfang/plugin-sdk/routing";
+import { logVerbose } from "foxfang/plugin-sdk/runtime-env";
+import { createNonExitingRuntime, type RuntimeEnv } from "foxfang/plugin-sdk/runtime-env";
+import { logDebug, logError } from "foxfang/plugin-sdk/text-runtime";
 import { resolveDiscordMaxLinesPerMessage } from "../accounts.js";
 import { resolveDiscordComponentEntry, resolveDiscordModalEntry } from "../components-registry.js";
 import {
@@ -1009,7 +1009,7 @@ export class AgentSelectMenu extends StringSelectMenu {
 
 class DiscordComponentButton extends Button {
   label = "component";
-  customId = "__openclaw_discord_component_button_wildcard__";
+  customId = "__foxfang_discord_component_button_wildcard__";
   style = ButtonStyle.Primary;
   customIdParser = parseDiscordComponentCustomIdForCarbon;
   private ctx: AgentComponentContext;
@@ -1041,7 +1041,7 @@ class DiscordComponentButton extends Button {
 }
 
 class DiscordComponentStringSelect extends StringSelectMenu {
-  customId = "__openclaw_discord_component_string_select_wildcard__";
+  customId = "__foxfang_discord_component_string_select_wildcard__";
   options: APIStringSelectComponent["options"] = [];
   customIdParser = parseDiscordComponentCustomIdForCarbon;
   private ctx: AgentComponentContext;
@@ -1064,7 +1064,7 @@ class DiscordComponentStringSelect extends StringSelectMenu {
 }
 
 class DiscordComponentUserSelect extends UserSelectMenu {
-  customId = "__openclaw_discord_component_user_select_wildcard__";
+  customId = "__foxfang_discord_component_user_select_wildcard__";
   customIdParser = parseDiscordComponentCustomIdForCarbon;
   private ctx: AgentComponentContext;
 
@@ -1086,7 +1086,7 @@ class DiscordComponentUserSelect extends UserSelectMenu {
 }
 
 class DiscordComponentRoleSelect extends RoleSelectMenu {
-  customId = "__openclaw_discord_component_role_select_wildcard__";
+  customId = "__foxfang_discord_component_role_select_wildcard__";
   customIdParser = parseDiscordComponentCustomIdForCarbon;
   private ctx: AgentComponentContext;
 
@@ -1108,7 +1108,7 @@ class DiscordComponentRoleSelect extends RoleSelectMenu {
 }
 
 class DiscordComponentMentionableSelect extends MentionableSelectMenu {
-  customId = "__openclaw_discord_component_mentionable_select_wildcard__";
+  customId = "__foxfang_discord_component_mentionable_select_wildcard__";
   customIdParser = parseDiscordComponentCustomIdForCarbon;
   private ctx: AgentComponentContext;
 
@@ -1130,7 +1130,7 @@ class DiscordComponentMentionableSelect extends MentionableSelectMenu {
 }
 
 class DiscordComponentChannelSelect extends ChannelSelectMenu {
-  customId = "__openclaw_discord_component_channel_select_wildcard__";
+  customId = "__foxfang_discord_component_channel_select_wildcard__";
   customIdParser = parseDiscordComponentCustomIdForCarbon;
   private ctx: AgentComponentContext;
 
@@ -1152,8 +1152,8 @@ class DiscordComponentChannelSelect extends ChannelSelectMenu {
 }
 
 class DiscordComponentModal extends Modal {
-  title = "OpenClaw form";
-  customId = "__openclaw_discord_component_modal_wildcard__";
+  title = "FoxFang form";
+  customId = "__foxfang_discord_component_modal_wildcard__";
   components = [];
   customIdParser = parseDiscordModalCustomIdForCarbon;
   private ctx: AgentComponentContext;

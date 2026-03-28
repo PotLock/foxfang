@@ -3,7 +3,7 @@ import {
   createDirectoryTestRuntime,
   expectDirectorySurface,
 } from "../../../test/helpers/extensions/directory.ts";
-import type { OpenClawConfig, PluginRuntime } from "../runtime-api.js";
+import type { FoxFangConfig, PluginRuntime } from "../runtime-api.js";
 
 const uploadGoogleChatAttachmentMock = vi.hoisted(() => vi.fn());
 const sendGoogleChatMessageMock = vi.hoisted(() => vi.fn());
@@ -67,7 +67,7 @@ afterEach(() => {
   fetchRemoteMediaMock.mockImplementation(runtimeApiActual.fetchRemoteMedia);
 });
 
-function createGoogleChatCfg(): OpenClawConfig {
+function createGoogleChatCfg(): FoxFangConfig {
   return {
     channels: {
       googlechat: {
@@ -493,7 +493,7 @@ describe("googlechat directory", () => {
           },
         },
       },
-    } as unknown as OpenClawConfig;
+    } as unknown as FoxFangConfig;
 
     const directory = expectDirectorySurface(googlechatPlugin.directory);
 
@@ -536,7 +536,7 @@ describe("googlechat directory", () => {
           dm: { allowFrom: [" users/alice ", " googlechat:user:Bob@Example.com "] },
         },
       },
-    } as unknown as OpenClawConfig;
+    } as unknown as FoxFangConfig;
 
     const directory = expectDirectorySurface(googlechatPlugin.directory);
 
@@ -578,7 +578,7 @@ describe("googlechatPlugin security", () => {
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
 
     const account = googlechatPlugin.config.resolveAccount(cfg, "default");
     const resolved = resolveDmPolicy!({ cfg, account });

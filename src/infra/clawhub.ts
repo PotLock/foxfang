@@ -12,7 +12,7 @@ export type ClawHubPackageFamily = "skill" | "code-plugin" | "bundle-plugin";
 export type ClawHubPackageChannel = "official" | "community" | "private";
 export type ClawHubPackageCompatibility = {
   pluginApiRange?: string;
-  builtWithOpenClawVersion?: string;
+  builtWithFoxFangVersion?: string;
   minGatewayVersion?: string;
 };
 
@@ -197,7 +197,7 @@ export class ClawHubRequestError extends Error {
 
 function normalizeBaseUrl(baseUrl?: string): string {
   const envValue =
-    process.env.OPENCLAW_CLAWHUB_URL?.trim() ||
+    process.env.FOXFANG_CLAWHUB_URL?.trim() ||
     process.env.CLAWHUB_URL?.trim() ||
     DEFAULT_CLAWHUB_URL;
   const value = (baseUrl?.trim() || envValue).replace(/\/+$/, "");
@@ -227,7 +227,7 @@ function extractTokenFromClawHubConfig(value: unknown): string | undefined {
 
 function resolveClawHubConfigPaths(): string[] {
   const explicit =
-    process.env.OPENCLAW_CLAWHUB_CONFIG_PATH?.trim() ||
+    process.env.FOXFANG_CLAWHUB_CONFIG_PATH?.trim() ||
     process.env.CLAWHUB_CONFIG_PATH?.trim() ||
     process.env.CLAWDHUB_CONFIG_PATH?.trim(); // legacy misspelling from older clawhub CLI builds; keep for back-compat
   if (explicit) {
@@ -251,7 +251,7 @@ function resolveClawHubConfigPaths(): string[] {
 
 export async function resolveClawHubAuthToken(): Promise<string | undefined> {
   const envToken =
-    process.env.OPENCLAW_CLAWHUB_TOKEN?.trim() ||
+    process.env.FOXFANG_CLAWHUB_TOKEN?.trim() ||
     process.env.CLAWHUB_TOKEN?.trim() ||
     process.env.CLAWHUB_AUTH_TOKEN?.trim();
   if (envToken) {
@@ -579,7 +579,7 @@ export async function downloadClawHubPackageArchive(params: {
     });
   }
   const bytes = new Uint8Array(await response.arrayBuffer());
-  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "openclaw-clawhub-package-"));
+  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "foxfang-clawhub-package-"));
   const archivePath = path.join(tmpDir, `${params.name}.zip`);
   await fs.writeFile(archivePath, bytes);
   return {
@@ -617,7 +617,7 @@ export async function downloadClawHubSkillArchive(params: {
     });
   }
   const bytes = new Uint8Array(await response.arrayBuffer());
-  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "openclaw-clawhub-skill-"));
+  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "foxfang-clawhub-skill-"));
   const archivePath = path.join(tmpDir, `${params.slug}.zip`);
   await fs.writeFile(archivePath, bytes);
   return {

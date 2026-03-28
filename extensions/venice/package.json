@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/venice-provider",
+  "name": "@foxfang/venice-provider",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw Venice provider plugin",
+  "description": "FoxFang Venice provider plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

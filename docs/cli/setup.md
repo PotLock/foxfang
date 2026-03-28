@@ -1,14 +1,14 @@
 ---
-summary: "CLI reference for `openclaw setup` (initialize config + workspace)"
+summary: "CLI reference for `foxfang setup` (initialize config + workspace)"
 read_when:
   - You’re doing first-run setup without full CLI onboarding
   - You want to set the default workspace path
 title: "setup"
 ---
 
-# `openclaw setup`
+# `foxfang setup`
 
-Initialize `~/.foxfang/openclaw.json` and the agent workspace.
+Initialize `~/.foxfang/foxfang.json` and the agent workspace.
 
 Related:
 
@@ -18,12 +18,12 @@ Related:
 ## Examples
 
 ```bash
-openclaw setup
-openclaw setup --workspace ~/.foxfang/workspace
+foxfang setup
+foxfang setup --workspace ~/.foxfang/workspace
 ```
 
 To run onboarding via setup:
 
 ```bash
-openclaw setup --wizard
+foxfang setup --wizard
 ```

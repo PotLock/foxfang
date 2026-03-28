@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/deepseek-provider",
+  "name": "@foxfang/deepseek-provider",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw DeepSeek provider plugin",
+  "description": "FoxFang DeepSeek provider plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

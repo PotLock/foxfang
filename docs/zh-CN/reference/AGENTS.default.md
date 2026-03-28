@@ -1,8 +1,8 @@
 ---
 read_when:
-  - 启动新的 OpenClaw 智能体会话
+  - 启动新的 FoxFang 智能体会话
   - 启用或审计默认 Skills
-summary: 个人助手设置的默认 OpenClaw 智能体指令和 Skills 列表
+summary: 个人助手设置的默认 FoxFang 智能体指令和 Skills 列表
 x-i18n:
   generated_at: "2026-02-03T10:09:19Z"
   model: claude-opus-4-5
@@ -12,11 +12,11 @@ x-i18n:
   workflow: 15
 ---
 
-# AGENTS.md — OpenClaw 个人助手（默认）
+# AGENTS.md — FoxFang 个人助手（默认）
 
 ## 首次运行（推荐）
 
-OpenClaw 为智能体使用专用的工作区目录。默认：`~/.foxfang/workspace`（可通过 `agents.defaults.workspace` 配置）。
+FoxFang 为智能体使用专用的工作区目录。默认：`~/.foxfang/workspace`（可通过 `agents.defaults.workspace` 配置）。
 
 1. 创建工作区（如果尚不存在）：
 
@@ -93,10 +93,10 @@ git commit -m "Add Clawd workspace"
 # 可选：添加私有远程仓库 + push
 ```
 
-## OpenClaw 的功能
+## FoxFang 的功能
 
 - 运行 WhatsApp Gateway 网关 + Pi 编程智能体，使助手可以读写聊天、获取上下文，并通过主机 Mac 运行 Skills。
-- macOS 应用管理权限（屏幕录制、通知、麦克风）并通过其内置二进制文件暴露 `openclaw` CLI。
+- macOS 应用管理权限（屏幕录制、通知、麦克风）并通过其内置二进制文件暴露 `foxfang` CLI。
 - 私聊默认折叠到智能体的 `main` 会话；群组保持隔离为 `agent:<agentId>:<channel>:group:<id>`（房间/频道：`agent:<agentId>:<channel>:channel:<id>`）；心跳保持后台任务存活。
 
 ## 核心 Skills（在设置 → Skills 中启用）
@@ -122,10 +122,10 @@ git commit -m "Add Clawd workspace"
 
 ## 使用说明
 
-- 脚本编写优先使用 `openclaw` CLI；mac 应用处理权限。
+- 脚本编写优先使用 `foxfang` CLI；mac 应用处理权限。
 - 从 Skills 标签页运行安装；如果二进制文件已存在，它会隐藏按钮。
 - 保持心跳启用，以便助手可以安排提醒、监控收件箱和触发摄像头捕获。
 - Canvas UI 以全屏运行并带有原生叠加层。避免在左上/右上/底部边缘放置关键控件；在布局中添加显式边距，不要依赖安全区域内边距。
-- 对于浏览器驱动的验证，使用带有 OpenClaw 管理的 Chrome 配置文件的 `openclaw browser`（tabs/status/screenshot）。
-- 对于 DOM 检查，使用 `openclaw browser eval|query|dom|snapshot`（需要机器输出时使用 `--json`/`--out`）。
-- 对于交互，使用 `openclaw browser click|type|hover|drag|select|upload|press|wait|navigate|back|evaluate|run`（click/type 需要 snapshot 引用；CSS 选择器使用 `evaluate`）。
+- 对于浏览器驱动的验证，使用带有 FoxFang 管理的 Chrome 配置文件的 `foxfang browser`（tabs/status/screenshot）。
+- 对于 DOM 检查，使用 `foxfang browser eval|query|dom|snapshot`（需要机器输出时使用 `--json`/`--out`）。
+- 对于交互，使用 `foxfang browser click|type|hover|drag|select|upload|press|wait|navigate|back|evaluate|run`（click/type 需要 snapshot 引用；CSS 选择器使用 `evaluate`）。

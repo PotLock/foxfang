@@ -4,7 +4,7 @@ import { authorizeHttpGatewayConnect, type ResolvedGatewayAuth } from "./auth.js
 import { sendGatewayAuthFailure } from "./http-common.js";
 import { getBearerToken, getHeader } from "./http-utils.js";
 
-const OPERATOR_SCOPES_HEADER = "x-openclaw-scopes";
+const OPERATOR_SCOPES_HEADER = "x-foxfang-scopes";
 
 export async function authorizeGatewayBearerRequestOrReply(params: {
   req: IncomingMessage;

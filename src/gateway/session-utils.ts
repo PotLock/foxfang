@@ -16,7 +16,7 @@ import {
   listSubagentRunsForController,
   resolveSubagentSessionStatus,
 } from "../agents/subagent-registry-read.js";
-import { type OpenClawConfig, loadConfig } from "../config/config.js";
+import { type FoxFangConfig, loadConfig } from "../config/config.js";
 import { resolveStateDir } from "../config/paths.js";
 import {
   buildGroupDisplayName,
@@ -62,7 +62,7 @@ import type {
 export {
   archiveFileOnDisk,
   archiveSessionTranscripts,
-  attachOpenClawTranscriptMeta,
+  attachFoxFangTranscriptMeta,
   capArrayByJsonBytes,
   readFirstUserMessageFromTranscript,
   readLastMessagePreviewFromTranscript,
@@ -93,7 +93,7 @@ function tryResolveExistingPath(value: string): string | null {
 }
 
 function resolveIdentityAvatarUrl(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   agentId: string,
   avatar: string | undefined,
 ): string | undefined {
@@ -206,7 +206,7 @@ function resolveNonNegativeNumber(value: number | null | undefined): number | un
 }
 
 function resolveEstimatedSessionCostUsd(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   provider?: string;
   model?: string;
   entry?: Pick<
@@ -295,7 +295,7 @@ function resolveChildSessionKeys(
 }
 
 function resolveTranscriptUsageFallback(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   key: string;
   entry?: SessionEntry;
   storePath: string;
@@ -554,7 +554,7 @@ function listExistingAgentIdsFromDisk(): string[] {
   }
 }
 
-function listConfiguredAgentIds(cfg: OpenClawConfig): string[] {
+function listConfiguredAgentIds(cfg: FoxFangConfig): string[] {
   const ids = new Set<string>();
   const defaultId = normalizeAgentId(resolveDefaultAgentId(cfg));
   ids.add(defaultId);
@@ -576,7 +576,7 @@ function listConfiguredAgentIds(cfg: OpenClawConfig): string[] {
     : sorted;
 }
 
-export function listAgentsForGateway(cfg: OpenClawConfig): {
+export function listAgentsForGateway(cfg: FoxFangConfig): {
   defaultId: string;
   mainKey: string;
   scope: SessionScope;
@@ -645,12 +645,12 @@ function canonicalizeSessionKeyForAgent(agentId: string, key: string): string {
   return `agent:${normalizeAgentId(agentId)}:${lowered}`;
 }
 
-function resolveDefaultStoreAgentId(cfg: OpenClawConfig): string {
+function resolveDefaultStoreAgentId(cfg: FoxFangConfig): string {
   return normalizeAgentId(resolveDefaultAgentId(cfg));
 }
 
 export function resolveSessionStoreKey(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   sessionKey: string;
 }): string {
   const raw = (params.sessionKey ?? "").trim();
@@ -686,7 +686,7 @@ export function resolveSessionStoreKey(params: {
   return canonicalizeSessionKeyForAgent(agentId, lowered);
 }
 
-function resolveSessionStoreAgentId(cfg: OpenClawConfig, canonicalKey: string): string {
+function resolveSessionStoreAgentId(cfg: FoxFangConfig, canonicalKey: string): string {
   if (canonicalKey === "global" || canonicalKey === "unknown") {
     return resolveDefaultStoreAgentId(cfg);
   }
@@ -698,7 +698,7 @@ function resolveSessionStoreAgentId(cfg: OpenClawConfig, canonicalKey: string): 
 }
 
 export function canonicalizeSpawnedByForAgent(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   agentId: string,
   spawnedBy?: string,
 ): string | undefined {
@@ -723,7 +723,7 @@ export function canonicalizeSpawnedByForAgent(
 }
 
 function buildGatewaySessionStoreScanTargets(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   key: string;
   canonicalKey: string;
   agentId: string;
@@ -746,7 +746,7 @@ function buildGatewaySessionStoreScanTargets(params: {
 }
 
 function resolveGatewaySessionStoreCandidates(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   agentId: string,
 ): SessionStoreTarget[] {
   const storeConfig = cfg.session?.store;
@@ -768,7 +768,7 @@ function resolveGatewaySessionStoreCandidates(
 }
 
 function resolveGatewaySessionStoreLookup(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   key: string;
   canonicalKey: string;
   agentId: string;
@@ -818,7 +818,7 @@ function resolveGatewaySessionStoreLookup(params: {
 }
 
 export function resolveGatewaySessionStoreTarget(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   key: string;
   scanLegacyKeys?: boolean;
   store?: Record<string, SessionEntry>;
@@ -877,7 +877,7 @@ export function resolveGatewaySessionStoreTarget(params: {
 
 // Merge with existing entry based on latest timestamp to ensure data consistency and avoid overwriting with less complete data.
 function mergeSessionEntryIntoCombined(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   combined: Record<string, SessionEntry>;
   entry: SessionEntry;
   agentId: string;
@@ -905,7 +905,7 @@ function mergeSessionEntryIntoCombined(params: {
   }
 }
 
-export function loadCombinedSessionStoreForGateway(cfg: OpenClawConfig): {
+export function loadCombinedSessionStoreForGateway(cfg: FoxFangConfig): {
   storePath: string;
   store: Record<string, SessionEntry>;
 } {
@@ -951,7 +951,7 @@ export function loadCombinedSessionStoreForGateway(cfg: OpenClawConfig): {
   return { storePath, store: combined };
 }
 
-export function getSessionDefaults(cfg: OpenClawConfig): GatewaySessionsDefaults {
+export function getSessionDefaults(cfg: FoxFangConfig): GatewaySessionsDefaults {
   const resolved = resolveConfiguredModelRef({
     cfg,
     defaultProvider: DEFAULT_PROVIDER,
@@ -969,7 +969,7 @@ export function getSessionDefaults(cfg: OpenClawConfig): GatewaySessionsDefaults
 }
 
 export function resolveSessionModelRef(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   entry?:
     | SessionEntry
     | Pick<SessionEntry, "model" | "modelProvider" | "modelOverride" | "providerOverride">,
@@ -1027,7 +1027,7 @@ export function resolveSessionModelRef(
 }
 
 export function resolveSessionModelIdentityRef(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   entry?:
     | SessionEntry
     | Pick<SessionEntry, "model" | "modelProvider" | "modelOverride" | "providerOverride">,
@@ -1076,7 +1076,7 @@ export function resolveSessionModelIdentityRef(
 }
 
 export function buildGatewaySessionRow(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   storePath: string;
   store: Record<string, SessionEntry>;
   key: string;
@@ -1264,7 +1264,7 @@ export function loadGatewaySessionRow(
 }
 
 export function listSessionsFromStore(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   storePath: string;
   store: Record<string, SessionEntry>;
   opts: import("./protocol/index.js").SessionsListParams;

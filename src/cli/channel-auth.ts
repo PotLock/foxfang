@@ -5,7 +5,7 @@ import {
   normalizeChannelId,
 } from "../channels/plugins/index.js";
 import { resolveInstallableChannelPlugin } from "../commands/channel-setup/channel-plugin-resolution.js";
-import { loadConfig, writeConfigFile, type OpenClawConfig } from "../config/config.js";
+import { loadConfig, writeConfigFile, type FoxFangConfig } from "../config/config.js";
 import { applyPluginAutoEnable } from "../config/plugin-auto-enable.js";
 import { setVerbose } from "../globals.js";
 import { isBlockedObjectKey } from "../infra/prototype-keys.js";
@@ -25,7 +25,7 @@ function supportsChannelAuthMode(plugin: ChannelPlugin, mode: ChannelAuthMode): 
   return mode === "login" ? Boolean(plugin.auth?.login) : Boolean(plugin.gateway?.logoutAccount);
 }
 
-function isConfiguredAuthPlugin(plugin: ChannelPlugin, cfg: OpenClawConfig): boolean {
+function isConfiguredAuthPlugin(plugin: ChannelPlugin, cfg: FoxFangConfig): boolean {
   const key = plugin.id;
   if (isBlockedObjectKey(key)) {
     return false;
@@ -59,7 +59,7 @@ function isConfiguredAuthPlugin(plugin: ChannelPlugin, cfg: OpenClawConfig): boo
   return false;
 }
 
-function resolveConfiguredAuthChannelInput(cfg: OpenClawConfig, mode: ChannelAuthMode): string {
+function resolveConfiguredAuthChannelInput(cfg: FoxFangConfig, mode: ChannelAuthMode): string {
   const configured = listChannelPlugins()
     .filter((plugin): plugin is ChannelPlugin => supportsChannelAuthMode(plugin, mode))
     .filter((plugin) => isConfiguredAuthPlugin(plugin, cfg))
@@ -80,10 +80,10 @@ function resolveConfiguredAuthChannelInput(cfg: OpenClawConfig, mode: ChannelAut
 async function resolveChannelPluginForMode(
   opts: ChannelAuthOptions,
   mode: ChannelAuthMode,
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   runtime: RuntimeEnv,
 ): Promise<{
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   configChanged: boolean;
   channelInput: string;
   channelId: string;
@@ -121,7 +121,7 @@ async function resolveChannelPluginForMode(
 function resolveAccountContext(
   plugin: ChannelPlugin,
   opts: ChannelAuthOptions,
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
 ) {
   const accountId = opts.account?.trim() || resolveChannelDefaultAccountId({ plugin, cfg });
   return { accountId };

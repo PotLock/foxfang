@@ -1,9 +1,9 @@
-import { resolveCommandAuthorizedFromAuthorizers } from "openclaw/plugin-sdk/command-auth";
+import { resolveCommandAuthorizedFromAuthorizers } from "foxfang/plugin-sdk/command-auth";
 import {
   readStoreAllowFromForDmPolicy,
   resolveDmGroupAccessWithLists,
   type DmGroupAccessDecision,
-} from "openclaw/plugin-sdk/security-runtime";
+} from "foxfang/plugin-sdk/security-runtime";
 import { normalizeDiscordAllowList, resolveDiscordAllowListMatch } from "./allow-list.js";
 
 const DISCORD_ALLOW_LIST_PREFIXES = ["discord:", "user:", "pk:"];

@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "openclaw/plugin-sdk/memory-core-host-engine-foundation";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/memory-core-host-engine-foundation";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 function createManagerStatus(params: {
@@ -116,7 +116,7 @@ const createQmdManagerMock = vi.mocked(QmdMemoryManager.create);
 type SearchManagerResult = Awaited<ReturnType<typeof getMemorySearchManager>>;
 type SearchManager = NonNullable<SearchManagerResult["manager"]>;
 
-function createQmdCfg(agentId: string): OpenClawConfig {
+function createQmdCfg(agentId: string): FoxFangConfig {
   return {
     memory: { backend: "qmd", qmd: {} },
     agents: { list: [{ id: agentId, default: true, workspace: "/tmp/workspace" }] },

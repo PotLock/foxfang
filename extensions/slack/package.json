@@ -1,14 +1,14 @@
 {
-  "name": "@openclaw/slack",
+  "name": "@foxfang/slack",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw Slack channel plugin",
+  "description": "FoxFang Slack channel plugin",
   "type": "module",
   "dependencies": {
     "@slack/bolt": "^4.6.0",
     "@slack/web-api": "^7.15.0"
   },
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ],

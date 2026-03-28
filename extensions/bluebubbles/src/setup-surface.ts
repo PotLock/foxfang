@@ -6,8 +6,8 @@ import {
   formatDocsLink,
   type ChannelSetupDmPolicy,
   type ChannelSetupWizard,
-  type OpenClawConfig,
-} from "openclaw/plugin-sdk/setup";
+  type FoxFangConfig,
+} from "foxfang/plugin-sdk/setup";
 import {
   listBlueBubblesAccountIds,
   resolveBlueBubblesAccount,
@@ -94,14 +94,14 @@ function validateBlueBubblesServerUrlInput(value: unknown): string | undefined {
 }
 
 function applyBlueBubblesSetupPatch(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   accountId: string,
   patch: {
     serverUrl?: string;
     password?: unknown;
     webhookPath?: string;
   },
-): OpenClawConfig {
+): FoxFangConfig {
   return applyBlueBubblesConnectionConfig({
     cfg,
     accountId,
@@ -111,11 +111,11 @@ function applyBlueBubblesSetupPatch(
   });
 }
 
-function resolveBlueBubblesServerUrl(cfg: OpenClawConfig, accountId: string): string | undefined {
+function resolveBlueBubblesServerUrl(cfg: FoxFangConfig, accountId: string): string | undefined {
   return resolveBlueBubblesAccount({ cfg, accountId }).config.serverUrl?.trim() || undefined;
 }
 
-function resolveBlueBubblesWebhookPath(cfg: OpenClawConfig, accountId: string): string | undefined {
+function resolveBlueBubblesWebhookPath(cfg: FoxFangConfig, accountId: string): string | undefined {
   return resolveBlueBubblesAccount({ cfg, accountId }).config.webhookPath?.trim() || undefined;
 }
 
@@ -247,7 +247,7 @@ export const blueBubblesSetupWizard: ChannelSetupWizard = {
     lines: [
       "Configure the webhook URL in BlueBubbles Server:",
       "1. Open BlueBubbles Server -> Settings -> Webhooks",
-      "2. Add your OpenClaw gateway URL + webhook path",
+      "2. Add your FoxFang gateway URL + webhook path",
       `   Example: https://your-gateway-host:3000${DEFAULT_WEBHOOK_PATH}`,
       "3. Enable the webhook and save",
       "",

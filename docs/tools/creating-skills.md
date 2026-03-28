@@ -51,20 +51,20 @@ For how skills are loaded and prioritized, see [Skills](/tools/skills).
   </Step>
 
   <Step title="Load the skill">
-    Start a new session so OpenClaw picks up the skill:
+    Start a new session so FoxFang picks up the skill:
 
     ```bash
     # From chat
     /new
 
     # Or restart the gateway
-    openclaw gateway restart
+    foxfang gateway restart
     ```
 
     Verify the skill loaded:
 
     ```bash
-    openclaw skills list
+    foxfang skills list
     ```
 
   </Step>
@@ -73,7 +73,7 @@ For how skills are loaded and prioritized, see [Skills](/tools/skills).
     Send a message that should trigger the skill:
 
     ```bash
-    openclaw agent --message "give me a greeting"
+    foxfang agent --message "give me a greeting"
     ```
 
     Or just chat with the agent and ask for a greeting.
@@ -89,15 +89,15 @@ The YAML frontmatter supports these fields:
 | ----------------------------------- | -------- | ------------------------------------------- |
 | `name`                              | Yes      | Unique identifier (snake_case)              |
 | `description`                       | Yes      | One-line description shown to the agent     |
-| `metadata.openclaw.os`              | No       | OS filter (`["darwin"]`, `["linux"]`, etc.) |
-| `metadata.openclaw.requires.bins`   | No       | Required binaries on PATH                   |
-| `metadata.openclaw.requires.config` | No       | Required config keys                        |
+| `metadata.foxfang.os`              | No       | OS filter (`["darwin"]`, `["linux"]`, etc.) |
+| `metadata.foxfang.requires.bins`   | No       | Required binaries on PATH                   |
+| `metadata.foxfang.requires.config` | No       | Required config keys                        |
 
 ## Best practices
 
 - **Be concise** — instruct the model on _what_ to do, not how to be an AI
 - **Safety first** — if your skill uses `exec`, ensure prompts don't allow arbitrary command injection from untrusted input
-- **Test locally** — use `openclaw agent --message "..."` to test before sharing
+- **Test locally** — use `foxfang agent --message "..."` to test before sharing
 - **Use ClawHub** — browse and contribute skills at [ClawHub](https://clawhub.com)
 
 ## Where skills live
@@ -106,7 +106,7 @@ The YAML frontmatter supports these fields:
 | ------------------------------- | ---------- | --------------------- |
 | `\<workspace\>/skills/`         | Highest    | Per-agent             |
 | `~/.foxfang/skills/`           | Medium     | Shared (all agents)   |
-| Bundled (shipped with OpenClaw) | Lowest     | Global                |
+| Bundled (shipped with FoxFang) | Lowest     | Global                |
 | `skills.load.extraDirs`         | Lowest     | Custom shared folders |
 
 ## Related

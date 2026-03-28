@@ -1,14 +1,14 @@
-import { loadConfig, type OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import { resolveMarkdownTableMode } from "openclaw/plugin-sdk/config-runtime";
-import { kindFromMime } from "openclaw/plugin-sdk/media-runtime";
-import { resolveOutboundAttachmentFromUrl } from "openclaw/plugin-sdk/media-runtime";
+import { loadConfig, type FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import { resolveMarkdownTableMode } from "foxfang/plugin-sdk/config-runtime";
+import { kindFromMime } from "foxfang/plugin-sdk/media-runtime";
+import { resolveOutboundAttachmentFromUrl } from "foxfang/plugin-sdk/media-runtime";
 import { resolveSignalAccount } from "./accounts.js";
 import { signalRpcRequest } from "./client.js";
 import { markdownToSignalText, type SignalTextStyleRange } from "./format.js";
 import { resolveSignalRpcContext } from "./rpc-context.js";
 
 export type SignalSendOpts = {
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   baseUrl?: string;
   account?: string;
   accountId?: string;

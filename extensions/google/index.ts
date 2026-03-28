@@ -1,14 +1,14 @@
-import type { ImageGenerationProvider } from "openclaw/plugin-sdk/image-generation";
-import type { MediaUnderstandingProvider } from "openclaw/plugin-sdk/media-understanding";
+import type { ImageGenerationProvider } from "foxfang/plugin-sdk/image-generation";
+import type { MediaUnderstandingProvider } from "foxfang/plugin-sdk/media-understanding";
 import {
   definePluginEntry,
-  type OpenClawPluginApi,
+  type FoxFangPluginApi,
   type ProviderAuthContext,
   type ProviderFetchUsageSnapshotContext,
-} from "openclaw/plugin-sdk/plugin-entry";
-import { createProviderApiKeyAuthMethod } from "openclaw/plugin-sdk/provider-auth-api-key";
-import type { ProviderPlugin } from "openclaw/plugin-sdk/provider-model-shared";
-import { createGoogleThinkingPayloadWrapper } from "openclaw/plugin-sdk/provider-stream";
+} from "foxfang/plugin-sdk/plugin-entry";
+import { createProviderApiKeyAuthMethod } from "foxfang/plugin-sdk/provider-auth-api-key";
+import type { ProviderPlugin } from "foxfang/plugin-sdk/provider-model-shared";
+import { createGoogleThinkingPayloadWrapper } from "foxfang/plugin-sdk/provider-stream";
 import {
   GOOGLE_GEMINI_DEFAULT_MODEL,
   applyGoogleGeminiModelDefault,
@@ -24,8 +24,8 @@ const GOOGLE_GEMINI_CLI_PROVIDER_ID = "google-gemini-cli";
 const GOOGLE_GEMINI_CLI_PROVIDER_LABEL = "Gemini CLI OAuth";
 const GOOGLE_GEMINI_CLI_DEFAULT_MODEL = "google-gemini-cli/gemini-3.1-pro-preview";
 const GOOGLE_GEMINI_CLI_ENV_VARS = [
-  "OPENCLAW_GEMINI_OAUTH_CLIENT_ID",
-  "OPENCLAW_GEMINI_OAUTH_CLIENT_SECRET",
+  "FOXFANG_GEMINI_OAUTH_CLIENT_ID",
+  "FOXFANG_GEMINI_OAUTH_CLIENT_SECRET",
   "GEMINI_CLI_OAUTH_CLIENT_ID",
   "GEMINI_CLI_OAUTH_CLIENT_SECRET",
 ] as const;
@@ -65,7 +65,7 @@ async function loadGoogleGeminiCliProvider(): Promise<ProviderPlugin> {
         registerProvider(entry) {
           provider = entry;
         },
-      } as Pick<OpenClawPluginApi, "registerProvider"> as OpenClawPluginApi);
+      } as Pick<FoxFangPluginApi, "registerProvider"> as FoxFangPluginApi);
       if (!provider) {
         throw new Error("google gemini cli provider missing provider registration");
       }

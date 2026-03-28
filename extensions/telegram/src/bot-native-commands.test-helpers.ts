@@ -1,8 +1,8 @@
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import type { ChannelGroupPolicy } from "openclaw/plugin-sdk/config-runtime";
-import type { TelegramAccountConfig } from "openclaw/plugin-sdk/config-runtime";
-import type { RuntimeEnv } from "openclaw/plugin-sdk/runtime-env";
-import type { MockFn } from "openclaw/plugin-sdk/testing";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import type { ChannelGroupPolicy } from "foxfang/plugin-sdk/config-runtime";
+import type { TelegramAccountConfig } from "foxfang/plugin-sdk/config-runtime";
+import type { RuntimeEnv } from "foxfang/plugin-sdk/runtime-env";
+import type { MockFn } from "foxfang/plugin-sdk/testing";
 import { vi } from "vitest";
 import {
   createNativeCommandTestParams,
@@ -12,17 +12,17 @@ import type { RegisterTelegramNativeCommandsParams } from "./bot-native-commands
 import { registerTelegramNativeCommands } from "./bot-native-commands.js";
 
 type GetPluginCommandSpecsFn =
-  typeof import("openclaw/plugin-sdk/plugin-runtime").getPluginCommandSpecs;
-type MatchPluginCommandFn = typeof import("openclaw/plugin-sdk/plugin-runtime").matchPluginCommand;
+  typeof import("foxfang/plugin-sdk/plugin-runtime").getPluginCommandSpecs;
+type MatchPluginCommandFn = typeof import("foxfang/plugin-sdk/plugin-runtime").matchPluginCommand;
 type ExecutePluginCommandFn =
-  typeof import("openclaw/plugin-sdk/plugin-runtime").executePluginCommand;
+  typeof import("foxfang/plugin-sdk/plugin-runtime").executePluginCommand;
 type DispatchReplyWithBufferedBlockDispatcherFn =
-  typeof import("openclaw/plugin-sdk/reply-runtime").dispatchReplyWithBufferedBlockDispatcher;
+  typeof import("foxfang/plugin-sdk/reply-runtime").dispatchReplyWithBufferedBlockDispatcher;
 type DispatchReplyWithBufferedBlockDispatcherResult = Awaited<
   ReturnType<DispatchReplyWithBufferedBlockDispatcherFn>
 >;
 type RecordInboundSessionMetaSafeFn =
-  typeof import("openclaw/plugin-sdk/conversation-runtime").recordInboundSessionMetaSafe;
+  typeof import("foxfang/plugin-sdk/conversation-runtime").recordInboundSessionMetaSafe;
 type AnyMock = MockFn<(...args: unknown[]) => unknown>;
 type AnyAsyncMock = MockFn<(...args: unknown[]) => Promise<unknown>>;
 type NativeCommandHarness = {
@@ -42,7 +42,7 @@ export const getPluginCommandSpecs = pluginCommandMocks.getPluginCommandSpecs;
 export const matchPluginCommand = pluginCommandMocks.matchPluginCommand;
 export const executePluginCommand = pluginCommandMocks.executePluginCommand;
 
-vi.mock("openclaw/plugin-sdk/plugin-runtime", () => ({
+vi.mock("foxfang/plugin-sdk/plugin-runtime", () => ({
   getPluginCommandSpecs: pluginCommandMocks.getPluginCommandSpecs,
   matchPluginCommand: pluginCommandMocks.matchPluginCommand,
   executePluginCommand: pluginCommandMocks.executePluginCommand,
@@ -65,8 +65,8 @@ const replyPipelineMocks = vi.hoisted(() => {
 export const dispatchReplyWithBufferedBlockDispatcher =
   replyPipelineMocks.dispatchReplyWithBufferedBlockDispatcher;
 
-vi.mock("openclaw/plugin-sdk/reply-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/reply-runtime")>();
+vi.mock("foxfang/plugin-sdk/reply-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/reply-runtime")>();
   return {
     ...actual,
     finalizeInboundContext: replyPipelineMocks.finalizeInboundContext,
@@ -74,17 +74,17 @@ vi.mock("openclaw/plugin-sdk/reply-runtime", async (importOriginal) => {
       replyPipelineMocks.dispatchReplyWithBufferedBlockDispatcher,
   };
 });
-vi.mock("openclaw/plugin-sdk/conversation-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/conversation-runtime")>();
+vi.mock("foxfang/plugin-sdk/conversation-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/conversation-runtime")>();
   return {
     ...actual,
     recordInboundSessionMetaSafe: replyPipelineMocks.recordInboundSessionMetaSafe,
     readChannelAllowFromStore: vi.fn(async () => []),
   };
 });
-vi.mock("openclaw/plugin-sdk/channel-reply-pipeline", async (importOriginal) => {
+vi.mock("foxfang/plugin-sdk/channel-reply-pipeline", async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import("openclaw/plugin-sdk/channel-reply-pipeline")>();
+    await importOriginal<typeof import("foxfang/plugin-sdk/channel-reply-pipeline")>();
   return {
     ...actual,
     createChannelReplyPipeline: replyPipelineMocks.createChannelReplyPipeline,
@@ -100,7 +100,7 @@ vi.mock("./bot/delivery.replies.js", () => ({ deliverReplies: deliveryMocks.deli
 export { createNativeCommandTestParams };
 
 export function createNativeCommandsHarness(params?: {
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   runtime?: RuntimeEnv;
   telegramCfg?: TelegramAccountConfig;
   allowFrom?: string[];
@@ -115,7 +115,7 @@ export function createNativeCommandsHarness(params?: {
   const setMyCommands: AnyAsyncMock = vi.fn(async () => undefined);
   const log: AnyMock = vi.fn();
   const telegramDeps = {
-    loadConfig: vi.fn(() => params?.cfg ?? ({} as OpenClawConfig)),
+    loadConfig: vi.fn(() => params?.cfg ?? ({} as FoxFangConfig)),
     resolveStorePath: vi.fn((storePath?: string) => storePath ?? "/tmp/sessions.json"),
     readChannelAllowFromStore: vi.fn(async () => []),
     upsertChannelPairingRequest: vi.fn(async () => ({ code: "PAIRCODE", created: true })),
@@ -142,7 +142,7 @@ export function createNativeCommandsHarness(params?: {
 
   registerTelegramNativeCommands({
     bot,
-    cfg: params?.cfg ?? ({} as OpenClawConfig),
+    cfg: params?.cfg ?? ({} as FoxFangConfig),
     runtime: params?.runtime ?? ({ log } as unknown as RuntimeEnv),
     accountId: "default",
     telegramCfg: params?.telegramCfg ?? ({} as TelegramAccountConfig),

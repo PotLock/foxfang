@@ -8,7 +8,7 @@ import { pipeline } from "node:stream/promises";
 import { fetchWithSsrFGuard } from "../../runtime-api.js";
 import { getDefaultSsrFPolicy } from "../urbit/context.js";
 
-// Default to OpenClaw workspace media directory
+// Default to FoxFang workspace media directory
 const DEFAULT_MEDIA_DIR = path.join(homedir(), ".foxfang", "workspace", "media", "inbound");
 
 export interface ExtractedImage {
@@ -139,7 +139,7 @@ function getExtensionFromUrl(url: string): string | null {
 
 /**
  * Download all images from a message and return attachment metadata.
- * Format matches OpenClaw's expected attachment structure.
+ * Format matches FoxFang's expected attachment structure.
  */
 export async function downloadMessageImages(
   content: unknown,

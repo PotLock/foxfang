@@ -8,8 +8,8 @@ import {
   resolveGlobalSingleton,
   resolveStateDir,
   writeFileWithinRoot,
-  type OpenClawConfig,
-} from "openclaw/plugin-sdk/memory-core-host-engine-foundation";
+  type FoxFangConfig,
+} from "foxfang/plugin-sdk/memory-core-host-engine-foundation";
 import {
   buildSessionEntry,
   deriveQmdScopeChannel,
@@ -22,7 +22,7 @@ import {
   runCliCommand,
   type QmdQueryResult,
   type SessionFileEntry,
-} from "openclaw/plugin-sdk/memory-core-host-engine-qmd";
+} from "foxfang/plugin-sdk/memory-core-host-engine-qmd";
 import {
   isFileMissingError,
   requireNodeSqlite,
@@ -36,7 +36,7 @@ import {
   type ResolvedMemoryBackendConfig,
   type ResolvedQmdConfig,
   type ResolvedQmdMcporterConfig,
-} from "openclaw/plugin-sdk/memory-core-host-engine-storage";
+} from "foxfang/plugin-sdk/memory-core-host-engine-storage";
 
 type SqliteDatabase = import("node:sqlite").DatabaseSync;
 
@@ -50,7 +50,7 @@ const QMD_EMBED_BACKOFF_BASE_MS = 60_000;
 const QMD_EMBED_BACKOFF_MAX_MS = 60 * 60 * 1000;
 const HAN_SCRIPT_RE = /[\u3400-\u9fff]/u;
 const QMD_BM25_HAN_KEYWORD_LIMIT = 12;
-const MCPORTER_STATE_KEY = Symbol.for("openclaw.mcporterState");
+const MCPORTER_STATE_KEY = Symbol.for("foxfang.mcporterState");
 
 type McporterState = {
   coldStartWarned: boolean;
@@ -141,7 +141,7 @@ type QmdManagerMode = "full" | "status";
 
 export class QmdMemoryManager implements MemorySearchManager {
   static async create(params: {
-    cfg: OpenClawConfig;
+    cfg: FoxFangConfig;
     agentId: string;
     resolved: ResolvedMemoryBackendConfig;
     mode?: QmdManagerMode;
@@ -155,7 +155,7 @@ export class QmdMemoryManager implements MemorySearchManager {
     return manager;
   }
 
-  private readonly cfg: OpenClawConfig;
+  private readonly cfg: FoxFangConfig;
   private readonly agentId: string;
   private readonly qmd: ResolvedQmdConfig;
   private readonly workspaceDir: string;
@@ -197,7 +197,7 @@ export class QmdMemoryManager implements MemorySearchManager {
   private attemptedDuplicateDocumentRepair = false;
 
   private constructor(params: {
-    cfg: OpenClawConfig;
+    cfg: FoxFangConfig;
     agentId: string;
     resolved: ResolvedQmdConfig;
   }) {

@@ -17,13 +17,13 @@ import { validateConfigObject } from "./validation.js";
 const tempDirs: string[] = [];
 
 function makeTempDir() {
-  return makeTrackedTempDir("openclaw-plugin-auto-enable", tempDirs);
+  return makeTrackedTempDir("foxfang-plugin-auto-enable", tempDirs);
 }
 
 function writePluginManifestFixture(params: { rootDir: string; id: string; channels: string[] }) {
   mkdirSafeDir(params.rootDir);
   fs.writeFileSync(
-    path.join(params.rootDir, "openclaw.plugin.json"),
+    path.join(params.rootDir, "foxfang.plugin.json"),
     JSON.stringify(
       {
         id: params.id,
@@ -60,7 +60,7 @@ function makeRegistry(
       origin: "config" as const,
       rootDir: `/fake/${p.id}`,
       source: `/fake/${p.id}/index.js`,
-      manifestPath: `/fake/${p.id}/openclaw.plugin.json`,
+      manifestPath: `/fake/${p.id}/foxfang.plugin.json`,
     })),
     diagnostics: [],
   };
@@ -261,7 +261,7 @@ describe("applyPluginAutoEnable", () => {
       config: {},
       env: {
         IRC_HOST: "irc.libera.chat",
-        IRC_NICK: "openclaw-bot",
+        IRC_NICK: "foxfang-bot",
       },
     });
 
@@ -284,9 +284,9 @@ describe("applyPluginAutoEnable", () => {
       },
       env: {
         ...process.env,
-        OPENCLAW_HOME: undefined,
-        OPENCLAW_STATE_DIR: stateDir,
-        OPENCLAW_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins",
+        FOXFANG_HOME: undefined,
+        FOXFANG_STATE_DIR: stateDir,
+        FOXFANG_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins",
       },
     });
 
@@ -303,8 +303,8 @@ describe("applyPluginAutoEnable", () => {
       JSON.stringify({
         entries: [
           {
-            name: "@openclaw/env-secondary",
-            openclaw: {
+            name: "@foxfang/env-secondary",
+            foxfang: {
               channel: {
                 id: "env-secondary",
                 label: "Env Secondary",
@@ -314,7 +314,7 @@ describe("applyPluginAutoEnable", () => {
                 preferOver: ["env-primary"],
               },
               install: {
-                npmSpec: "@openclaw/env-secondary",
+                npmSpec: "@foxfang/env-secondary",
               },
             },
           },
@@ -332,7 +332,7 @@ describe("applyPluginAutoEnable", () => {
       },
       env: {
         ...process.env,
-        OPENCLAW_STATE_DIR: stateDir,
+        FOXFANG_STATE_DIR: stateDir,
       },
       manifestRegistry: makeRegistry([]),
     });
@@ -465,7 +465,7 @@ describe("applyPluginAutoEnable", () => {
 
   describe("third-party channel plugins (pluginId ≠ channelId)", () => {
     it("uses the plugin manifest id, not the channel id, for plugins.entries", () => {
-      // Reproduces: https://github.com/openclaw/openclaw/issues/25261
+      // Reproduces: https://github.com/foxfang/foxfang/issues/25261
       // Plugin "apn-channel" declares channels: ["apn"]. Doctor must write
       // plugins.entries["apn-channel"], not plugins.entries["apn"].
       const result = applyWithApnChannelConfig();
@@ -603,9 +603,9 @@ describe("applyPluginAutoEnable", () => {
         config: makeApnChannelConfig(),
         env: {
           ...process.env,
-          OPENCLAW_HOME: undefined,
-          OPENCLAW_STATE_DIR: stateDir,
-          OPENCLAW_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins",
+          FOXFANG_HOME: undefined,
+          FOXFANG_STATE_DIR: stateDir,
+          FOXFANG_BUNDLED_PLUGINS_DIR: "/nonexistent/bundled/plugins",
         },
       });
 

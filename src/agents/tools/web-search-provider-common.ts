@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "../../config/config.js";
+import type { FoxFangConfig } from "../../config/config.js";
 import { normalizeResolvedSecretInputString } from "../../config/types.secrets.js";
 import { normalizeSecretInput } from "../../utils/normalize-secret-input.js";
 import { withTrustedWebToolsEndpoint } from "./web-guarded-fetch.js";
@@ -14,7 +14,7 @@ import {
   writeCache,
 } from "./web-shared.js";
 
-export type SearchConfigRecord = (NonNullable<OpenClawConfig["tools"]>["web"] extends infer Web
+export type SearchConfigRecord = (NonNullable<FoxFangConfig["tools"]>["web"] extends infer Web
   ? Web extends { search?: infer Search }
     ? Search
     : never
@@ -31,7 +31,7 @@ type UnsupportedWebSearchFilterName =
 export const DEFAULT_SEARCH_COUNT = 5;
 export const MAX_SEARCH_COUNT = 10;
 
-const SEARCH_CACHE_KEY = Symbol.for("openclaw.web-search.cache");
+const SEARCH_CACHE_KEY = Symbol.for("foxfang.web-search.cache");
 
 function getSharedSearchCache(): Map<string, CacheEntry<Record<string, unknown>>> {
   const root = globalThis as Record<PropertyKey, unknown>;
@@ -222,7 +222,7 @@ export function parseIsoDateRange(params: {
       message: string;
       docs: string;
     } {
-  const docs = params.docs ?? "https://docs.openclaw.ai/tools/web";
+  const docs = params.docs ?? "https://docs.foxfang.ai/tools/web";
   const dateAfter = params.rawDateAfter ? normalizeToIsoDate(params.rawDateAfter) : undefined;
   if (params.rawDateAfter && !dateAfter) {
     return {
@@ -333,7 +333,7 @@ function describeUnsupportedSearchFilter(name: UnsupportedWebSearchFilterName): 
 export function buildUnsupportedSearchFilterResponse(
   params: Record<string, unknown>,
   provider: string,
-  docs = "https://docs.openclaw.ai/tools/web",
+  docs = "https://docs.foxfang.ai/tools/web",
 ):
   | {
       error: string;

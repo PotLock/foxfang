@@ -1,6 +1,6 @@
-import { buildMentionRegexes, normalizeMentionText } from "openclaw/plugin-sdk/channel-inbound";
-import type { loadConfig } from "openclaw/plugin-sdk/config-runtime";
-import { isSelfChatMode, normalizeE164 } from "openclaw/plugin-sdk/text-runtime";
+import { buildMentionRegexes, normalizeMentionText } from "foxfang/plugin-sdk/channel-inbound";
+import type { loadConfig } from "foxfang/plugin-sdk/config-runtime";
+import { isSelfChatMode, normalizeE164 } from "foxfang/plugin-sdk/text-runtime";
 import {
   getComparableIdentityValues,
   getMentionIdentities,

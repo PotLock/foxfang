@@ -1,6 +1,6 @@
-import { createRunStateMachine } from "openclaw/plugin-sdk/channel-lifecycle";
-import { KeyedAsyncQueue } from "openclaw/plugin-sdk/core";
-import { danger, formatDurationSeconds } from "openclaw/plugin-sdk/runtime-env";
+import { createRunStateMachine } from "foxfang/plugin-sdk/channel-lifecycle";
+import { KeyedAsyncQueue } from "foxfang/plugin-sdk/core";
+import { danger, formatDurationSeconds } from "foxfang/plugin-sdk/runtime-env";
 import { materializeDiscordInboundJob, type DiscordInboundJob } from "./inbound-job.js";
 import type { RuntimeEnv } from "./message-handler.preflight.types.js";
 import { processDiscordMessage } from "./message-handler.process.js";

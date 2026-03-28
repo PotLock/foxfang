@@ -4,17 +4,17 @@ import {
   formatLocationText,
   resolveInboundSessionEnvelopeContext,
   toLocationContext,
-} from "openclaw/plugin-sdk/channel-inbound";
-import { recordChannelActivity } from "openclaw/plugin-sdk/channel-runtime";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
+} from "foxfang/plugin-sdk/channel-inbound";
+import { recordChannelActivity } from "foxfang/plugin-sdk/channel-runtime";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
 import {
   recordInboundSession,
   resolvePinnedMainDmOwnerFromAllowlist,
-} from "openclaw/plugin-sdk/conversation-runtime";
-import type { HistoryEntry } from "openclaw/plugin-sdk/reply-history";
-import { finalizeInboundContext } from "openclaw/plugin-sdk/reply-runtime";
-import { resolveAgentRoute } from "openclaw/plugin-sdk/routing";
-import { logVerbose, shouldLogVerbose } from "openclaw/plugin-sdk/runtime-env";
+} from "foxfang/plugin-sdk/conversation-runtime";
+import type { HistoryEntry } from "foxfang/plugin-sdk/reply-history";
+import { finalizeInboundContext } from "foxfang/plugin-sdk/reply-runtime";
+import { resolveAgentRoute } from "foxfang/plugin-sdk/routing";
+import { logVerbose, shouldLogVerbose } from "foxfang/plugin-sdk/runtime-env";
 import { normalizeAllowFrom } from "./bot-access.js";
 import { resolveLineGroupConfigEntry, resolveLineGroupHistoryKey } from "./group-keys.js";
 import type { LineGroupConfig, ResolvedLineAccount } from "./types.js";
@@ -27,7 +27,7 @@ interface MediaRef {
 interface BuildLineMessageContextParams {
   event: MessageEvent;
   allMedia: MediaRef[];
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   account: ResolvedLineAccount;
   commandAuthorized: boolean;
   groupHistories?: Map<string, HistoryEntry[]>;
@@ -73,7 +73,7 @@ function buildPeerId(source: EventSource): string {
 
 function resolveLineInboundRoute(params: {
   source: EventSource;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   account: ResolvedLineAccount;
 }): {
   userId?: string;
@@ -226,7 +226,7 @@ function resolveLineGroupSystemPrompt(
 }
 
 async function finalizeLineInboundContext(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   account: ResolvedLineAccount;
   event: MessageEvent | PostbackEvent;
   route: LineRouteInfo;
@@ -453,7 +453,7 @@ export async function buildLineMessageContext(params: BuildLineMessageContextPar
 
 export async function buildLinePostbackContext(params: {
   event: PostbackEvent;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   account: ResolvedLineAccount;
   commandAuthorized: boolean;
 }) {

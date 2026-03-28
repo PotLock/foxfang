@@ -1,6 +1,6 @@
-import type { KilocodeModelCatalogEntry } from "openclaw/plugin-sdk/provider-model-shared";
-import type { ModelDefinitionConfig } from "openclaw/plugin-sdk/provider-model-shared";
-import { createSubsystemLogger } from "openclaw/plugin-sdk/runtime-env";
+import type { KilocodeModelCatalogEntry } from "foxfang/plugin-sdk/provider-model-shared";
+import type { ModelDefinitionConfig } from "foxfang/plugin-sdk/provider-model-shared";
+import { createSubsystemLogger } from "foxfang/plugin-sdk/runtime-env";
 
 const log = createSubsystemLogger("kilocode-models");
 

@@ -1,13 +1,13 @@
-import { loadConfig, type OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import { resolveMarkdownTableMode } from "openclaw/plugin-sdk/config-runtime";
-import { generateSecureUuid } from "openclaw/plugin-sdk/core";
-import { normalizePollInput, type PollInput } from "openclaw/plugin-sdk/media-runtime";
-import { createSubsystemLogger } from "openclaw/plugin-sdk/runtime-env";
-import { getChildLogger } from "openclaw/plugin-sdk/text-runtime";
-import { redactIdentifier } from "openclaw/plugin-sdk/text-runtime";
-import { convertMarkdownTables } from "openclaw/plugin-sdk/text-runtime";
-import { markdownToWhatsApp } from "openclaw/plugin-sdk/text-runtime";
-import { toWhatsappJid } from "openclaw/plugin-sdk/text-runtime";
+import { loadConfig, type FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import { resolveMarkdownTableMode } from "foxfang/plugin-sdk/config-runtime";
+import { generateSecureUuid } from "foxfang/plugin-sdk/core";
+import { normalizePollInput, type PollInput } from "foxfang/plugin-sdk/media-runtime";
+import { createSubsystemLogger } from "foxfang/plugin-sdk/runtime-env";
+import { getChildLogger } from "foxfang/plugin-sdk/text-runtime";
+import { redactIdentifier } from "foxfang/plugin-sdk/text-runtime";
+import { convertMarkdownTables } from "foxfang/plugin-sdk/text-runtime";
+import { markdownToWhatsApp } from "foxfang/plugin-sdk/text-runtime";
+import { toWhatsappJid } from "foxfang/plugin-sdk/text-runtime";
 import { resolveWhatsAppAccount, resolveWhatsAppMediaMaxBytes } from "./accounts.js";
 import { type ActiveWebSendOptions, requireActiveWebListener } from "./active-listener.js";
 import { loadWebMedia } from "./media.js";
@@ -19,7 +19,7 @@ export async function sendMessageWhatsApp(
   body: string,
   options: {
     verbose: boolean;
-    cfg?: OpenClawConfig;
+    cfg?: FoxFangConfig;
     mediaUrl?: string;
     mediaLocalRoots?: readonly string[];
     gifPlayback?: boolean;
@@ -160,7 +160,7 @@ export async function sendReactionWhatsApp(
 export async function sendPollWhatsApp(
   to: string,
   poll: PollInput,
-  options: { verbose: boolean; accountId?: string; cfg?: OpenClawConfig },
+  options: { verbose: boolean; accountId?: string; cfg?: FoxFangConfig },
 ): Promise<{ messageId: string; toJid: string }> {
   const correlationId = generateSecureUuid();
   const startedAt = Date.now();

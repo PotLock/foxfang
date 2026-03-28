@@ -1,6 +1,6 @@
-export { definePluginEntry } from "openclaw/plugin-sdk/plugin-entry";
+export { definePluginEntry } from "foxfang/plugin-sdk/plugin-entry";
 export type {
-  OpenClawPluginApi,
+  FoxFangPluginApi,
   ProviderAuthContext,
   ProviderAuthResult,
-} from "openclaw/plugin-sdk/core";
+} from "foxfang/plugin-sdk/core";

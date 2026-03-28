@@ -4,21 +4,21 @@ import {
   createTestWizardPrompter,
   runSetupWizardConfigure,
 } from "../../../test/helpers/extensions/setup-wizard.js";
-import type { OpenClawConfig } from "../runtime-api.js";
+import type { FoxFangConfig } from "../runtime-api.js";
 import "./zalo-js.test-mocks.js";
 import { zalouserPlugin } from "./channel.js";
 
 const zalouserConfigure = createPluginSetupWizardConfigure(zalouserPlugin);
 
 async function runSetup(params: {
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   prompter: ReturnType<typeof createTestWizardPrompter>;
   options?: Record<string, unknown>;
   forceAllowFrom?: boolean;
 }) {
   return await runSetupWizardConfigure({
     configure: zalouserConfigure,
-    cfg: params.cfg as OpenClawConfig | undefined,
+    cfg: params.cfg as FoxFangConfig | undefined,
     prompter: params.prompter,
     options: params.options,
     forceAllowFrom: params.forceAllowFrom,
@@ -214,7 +214,7 @@ describe("zalouser setup wizard", () => {
         plugins: {
           allow: ["telegram"],
         },
-      } as OpenClawConfig,
+      } as FoxFangConfig,
       prompter,
     });
 

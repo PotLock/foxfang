@@ -1,15 +1,15 @@
-import { buildDmGroupAccountAllowlistAdapter } from "openclaw/plugin-sdk/allowlist-config-edit";
-import { createPairingPrefixStripper } from "openclaw/plugin-sdk/channel-pairing";
+import { buildDmGroupAccountAllowlistAdapter } from "foxfang/plugin-sdk/allowlist-config-edit";
+import { createPairingPrefixStripper } from "foxfang/plugin-sdk/channel-pairing";
 import {
   attachChannelToResult,
   attachChannelToResults,
-} from "openclaw/plugin-sdk/channel-send-result";
-import { resolveMarkdownTableMode } from "openclaw/plugin-sdk/config-runtime";
-import { createChatChannelPlugin } from "openclaw/plugin-sdk/core";
-import { resolveOutboundSendDep } from "openclaw/plugin-sdk/outbound-runtime";
-import { resolveTextChunkLimit } from "openclaw/plugin-sdk/reply-runtime";
-import { buildOutboundBaseSessionKey, type RoutePeer } from "openclaw/plugin-sdk/routing";
-import { createComputedAccountStatusAdapter } from "openclaw/plugin-sdk/status-helpers";
+} from "foxfang/plugin-sdk/channel-send-result";
+import { resolveMarkdownTableMode } from "foxfang/plugin-sdk/config-runtime";
+import { createChatChannelPlugin } from "foxfang/plugin-sdk/core";
+import { resolveOutboundSendDep } from "foxfang/plugin-sdk/outbound-runtime";
+import { resolveTextChunkLimit } from "foxfang/plugin-sdk/reply-runtime";
+import { buildOutboundBaseSessionKey, type RoutePeer } from "foxfang/plugin-sdk/routing";
+import { createComputedAccountStatusAdapter } from "foxfang/plugin-sdk/status-helpers";
 import { resolveSignalAccount, type ResolvedSignalAccount } from "./accounts.js";
 import { markdownToSignalTextChunks } from "./format.js";
 import { signalMessageActions } from "./message-actions.js";

@@ -115,7 +115,7 @@ describe("bundled plugin metadata", () => {
   });
 
   it("prefers built generated paths when present and falls back to source paths", () => {
-    const tempRoot = createGeneratedPluginTempRoot("openclaw-bundled-plugin-metadata-");
+    const tempRoot = createGeneratedPluginTempRoot("foxfang-bundled-plugin-metadata-");
 
     fs.mkdirSync(path.join(tempRoot, "plugin"), { recursive: true });
     fs.writeFileSync(path.join(tempRoot, "plugin", "index.ts"), "export {};\n", "utf8");
@@ -126,16 +126,16 @@ describe("bundled plugin metadata", () => {
   });
 
   it("supports check mode for stale generated artifacts", async () => {
-    const tempRoot = createGeneratedPluginTempRoot("openclaw-bundled-plugin-generated-");
+    const tempRoot = createGeneratedPluginTempRoot("foxfang-bundled-plugin-generated-");
 
     writeJson(path.join(tempRoot, "extensions", "alpha", "package.json"), {
-      name: "@openclaw/alpha",
+      name: "@foxfang/alpha",
       version: "0.0.1",
-      openclaw: {
+      foxfang: {
         extensions: ["./index.ts"],
       },
     });
-    writeJson(path.join(tempRoot, "extensions", "alpha", "openclaw.plugin.json"), {
+    writeJson(path.join(tempRoot, "extensions", "alpha", "foxfang.plugin.json"), {
       id: "alpha",
       configSchema: { type: "object" },
     });
@@ -165,12 +165,12 @@ describe("bundled plugin metadata", () => {
   });
 
   it("merges generated channel schema metadata with manifest-owned channel config fields", async () => {
-    const tempRoot = createGeneratedPluginTempRoot("openclaw-bundled-plugin-channel-configs-");
+    const tempRoot = createGeneratedPluginTempRoot("foxfang-bundled-plugin-channel-configs-");
 
     writeJson(path.join(tempRoot, "extensions", "alpha", "package.json"), {
-      name: "@openclaw/alpha",
+      name: "@foxfang/alpha",
       version: "0.0.1",
-      openclaw: {
+      foxfang: {
         extensions: ["./index.ts"],
         channel: {
           id: "alpha",
@@ -180,7 +180,7 @@ describe("bundled plugin metadata", () => {
         },
       },
     });
-    writeJson(path.join(tempRoot, "extensions", "alpha", "openclaw.plugin.json"), {
+    writeJson(path.join(tempRoot, "extensions", "alpha", "foxfang.plugin.json"), {
       id: "alpha",
       channels: ["alpha"],
       configSchema: { type: "object" },
@@ -241,17 +241,17 @@ describe("bundled plugin metadata", () => {
   });
 
   it("captures top-level public surface artifacts without duplicating the primary entrypoints", async () => {
-    const tempRoot = createGeneratedPluginTempRoot("openclaw-bundled-plugin-public-artifacts-");
+    const tempRoot = createGeneratedPluginTempRoot("foxfang-bundled-plugin-public-artifacts-");
 
     writeJson(path.join(tempRoot, "extensions", "alpha", "package.json"), {
-      name: "@openclaw/alpha",
+      name: "@foxfang/alpha",
       version: "0.0.1",
-      openclaw: {
+      foxfang: {
         extensions: ["./index.ts"],
         setupEntry: "./setup-entry.ts",
       },
     });
-    writeJson(path.join(tempRoot, "extensions", "alpha", "openclaw.plugin.json"), {
+    writeJson(path.join(tempRoot, "extensions", "alpha", "foxfang.plugin.json"), {
       id: "alpha",
       configSchema: { type: "object" },
     });

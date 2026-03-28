@@ -17,24 +17,24 @@ x-i18n:
 # CLI 新手引导
 
 CLI 新手引导是在 macOS、
-Linux 或 Windows（通过 WSL2；强烈推荐）上设置 OpenClaw 的**推荐**方式。
+Linux 或 Windows（通过 WSL2；强烈推荐）上设置 FoxFang 的**推荐**方式。
 它可在一次引导式流程中配置本地 Gateway 网关或远程 Gateway 网关连接，以及渠道、Skills
 和工作区默认值。
 
 ```bash
-openclaw onboard
+foxfang onboard
 ```
 
 <Info>
 最快的首次聊天方式：打开 Control UI（无需设置渠道）。运行
-`openclaw dashboard` 并在浏览器中聊天。文档：[Dashboard](/web/dashboard)。
+`foxfang dashboard` 并在浏览器中聊天。文档：[Dashboard](/web/dashboard)。
 </Info>
 
 若要稍后重新配置：
 
 ```bash
-openclaw configure
-openclaw agents add <name>
+foxfang configure
+foxfang agents add <name>
 ```
 
 <Note>
@@ -45,7 +45,7 @@ openclaw agents add <name>
 CLI 新手引导包含一个 web search 步骤，你可以选择一个提供商
 （Perplexity、Brave、Gemini、Grok 或 Kimi），并粘贴你的 API 密钥，以便智能体
 可以使用 `web_search`。你也可以稍后通过
-`openclaw configure --section web` 进行配置。文档：[Web 工具](/tools/web)。
+`foxfang configure --section web` 进行配置。文档：[Web 工具](/tools/web)。
 </Tip>
 
 ## 快速开始与高级模式
@@ -93,7 +93,7 @@ CLI 新手引导包含一个 web search 步骤，你可以选择一个提供商
 <Note>
 重新运行新手引导**不会**清除任何内容，除非你显式选择 **Reset**（或传入 `--reset`）。
 CLI `--reset` 默认会重置配置、凭证和会话；如需包含工作区，请使用 `--reset-scope full`。
-如果配置无效或包含旧版键，新手引导会先要求你运行 `openclaw doctor`。
+如果配置无效或包含旧版键，新手引导会先要求你运行 `foxfang doctor`。
 </Note>
 
 **远程模式**只会配置本地客户端以连接到其他地方的 Gateway 网关。
@@ -101,7 +101,7 @@ CLI `--reset` 默认会重置配置、凭证和会话；如需包含工作区，
 
 ## 添加另一个智能体
 
-使用 `openclaw agents add <name>` 创建一个单独的智能体，它拥有自己的工作区、
+使用 `foxfang agents add <name>` 创建一个单独的智能体，它拥有自己的工作区、
 会话和认证配置文件。不带 `--workspace` 运行会启动新手引导。
 
 它会设置：
@@ -126,7 +126,7 @@ CLI `--reset` 默认会重置配置、凭证和会话；如需包含工作区，
 
 ## 相关文档
 
-- CLI 命令参考：[`openclaw onboard`](/cli/onboard)
+- CLI 命令参考：[`foxfang onboard`](/cli/onboard)
 - 新手引导概览：[Onboarding Overview](/start/onboarding-overview)
 - macOS 应用新手引导：[新手引导](/start/onboarding)
 - 智能体首次运行仪式：[智能体引导](/start/bootstrapping)

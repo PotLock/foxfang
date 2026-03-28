@@ -1,12 +1,12 @@
-import { describeAccountSnapshot } from "openclaw/plugin-sdk/account-helpers";
+import { describeAccountSnapshot } from "foxfang/plugin-sdk/account-helpers";
 import {
   adaptScopedAccountAccessor,
   createScopedChannelConfigAdapter,
   createScopedDmSecurityResolver,
-} from "openclaw/plugin-sdk/channel-config-helpers";
-import { createAllowlistProviderRouteAllowlistWarningCollector } from "openclaw/plugin-sdk/channel-policy";
-import { createChannelPluginBase } from "openclaw/plugin-sdk/core";
-import { createDelegatedSetupWizardProxy } from "openclaw/plugin-sdk/setup";
+} from "foxfang/plugin-sdk/channel-config-helpers";
+import { createAllowlistProviderRouteAllowlistWarningCollector } from "foxfang/plugin-sdk/channel-policy";
+import { createChannelPluginBase } from "foxfang/plugin-sdk/core";
+import { createDelegatedSetupWizardProxy } from "foxfang/plugin-sdk/setup";
 import {
   listWhatsAppAccountIds,
   resolveDefaultWhatsAppAccountId,

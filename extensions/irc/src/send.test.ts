@@ -40,7 +40,7 @@ vi.mock("./protocol.js", async () => {
   };
 });
 
-vi.mock("openclaw/plugin-sdk/config-runtime", async (importOriginal) => {
+vi.mock("foxfang/plugin-sdk/config-runtime", async (importOriginal) => {
   const original = (await importOriginal()) as Record<string, unknown>;
   return {
     ...original,
@@ -48,7 +48,7 @@ vi.mock("openclaw/plugin-sdk/config-runtime", async (importOriginal) => {
   };
 });
 
-vi.mock("openclaw/plugin-sdk/text-runtime", async (importOriginal) => {
+vi.mock("foxfang/plugin-sdk/text-runtime", async (importOriginal) => {
   const original = (await importOriginal()) as Record<string, unknown>;
   return {
     ...original,
@@ -69,7 +69,7 @@ describe("sendMessageIrc cfg threading", () => {
       channels: {
         irc: {
           host: "irc.example.com",
-          nick: "openclaw",
+          nick: "foxfang",
           accounts: {
             work: {
               host: "irc.example.com",
@@ -107,7 +107,7 @@ describe("sendMessageIrc cfg threading", () => {
       channels: {
         irc: {
           host: "irc.example.com",
-          nick: "openclaw",
+          nick: "foxfang",
         },
       },
     } as unknown as CoreConfig;
@@ -133,7 +133,7 @@ describe("sendMessageIrc cfg threading", () => {
       channels: {
         irc: {
           host: "irc.example.com",
-          nick: "openclaw",
+          nick: "foxfang",
         },
       },
     } as unknown as CoreConfig;

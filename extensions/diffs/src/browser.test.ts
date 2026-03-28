@@ -4,8 +4,8 @@ import path from "node:path";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockServerResponse } from "../../../test/helpers/extensions/mock-http-response.js";
 import { createTestPluginApi } from "../../../test/helpers/extensions/plugin-api.js";
-import type { OpenClawConfig } from "../api.js";
-import type { OpenClawPluginApi, OpenClawPluginToolContext } from "../api.js";
+import type { FoxFangConfig } from "../api.js";
+import type { FoxFangPluginApi, FoxFangPluginToolContext } from "../api.js";
 import plugin from "../index.js";
 import { createTempDiffRoot } from "./test-helpers.js";
 
@@ -35,7 +35,7 @@ describe("PlaywrightDiffScreenshotter", () => {
 
   beforeEach(async () => {
     vi.useFakeTimers();
-    ({ rootDir, cleanup: cleanupRootDir } = await createTempDiffRoot("openclaw-diffs-browser-"));
+    ({ rootDir, cleanup: cleanupRootDir } = await createTempDiffRoot("foxfang-diffs-browser-"));
     outputPath = path.join(rootDir, "preview.png");
     launchMock.mockReset();
     await resetSharedBrowserStateForTests();
@@ -233,10 +233,10 @@ describe("diffs plugin registration", () => {
     type RegisteredTool = {
       execute?: (toolCallId: string, params: Record<string, unknown>) => Promise<unknown>;
     };
-    type RegisteredHttpRouteParams = Parameters<OpenClawPluginApi["registerHttpRoute"]>[0];
+    type RegisteredHttpRouteParams = Parameters<FoxFangPluginApi["registerHttpRoute"]>[0];
 
     let registeredToolFactory:
-      | ((ctx: OpenClawPluginToolContext) => RegisteredTool | RegisteredTool[] | null | undefined)
+      | ((ctx: FoxFangPluginToolContext) => RegisteredTool | RegisteredTool[] | null | undefined)
       | undefined;
     let registeredHttpRouteHandler: RegisteredHttpRouteParams["handler"] | undefined;
 
@@ -263,7 +263,7 @@ describe("diffs plugin registration", () => {
         },
       },
       runtime: {} as never,
-      registerTool(tool: Parameters<OpenClawPluginApi["registerTool"]>[0]) {
+      registerTool(tool: Parameters<FoxFangPluginApi["registerTool"]>[0]) {
         registeredToolFactory = typeof tool === "function" ? tool : () => tool;
       },
       registerHttpRoute(params: RegisteredHttpRouteParams) {
@@ -271,7 +271,7 @@ describe("diffs plugin registration", () => {
       },
     });
 
-    plugin.register?.(api as unknown as OpenClawPluginApi);
+    plugin.register?.(api as unknown as FoxFangPluginApi);
 
     const registeredTool = registeredToolFactory?.({
       agentId: "main",
@@ -314,12 +314,12 @@ describe("diffs plugin registration", () => {
   });
 });
 
-function createConfig(): OpenClawConfig {
+function createConfig(): FoxFangConfig {
   return {
     browser: {
       executablePath: process.execPath,
     },
-  } as OpenClawConfig;
+  } as FoxFangConfig;
 }
 
 function localReq(input: {

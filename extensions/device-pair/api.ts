@@ -6,15 +6,15 @@ export {
   listDevicePairing,
   revokeDeviceBootstrapToken,
   type DeviceBootstrapProfile,
-} from "openclaw/plugin-sdk/device-bootstrap";
-export { definePluginEntry, type OpenClawPluginApi } from "openclaw/plugin-sdk/plugin-entry";
+} from "foxfang/plugin-sdk/device-bootstrap";
+export { definePluginEntry, type FoxFangPluginApi } from "foxfang/plugin-sdk/plugin-entry";
 export {
   resolveGatewayBindUrl,
   resolveGatewayPort,
   resolveTailnetHostWithRunner,
-} from "openclaw/plugin-sdk/core";
+} from "foxfang/plugin-sdk/core";
 export {
-  resolvePreferredOpenClawTmpDir,
+  resolvePreferredFoxFangTmpDir,
   runPluginCommandWithTimeout,
-} from "openclaw/plugin-sdk/sandbox";
+} from "foxfang/plugin-sdk/sandbox";
 export { renderQrPngBase64 } from "./qr-image.js";

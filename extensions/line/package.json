@@ -1,21 +1,21 @@
 {
-  "name": "@openclaw/line",
+  "name": "@foxfang/line",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw LINE channel plugin",
+  "description": "FoxFang LINE channel plugin",
   "type": "module",
   "devDependencies": {
-    "openclaw": "workspace:*"
+    "foxfang": "workspace:*"
   },
   "peerDependencies": {
-    "openclaw": ">=2026.3.27"
+    "foxfang": ">=2026.3.27"
   },
   "peerDependenciesMeta": {
-    "openclaw": {
+    "foxfang": {
       "optional": true
     }
   },
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ],
@@ -31,7 +31,7 @@
       "quickstartAllowFrom": true
     },
     "install": {
-      "npmSpec": "@openclaw/line",
+      "npmSpec": "@foxfang/line",
       "localPath": "extensions/line",
       "defaultChoice": "npm",
       "minHostVersion": ">=2026.3.27"

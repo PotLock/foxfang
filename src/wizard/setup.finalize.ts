@@ -22,7 +22,7 @@ import {
   resolveControlUiLinks,
 } from "../commands/onboard-helpers.js";
 import type { OnboardOptions } from "../commands/onboard-types.js";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import { describeGatewayServiceRestart, resolveGatewayService } from "../daemon/service.js";
 import { isSystemdUserServiceAvailable } from "../daemon/systemd.js";
 import { ensureControlUiAssetsBuilt } from "../infra/control-ui-assets.js";
@@ -39,8 +39,8 @@ import type { GatewayWizardSettings, WizardFlow } from "./setup.types.js";
 type FinalizeOnboardingOptions = {
   flow: WizardFlow;
   opts: OnboardOptions;
-  baseConfig: OpenClawConfig;
-  nextConfig: OpenClawConfig;
+  baseConfig: FoxFangConfig;
+  nextConfig: FoxFangConfig;
   workspaceDir: string;
   settings: GatewayWizardSettings;
   prompter: WizardPrompter;
@@ -246,8 +246,8 @@ export async function finalizeSetupWizard(
         await prompter.note(
           [
             "Docs:",
-            "https://docs.openclaw.ai/gateway/health",
-            "https://docs.openclaw.ai/gateway/troubleshooting",
+            "https://docs.foxfang.ai/gateway/health",
+            "https://docs.foxfang.ai/gateway/troubleshooting",
           ].join("\n"),
           "Health check help",
         );
@@ -263,8 +263,8 @@ export async function finalizeSetupWizard(
       await prompter.note(
         [
           "Docs:",
-          "https://docs.openclaw.ai/gateway/health",
-          "https://docs.openclaw.ai/gateway/troubleshooting",
+          "https://docs.foxfang.ai/gateway/health",
+          "https://docs.foxfang.ai/gateway/troubleshooting",
         ].join("\n"),
         "Health check help",
       );
@@ -273,9 +273,9 @@ export async function finalizeSetupWizard(
         [
           "Gateway not detected yet.",
           "Setup was run without Gateway service install, so no background gateway is expected.",
-          `Start now: ${formatCliCommand("openclaw gateway run")}`,
-          `Or rerun with: ${formatCliCommand("openclaw onboard --install-daemon")}`,
-          `Or skip this probe next time: ${formatCliCommand("openclaw onboard --skip-health")}`,
+          `Start now: ${formatCliCommand("foxfang gateway run")}`,
+          `Or rerun with: ${formatCliCommand("foxfang onboard --install-daemon")}`,
+          `Or skip this probe next time: ${formatCliCommand("foxfang onboard --skip-health")}`,
         ].join("\n"),
         "Gateway",
       );
@@ -361,7 +361,7 @@ export async function finalizeSetupWizard(
         : undefined,
       `Gateway WS: ${links.wsUrl}`,
       gatewayStatusLine,
-      "Docs: https://docs.openclaw.ai/web/control-ui",
+      "Docs: https://docs.foxfang.ai/web/control-ui",
     ]
       .filter(Boolean)
       .join("\n"),
@@ -390,11 +390,11 @@ export async function finalizeSetupWizard(
     await prompter.note(
       [
         "Gateway token: shared auth for the Gateway + Control UI.",
-        "Stored in: ~/.foxfang/openclaw.json (gateway.auth.token) or OPENCLAW_GATEWAY_TOKEN.",
-        `View token: ${formatCliCommand("openclaw config get gateway.auth.token")}`,
-        `Generate token: ${formatCliCommand("openclaw doctor --generate-gateway-token")}`,
+        "Stored in: ~/.foxfang/foxfang.json (gateway.auth.token) or FOXFANG_GATEWAY_TOKEN.",
+        `View token: ${formatCliCommand("foxfang config get gateway.auth.token")}`,
+        `Generate token: ${formatCliCommand("foxfang doctor --generate-gateway-token")}`,
         "Web UI keeps dashboard URL tokens in memory for the current tab and strips them from the URL after load.",
-        `Open the dashboard anytime: ${formatCliCommand("openclaw dashboard --no-open")}`,
+        `Open the dashboard anytime: ${formatCliCommand("foxfang dashboard --no-open")}`,
         "If prompted: paste the token into Control UI settings (or use the tokenized dashboard URL).",
       ].join("\n"),
       "Token",
@@ -443,8 +443,8 @@ export async function finalizeSetupWizard(
         [
           `Dashboard link (with token): ${authedUrl}`,
           controlUiOpened
-            ? "Opened in your browser. Keep that tab to control OpenClaw."
-            : "Copy/paste this URL in a browser on this machine to control OpenClaw.",
+            ? "Opened in your browser. Keep that tab to control FoxFang."
+            : "Copy/paste this URL in a browser on this machine to control FoxFang.",
           controlUiOpenHint,
         ]
           .filter(Boolean)
@@ -453,7 +453,7 @@ export async function finalizeSetupWizard(
       );
     } else {
       await prompter.note(
-        `When you're ready: ${formatCliCommand("openclaw dashboard --no-open")}`,
+        `When you're ready: ${formatCliCommand("foxfang dashboard --no-open")}`,
         "Later",
       );
     }
@@ -464,13 +464,13 @@ export async function finalizeSetupWizard(
   await prompter.note(
     [
       "Back up your agent workspace.",
-      "Docs: https://docs.openclaw.ai/concepts/agent-workspace",
+      "Docs: https://docs.foxfang.ai/concepts/agent-workspace",
     ].join("\n"),
     "Workspace backup",
   );
 
   await prompter.note(
-    "Running agents on your computer is risky — harden your setup: https://docs.openclaw.ai/security",
+    "Running agents on your computer is risky — harden your setup: https://docs.foxfang.ai/security",
     "Security",
   );
 
@@ -505,8 +505,8 @@ export async function finalizeSetupWizard(
       [
         `Dashboard link (with token): ${authedUrl}`,
         controlUiOpened
-          ? "Opened in your browser. Keep that tab to control OpenClaw."
-          : "Copy/paste this URL in a browser on this machine to control OpenClaw.",
+          ? "Opened in your browser. Keep that tab to control FoxFang."
+          : "Copy/paste this URL in a browser on this machine to control FoxFang.",
         controlUiOpenHint,
       ]
         .filter(Boolean)
@@ -539,9 +539,9 @@ export async function finalizeSetupWizard(
         [
           `Web search provider ${label} is selected but unavailable under the current plugin policy.`,
           "web_search will not work until the provider is re-enabled or a different provider is selected.",
-          `  ${formatCliCommand("openclaw configure --section web")}`,
+          `  ${formatCliCommand("foxfang configure --section web")}`,
           "",
-          "Docs: https://docs.openclaw.ai/tools/web",
+          "Docs: https://docs.foxfang.ai/tools/web",
         ].join("\n"),
         "Web search",
       );
@@ -552,7 +552,7 @@ export async function finalizeSetupWizard(
           "",
           `Provider: ${label}`,
           ...(keySource ? [keySource] : []),
-          "Docs: https://docs.openclaw.ai/tools/web",
+          "Docs: https://docs.foxfang.ai/tools/web",
         ].join("\n"),
         "Web search",
       );
@@ -561,10 +561,10 @@ export async function finalizeSetupWizard(
         [
           `Provider ${label} is selected but no API key was found.`,
           "web_search will not work until a key is added.",
-          `  ${formatCliCommand("openclaw configure --section web")}`,
+          `  ${formatCliCommand("foxfang configure --section web")}`,
           "",
-          `Get your key at: ${entry?.signupUrl ?? "https://docs.openclaw.ai/tools/web"}`,
-          "Docs: https://docs.openclaw.ai/tools/web",
+          `Get your key at: ${entry?.signupUrl ?? "https://docs.foxfang.ai/tools/web"}`,
+          "Docs: https://docs.foxfang.ai/tools/web",
         ].join("\n"),
         "Web search",
       );
@@ -572,9 +572,9 @@ export async function finalizeSetupWizard(
       await prompter.note(
         [
           `Web search (${label}) is configured but disabled.`,
-          `Re-enable: ${formatCliCommand("openclaw configure --section web")}`,
+          `Re-enable: ${formatCliCommand("foxfang configure --section web")}`,
           "",
-          "Docs: https://docs.openclaw.ai/tools/web",
+          "Docs: https://docs.foxfang.ai/tools/web",
         ].join("\n"),
         "Web search",
       );
@@ -590,7 +590,7 @@ export async function finalizeSetupWizard(
       await prompter.note(
         [
           `Web search is available via ${legacyDetected.label} (auto-detected).`,
-          "Docs: https://docs.openclaw.ai/tools/web",
+          "Docs: https://docs.foxfang.ai/tools/web",
         ].join("\n"),
         "Web search",
       );
@@ -598,9 +598,9 @@ export async function finalizeSetupWizard(
       await prompter.note(
         [
           "Web search was skipped. You can enable it later:",
-          `  ${formatCliCommand("openclaw configure --section web")}`,
+          `  ${formatCliCommand("foxfang configure --section web")}`,
           "",
-          "Docs: https://docs.openclaw.ai/tools/web",
+          "Docs: https://docs.foxfang.ai/tools/web",
         ].join("\n"),
         "Web search",
       );
@@ -608,16 +608,16 @@ export async function finalizeSetupWizard(
   }
 
   await prompter.note(
-    'What now: https://openclaw.ai/showcase ("What People Are Building").',
+    'What now: https://foxfang.ai/showcase ("What People Are Building").',
     "What now",
   );
 
   await prompter.outro(
     controlUiOpened
-      ? "Onboarding complete. Dashboard opened; keep that tab to control OpenClaw."
+      ? "Onboarding complete. Dashboard opened; keep that tab to control FoxFang."
       : seededInBackground
         ? "Onboarding complete. Web UI seeded in the background; open it anytime with the dashboard link above."
-        : "Onboarding complete. Use the dashboard link above to control OpenClaw.",
+        : "Onboarding complete. Use the dashboard link above to control FoxFang.",
   );
 
   return { launchedTui };

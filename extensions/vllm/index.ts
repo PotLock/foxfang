@@ -1,8 +1,8 @@
 import {
   definePluginEntry,
-  type OpenClawPluginApi,
+  type FoxFangPluginApi,
   type ProviderAuthMethodNonInteractiveContext,
-} from "openclaw/plugin-sdk/plugin-entry";
+} from "foxfang/plugin-sdk/plugin-entry";
 import {
   VLLM_DEFAULT_API_KEY_ENV_VAR,
   VLLM_DEFAULT_BASE_URL,
@@ -14,14 +14,14 @@ import {
 const PROVIDER_ID = "vllm";
 
 async function loadProviderSetup() {
-  return await import("openclaw/plugin-sdk/self-hosted-provider-setup");
+  return await import("foxfang/plugin-sdk/self-hosted-provider-setup");
 }
 
 export default definePluginEntry({
   id: "vllm",
   name: "vLLM Provider",
   description: "Bundled vLLM provider plugin",
-  register(api: OpenClawPluginApi) {
+  register(api: FoxFangPluginApi) {
     api.registerProvider({
       id: PROVIDER_ID,
       label: "vLLM",
@@ -87,8 +87,8 @@ export default definePluginEntry({
       },
       buildUnknownModelHint: () =>
         "vLLM requires authentication to be registered as a provider. " +
-        'Set VLLM_API_KEY (any value works) or run "openclaw configure". ' +
-        "See: https://docs.openclaw.ai/providers/vllm",
+        'Set VLLM_API_KEY (any value works) or run "foxfang configure". ' +
+        "See: https://docs.foxfang.ai/providers/vllm",
     });
   },
 });

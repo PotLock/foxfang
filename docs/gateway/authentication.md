@@ -8,7 +8,7 @@ title: "Authentication"
 
 # Authentication
 
-OpenClaw supports OAuth and API keys for model providers. For always-on gateway
+FoxFang supports OAuth and API keys for model providers. For always-on gateway
 hosts, API keys are usually the most predictable option. Subscription/OAuth
 flows are also supported when they match your provider account model.
 
@@ -26,11 +26,11 @@ For Anthropic specifically, API key auth is the safe path and is recommended
 over subscription setup-token auth.
 
 1. Create an API key in your provider console.
-2. Put it on the **gateway host** (the machine running `openclaw gateway`).
+2. Put it on the **gateway host** (the machine running `foxfang gateway`).
 
 ```bash
 export <PROVIDER>_API_KEY="..."
-openclaw models status
+foxfang models status
 ```
 
 3. If the Gateway runs under systemd/launchd, prefer putting the key in
@@ -45,12 +45,12 @@ EOF
 Then restart the daemon (or restart your Gateway process) and re-check:
 
 ```bash
-openclaw models status
-openclaw doctor
+foxfang models status
+foxfang doctor
 ```
 
 If you’d rather not manage env vars yourself, onboarding can store
-API keys for daemon use: `openclaw onboard`.
+API keys for daemon use: `foxfang onboard`.
 
 See [Help](/help) for details on env inheritance (`env.shellEnv`,
 `~/.foxfang/.env`, systemd/launchd).
@@ -64,16 +64,16 @@ it on the **gateway host**:
 claude setup-token
 ```
 
-Then paste it into OpenClaw:
+Then paste it into FoxFang:
 
 ```bash
-openclaw models auth setup-token --provider anthropic
+foxfang models auth setup-token --provider anthropic
 ```
 
 If the token was created on another machine, paste it manually:
 
 ```bash
-openclaw models auth paste-token --provider anthropic
+foxfang models auth paste-token --provider anthropic
 ```
 
 If you see an Anthropic error like:
@@ -93,8 +93,8 @@ the policy risk is acceptable, and verify Anthropic's current terms yourself.
 Manual token entry (any provider; writes `auth-profiles.json` + updates config):
 
 ```bash
-openclaw models auth paste-token --provider anthropic
-openclaw models auth paste-token --provider openrouter
+foxfang models auth paste-token --provider anthropic
+foxfang models auth paste-token --provider openrouter
 ```
 
 Auth profile refs are also supported for static credentials:
@@ -105,7 +105,7 @@ Auth profile refs are also supported for static credentials:
 Automation-friendly check (exit `1` when expired/missing, `2` when expiring):
 
 ```bash
-openclaw models status --check
+foxfang models status --check
 ```
 
 Optional ops scripts (systemd/Termux) are documented here:
@@ -120,7 +120,7 @@ switch an existing Anthropic setup over to the CLI backend instead of pasting a
 setup-token:
 
 ```bash
-openclaw models auth login --provider anthropic --method cli --set-default
+foxfang models auth login --provider anthropic --method cli --set-default
 ```
 
 This keeps your existing Anthropic auth profiles for rollback, but changes the
@@ -130,14 +130,14 @@ allowlist entries under `agents.defaults.models`.
 Onboarding shortcut:
 
 ```bash
-openclaw onboard --auth-choice anthropic-cli
+foxfang onboard --auth-choice anthropic-cli
 ```
 
 ## Checking model auth status
 
 ```bash
-openclaw models status
-openclaw doctor
+foxfang models status
+foxfang doctor
 ```
 
 ## API key rotation behavior (gateway)
@@ -146,13 +146,13 @@ Some providers support retrying a request with alternative keys when an API call
 hits a provider rate limit.
 
 - Priority order:
-  - `OPENCLAW_LIVE_<PROVIDER>_KEY` (single override)
+  - `FOXFANG_LIVE_<PROVIDER>_KEY` (single override)
   - `<PROVIDER>_API_KEYS`
   - `<PROVIDER>_API_KEY`
   - `<PROVIDER>_API_KEY_*`
 - Google providers also include `GOOGLE_API_KEY` as an additional fallback.
 - The same key list is deduplicated before use.
-- OpenClaw retries with the next key only for rate-limit errors (for example
+- FoxFang retries with the next key only for rate-limit errors (for example
   `429`, `rate_limit`, `quota`, `resource exhausted`).
 - Non-rate-limit errors are not retried with alternate keys.
 - If all keys fail, the final error from the last attempt is returned.
@@ -170,9 +170,9 @@ Use `/model` (or `/model list`) for a compact picker; use `/model status` for th
 Set an explicit auth profile order override for an agent (stored in that agent’s `auth-profiles.json`):
 
 ```bash
-openclaw models auth order get --provider anthropic
-openclaw models auth order set --provider anthropic anthropic:default
-openclaw models auth order clear --provider anthropic
+foxfang models auth order get --provider anthropic
+foxfang models auth order set --provider anthropic anthropic:default
+foxfang models auth order clear --provider anthropic
 ```
 
 Use `--agent <id>` to target a specific agent; omit it to use the configured default agent.
@@ -185,12 +185,12 @@ If the Anthropic token profile is missing, run `claude setup-token` on the
 **gateway host**, then re-check:
 
 ```bash
-openclaw models status
+foxfang models status
 ```
 
 ### Token expiring/expired
 
-Run `openclaw models status` to confirm which profile is expiring. If the profile
+Run `foxfang models status` to confirm which profile is expiring. If the profile
 is missing, rerun `claude setup-token` and paste the token again.
 
 ## Requirements

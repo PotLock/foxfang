@@ -1,15 +1,15 @@
-import { describeAccountSnapshot } from "openclaw/plugin-sdk/account-helpers";
-import { formatAllowFromLowercase } from "openclaw/plugin-sdk/allow-from";
+import { describeAccountSnapshot } from "foxfang/plugin-sdk/account-helpers";
+import { formatAllowFromLowercase } from "foxfang/plugin-sdk/allow-from";
 import {
   adaptScopedAccountAccessor,
   createScopedChannelConfigAdapter,
-} from "openclaw/plugin-sdk/channel-config-helpers";
-import { createChannelPluginBase } from "openclaw/plugin-sdk/core";
+} from "foxfang/plugin-sdk/channel-config-helpers";
+import { createChannelPluginBase } from "foxfang/plugin-sdk/core";
 import {
   formatDocsLink,
   hasConfiguredSecretInput,
   patchChannelConfigForAccount,
-} from "openclaw/plugin-sdk/setup";
+} from "foxfang/plugin-sdk/setup";
 import { inspectSlackAccount } from "./account-inspect.js";
 import {
   listSlackAccountIds,
@@ -19,16 +19,16 @@ import {
 } from "./accounts.js";
 import { SlackChannelConfigSchema } from "./config-schema.js";
 import { isSlackInteractiveRepliesEnabled } from "./interactive-replies.js";
-import { getChatChannelMeta, type ChannelPlugin, type OpenClawConfig } from "./runtime-api.js";
+import { getChatChannelMeta, type ChannelPlugin, type FoxFangConfig } from "./runtime-api.js";
 
 export const SLACK_CHANNEL = "slack" as const;
 
 function buildSlackManifest(botName: string) {
-  const safeName = botName.trim() || "OpenClaw";
+  const safeName = botName.trim() || "FoxFang";
   const manifest = {
     display_information: {
       name: safeName,
-      description: `${safeName} connector for OpenClaw`,
+      description: `${safeName} connector for FoxFang`,
     },
     features: {
       bot_user: {
@@ -41,8 +41,8 @@ function buildSlackManifest(botName: string) {
       },
       slash_commands: [
         {
-          command: "/openclaw",
-          description: "Send a message to OpenClaw",
+          command: "/foxfang",
+          description: "Send a message to FoxFang",
           should_escape: false,
         },
       ],
@@ -92,7 +92,7 @@ function buildSlackManifest(botName: string) {
   return JSON.stringify(manifest, null, 2);
 }
 
-export function buildSlackSetupLines(botName = "OpenClaw"): string[] {
+export function buildSlackSetupLines(botName = "FoxFang"): string[] {
   return [
     "1) Slack API -> Create App -> From scratch or From manifest (with the JSON below)",
     "2) Add Socket Mode + enable it to get the app-level token (xapp-...)",
@@ -108,10 +108,10 @@ export function buildSlackSetupLines(botName = "OpenClaw"): string[] {
 }
 
 export function setSlackChannelAllowlist(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   accountId: string,
   channelKeys: string[],
-): OpenClawConfig {
+): FoxFangConfig {
   const channels = Object.fromEntries(channelKeys.map((key) => [key, { allow: true }]));
   return patchChannelConfigForAccount({
     cfg,

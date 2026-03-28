@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import type { TalkProviderConfig } from "../config/types.gateway.js";
 
 export type SpeechProviderId = string;
@@ -35,14 +35,14 @@ export type TtsDirectiveParseResult = {
 };
 
 export type SpeechProviderConfiguredContext = {
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   providerConfig: SpeechProviderConfig;
   timeoutMs: number;
 };
 
 export type SpeechSynthesisRequest = {
   text: string;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   providerConfig: SpeechProviderConfig;
   target: SpeechSynthesisTarget;
   providerOverrides?: SpeechProviderOverrides;
@@ -58,7 +58,7 @@ export type SpeechSynthesisResult = {
 
 export type SpeechTelephonySynthesisRequest = {
   text: string;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   providerConfig: SpeechProviderConfig;
   timeoutMs: number;
 };
@@ -80,14 +80,14 @@ export type SpeechVoiceOption = {
 };
 
 export type SpeechListVoicesRequest = {
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   providerConfig?: SpeechProviderConfig;
   apiKey?: string;
   baseUrl?: string;
 };
 
 export type SpeechProviderResolveConfigContext = {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   rawConfig: Record<string, unknown>;
   timeoutMs: number;
 };
@@ -107,7 +107,7 @@ export type SpeechDirectiveTokenParseResult = {
 };
 
 export type SpeechProviderResolveTalkConfigContext = {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   baseTtsConfig: Record<string, unknown>;
   talkProviderConfig: TalkProviderConfig;
   timeoutMs: number;

@@ -1,25 +1,25 @@
 import { Type } from "@sinclair/typebox";
-import { describeAccountSnapshot } from "openclaw/plugin-sdk/account-helpers";
-import { formatNormalizedAllowFromEntries } from "openclaw/plugin-sdk/allow-from";
-import { createMessageToolButtonsSchema } from "openclaw/plugin-sdk/channel-actions";
+import { describeAccountSnapshot } from "foxfang/plugin-sdk/account-helpers";
+import { formatNormalizedAllowFromEntries } from "foxfang/plugin-sdk/allow-from";
+import { createMessageToolButtonsSchema } from "foxfang/plugin-sdk/channel-actions";
 import {
   adaptScopedAccountAccessor,
   createScopedChannelConfigAdapter,
-} from "openclaw/plugin-sdk/channel-config-helpers";
+} from "foxfang/plugin-sdk/channel-config-helpers";
 import type {
   ChannelMessageActionAdapter,
   ChannelMessageActionName,
   ChannelMessageToolDiscovery,
-} from "openclaw/plugin-sdk/channel-contract";
-import { createLoggedPairingApprovalNotifier } from "openclaw/plugin-sdk/channel-pairing";
-import { createRestrictSendersChannelSecurity } from "openclaw/plugin-sdk/channel-policy";
-import { createChatChannelPlugin } from "openclaw/plugin-sdk/core";
-import { createChannelDirectoryAdapter } from "openclaw/plugin-sdk/directory-runtime";
-import { buildPassiveProbedChannelStatusSummary } from "openclaw/plugin-sdk/extension-shared";
+} from "foxfang/plugin-sdk/channel-contract";
+import { createLoggedPairingApprovalNotifier } from "foxfang/plugin-sdk/channel-pairing";
+import { createRestrictSendersChannelSecurity } from "foxfang/plugin-sdk/channel-policy";
+import { createChatChannelPlugin } from "foxfang/plugin-sdk/core";
+import { createChannelDirectoryAdapter } from "foxfang/plugin-sdk/directory-runtime";
+import { buildPassiveProbedChannelStatusSummary } from "foxfang/plugin-sdk/extension-shared";
 import {
   createComputedAccountStatusAdapter,
   createDefaultChannelRuntimeState,
-} from "openclaw/plugin-sdk/status-helpers";
+} from "foxfang/plugin-sdk/status-helpers";
 import { MattermostChannelConfigSchema } from "./config-surface.js";
 import { resolveMattermostGroupRequireMention } from "./group-mentions.js";
 import {
@@ -414,7 +414,7 @@ export const mattermostPlugin: ChannelPlugin<ResolvedMattermostAccount> = create
   pairing: {
     text: {
       idLabel: "mattermostUserId",
-      message: "OpenClaw: your access has been approved.",
+      message: "FoxFang: your access has been approved.",
       normalizeAllowEntry: (entry) => normalizeAllowEntry(entry),
       notify: createLoggedPairingApprovalNotifier(
         ({ id }) => `[mattermost] User ${id} approved for pairing`,

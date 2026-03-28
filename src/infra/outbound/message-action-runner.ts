@@ -13,7 +13,7 @@ import type {
   ChannelMessageActionName,
   ChannelThreadingToolContext,
 } from "../../channels/plugins/types.js";
-import type { OpenClawConfig } from "../../config/config.js";
+import type { FoxFangConfig } from "../../config/config.js";
 import { hasInteractiveReplyBlocks, hasReplyPayloadContent } from "../../interactive/payload.js";
 import {
   getAgentScopedMediaLocalRoots,
@@ -70,7 +70,7 @@ export type MessageActionRunnerGateway = {
 };
 
 export type RunMessageActionParams = {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   action: ChannelMessageActionName;
   params: Record<string, unknown>;
   defaultAccountId?: string;
@@ -176,7 +176,7 @@ function applyCrossContextMessageDecoration({
 }
 
 async function maybeApplyCrossContextMarker(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   channel: ChannelId;
   action: ChannelMessageActionName;
   target: string;
@@ -208,7 +208,7 @@ async function maybeApplyCrossContextMarker(params: {
 }
 
 async function resolveChannel(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   params: Record<string, unknown>,
   toolContext?: { currentChannelProvider?: string },
 ) {
@@ -224,7 +224,7 @@ async function resolveChannel(
 }
 
 async function resolveActionTarget(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   channel: ChannelId;
   action: ChannelMessageActionName;
   args: Record<string, unknown>;
@@ -269,7 +269,7 @@ async function resolveActionTarget(params: {
 }
 
 type ResolvedActionContext = {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   params: Record<string, unknown>;
   channel: ChannelId;
   mediaLocalRoots: readonly string[];

@@ -10,7 +10,7 @@
  */
 
 import type { IncomingMessage, ServerResponse } from "node:http";
-import type { OpenClawPluginApi } from "../runtime-api.js";
+import type { FoxFangPluginApi } from "../runtime-api.js";
 import type { MattermostConfig } from "../types.js";
 import type { ResolvedMattermostAccount } from "./accounts.js";
 import { resolveSlashCommandConfig, type MattermostRegisteredCommand } from "./slash-commands.js";
@@ -87,7 +87,7 @@ export function activateSlashCommands(params: {
   registeredCommands: MattermostRegisteredCommand[];
   triggerMap?: Map<string, string>;
   api: {
-    cfg: import("../runtime-api.js").OpenClawConfig;
+    cfg: import("../runtime-api.js").FoxFangConfig;
     runtime: import("../runtime-api.js").RuntimeEnv;
   };
   log?: (msg: string) => void;
@@ -149,7 +149,7 @@ export function deactivateSlashCommands(accountId?: string) {
  * The single HTTP route dispatches to the correct per-account handler
  * by matching the inbound token against each account's registered tokens.
  */
-export function registerSlashCommandRoute(api: OpenClawPluginApi) {
+export function registerSlashCommandRoute(api: FoxFangPluginApi) {
   const mmConfig = api.config.channels?.mattermost as MattermostConfig | undefined;
 
   // Collect callback paths from both top-level and per-account config.

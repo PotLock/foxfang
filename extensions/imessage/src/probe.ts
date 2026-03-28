@@ -1,8 +1,8 @@
-import type { BaseProbeResult } from "openclaw/plugin-sdk/channel-contract";
-import { loadConfig } from "openclaw/plugin-sdk/config-runtime";
-import { runCommandWithTimeout } from "openclaw/plugin-sdk/process-runtime";
-import type { RuntimeEnv } from "openclaw/plugin-sdk/runtime-env";
-import { detectBinary } from "openclaw/plugin-sdk/setup";
+import type { BaseProbeResult } from "foxfang/plugin-sdk/channel-contract";
+import { loadConfig } from "foxfang/plugin-sdk/config-runtime";
+import { runCommandWithTimeout } from "foxfang/plugin-sdk/process-runtime";
+import type { RuntimeEnv } from "foxfang/plugin-sdk/runtime-env";
+import { detectBinary } from "foxfang/plugin-sdk/setup";
 import { createIMessageRpcClient } from "./client.js";
 import { DEFAULT_IMESSAGE_PROBE_TIMEOUT_MS } from "./constants.js";
 

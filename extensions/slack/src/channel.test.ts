@@ -4,7 +4,7 @@ import { createRuntimeEnv } from "../../../test/helpers/extensions/runtime-env.j
 import { slackPlugin } from "./channel.js";
 import { slackOutbound } from "./outbound-adapter.js";
 import * as probeModule from "./probe.js";
-import type { OpenClawConfig } from "./runtime-api.js";
+import type { FoxFangConfig } from "./runtime-api.js";
 import { clearSlackRuntime, setSlackRuntime } from "./runtime.js";
 
 const handleSlackActionMock = vi.fn();
@@ -20,7 +20,7 @@ beforeEach(async () => {
   } as never);
 });
 
-async function getSlackConfiguredState(cfg: OpenClawConfig) {
+async function getSlackConfiguredState(cfg: FoxFangConfig) {
   const account = slackPlugin.config.resolveAccount(cfg, "default");
   return {
     configured: slackPlugin.config.isConfigured?.(account, cfg),
@@ -108,7 +108,7 @@ describe("slackPlugin actions", () => {
             appToken: "xapp-test",
           },
         },
-      } as OpenClawConfig,
+      } as FoxFangConfig,
     });
     const schema = discovery?.schema;
     if (!schema || Array.isArray(schema)) {
@@ -150,8 +150,8 @@ describe("slackPlugin status", () => {
     const probeSpy = vi.spyOn(probeModule, "probeSlack").mockResolvedValueOnce({
       ok: true,
       status: 200,
-      bot: { id: "B1", name: "openclaw-bot" },
-      team: { id: "T1", name: "OpenClaw" },
+      bot: { id: "B1", name: "foxfang-bot" },
+      team: { id: "T1", name: "FoxFang" },
     });
     clearSlackRuntime();
     const cfg = {
@@ -161,7 +161,7 @@ describe("slackPlugin status", () => {
           appToken: "xapp-test",
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     const account = slackPlugin.config.resolveAccount(cfg, "default");
 
     const result = await slackPlugin.status!.probeAccount!({
@@ -174,8 +174,8 @@ describe("slackPlugin status", () => {
     expect(result).toEqual({
       ok: true,
       status: 200,
-      bot: { id: "B1", name: "openclaw-bot" },
-      team: { id: "T1", name: "OpenClaw" },
+      bot: { id: "B1", name: "foxfang-bot" },
+      team: { id: "T1", name: "FoxFang" },
     });
   });
 });
@@ -194,7 +194,7 @@ describe("slackPlugin security", () => {
             dm: { policy: "allowlist", allowFrom: ["  slack:U123  "] },
           },
         },
-      } as OpenClawConfig,
+      } as FoxFangConfig,
       account: slackPlugin.config.resolveAccount(
         {
           channels: {
@@ -204,7 +204,7 @@ describe("slackPlugin security", () => {
               dm: { policy: "allowlist", allowFrom: ["  slack:U123  "] },
             },
           },
-        } as OpenClawConfig,
+        } as FoxFangConfig,
         "default",
       ),
     });
@@ -594,7 +594,7 @@ describe("slackPlugin outbound new targets", () => {
 
 describe("slackPlugin config", () => {
   it("treats HTTP mode accounts with bot token + signing secret as configured", async () => {
-    const cfg: OpenClawConfig = {
+    const cfg: FoxFangConfig = {
       channels: {
         slack: {
           mode: "http",
@@ -611,7 +611,7 @@ describe("slackPlugin config", () => {
   });
 
   it("keeps socket mode requiring app token", async () => {
-    const cfg: OpenClawConfig = {
+    const cfg: FoxFangConfig = {
       channels: {
         slack: {
           mode: "socket",
@@ -639,7 +639,7 @@ describe("slackPlugin config", () => {
         appTokenSource: "none",
         config: {},
       } as never,
-      cfg: {} as OpenClawConfig,
+      cfg: {} as FoxFangConfig,
       runtime: undefined,
     });
 
@@ -666,7 +666,7 @@ describe("slackPlugin config", () => {
           signingSecret: { source: "env", provider: "default", id: "SLACK_SIGNING_SECRET" },
         },
       } as never,
-      cfg: {} as OpenClawConfig,
+      cfg: {} as FoxFangConfig,
       runtime: undefined,
     });
 

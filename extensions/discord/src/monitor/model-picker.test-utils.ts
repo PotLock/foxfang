@@ -1,4 +1,4 @@
-import type { ModelsProviderData } from "openclaw/plugin-sdk/command-auth";
+import type { ModelsProviderData } from "foxfang/plugin-sdk/command-auth";
 
 export function createModelsProviderData(
   entries: Record<string, string[]>,

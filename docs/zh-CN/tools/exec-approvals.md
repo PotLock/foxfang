@@ -26,7 +26,7 @@ x-i18n:
 
 执行审批在执行主机上本地强制执行：
 
-- **gateway 主机** → gateway 机器上的 `openclaw` 进程
+- **gateway 主机** → gateway 机器上的 `foxfang` 进程
 - **node 主机** → 节点运行器（macOS 配套应用或无头节点主机）
 
 macOS 分工：
@@ -137,7 +137,7 @@ macOS 分工：
 目标选择器可选择 **Gateway**（本地审批）或 **Node**。节点必须通告 `system.execApprovals.get/set`（macOS 应用或无头节点主机）。
 如果节点尚未通告执行审批，请直接编辑其本地的 `~/.foxfang/exec-approvals.json`。
 
-CLI：`openclaw approvals` 支持 gateway 或 node 编辑（参见 [Approvals CLI](/cli/approvals)）。
+CLI：`foxfang approvals` 支持 gateway 或 node 编辑（参见 [Approvals CLI](/cli/approvals)）。
 
 ## 审批流程
 

@@ -1,4 +1,4 @@
-import { resolveMergedAccountConfig } from "openclaw/plugin-sdk/account-resolution";
+import { resolveMergedAccountConfig } from "foxfang/plugin-sdk/account-resolution";
 import {
   resolveConfiguredMatrixAccountIds,
   resolveMatrixDefaultOrOnlyAccountId,

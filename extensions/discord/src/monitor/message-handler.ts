@@ -2,10 +2,10 @@ import type { Client } from "@buape/carbon";
 import {
   createChannelInboundDebouncer,
   shouldDebounceTextInbound,
-} from "openclaw/plugin-sdk/channel-inbound";
-import { resolveOpenProviderRuntimeGroupPolicy } from "openclaw/plugin-sdk/config-runtime";
-import { createDedupeCache } from "openclaw/plugin-sdk/core";
-import { danger } from "openclaw/plugin-sdk/runtime-env";
+} from "foxfang/plugin-sdk/channel-inbound";
+import { resolveOpenProviderRuntimeGroupPolicy } from "foxfang/plugin-sdk/config-runtime";
+import { createDedupeCache } from "foxfang/plugin-sdk/core";
+import { danger } from "foxfang/plugin-sdk/runtime-env";
 import { buildDiscordInboundJob } from "./inbound-job.js";
 import {
   createDiscordInboundWorker,

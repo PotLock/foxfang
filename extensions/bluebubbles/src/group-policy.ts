@@ -2,11 +2,11 @@ import {
   resolveChannelGroupRequireMention,
   resolveChannelGroupToolsPolicy,
   type GroupToolPolicyConfig,
-} from "openclaw/plugin-sdk/channel-policy";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
+} from "foxfang/plugin-sdk/channel-policy";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
 
 type BlueBubblesGroupContext = {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId?: string | null;
   groupId?: string | null;
   senderId?: string | null;

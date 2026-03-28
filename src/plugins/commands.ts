@@ -6,7 +6,7 @@
  */
 
 import { parseExplicitTargetForChannel } from "../channels/plugins/target-parsing.js";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import { logVerbose } from "../globals.js";
 import { parseTelegramTarget } from "../plugin-sdk/telegram-runtime.js";
 import {
@@ -29,7 +29,7 @@ import {
   requestPluginConversationBinding,
 } from "./conversation-binding.js";
 import type {
-  OpenClawPluginCommandDefinition,
+  FoxFangPluginCommandDefinition,
   PluginCommandContext,
   PluginCommandResult,
 } from "./types.js";
@@ -222,7 +222,7 @@ export async function executePluginCommand(params: {
   isAuthorizedSender: boolean;
   gatewayClientScopes?: PluginCommandContext["gatewayClientScopes"];
   commandBody: string;
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   from?: PluginCommandContext["from"];
   to?: PluginCommandContext["to"];
   accountId?: PluginCommandContext["accountId"];
@@ -335,7 +335,7 @@ export function listPluginCommands(): Array<{
   }));
 }
 
-function listPluginInvocationNames(command: OpenClawPluginCommandDefinition): string[] {
+function listPluginInvocationNames(command: FoxFangPluginCommandDefinition): string[] {
   return listPluginInvocationKeys(command);
 }
 

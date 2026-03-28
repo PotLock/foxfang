@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import { resolveOpenClawAgentDir } from "../agents/agent-paths.js";
+import { resolveFoxFangAgentDir } from "../agents/agent-paths.js";
 import { normalizeProviderId } from "../agents/provider-id.js";
 import type { NormalizedUsage } from "../agents/usage.js";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import type { ModelProviderConfig } from "../config/types.models.js";
 import { getCachedGatewayModelPricing } from "../gateway/model-pricing-cache-state.js";
 
@@ -104,7 +104,7 @@ function buildProviderCostIndex(
 }
 
 function loadModelsJsonCostIndex(): Map<string, ModelCostConfig> {
-  const modelsPath = path.join(resolveOpenClawAgentDir(), "models.json");
+  const modelsPath = path.join(resolveFoxFangAgentDir(), "models.json");
   try {
     const stat = fs.statSync(modelsPath);
     if (
@@ -139,7 +139,7 @@ function loadModelsJsonCostIndex(): Map<string, ModelCostConfig> {
 function findConfiguredProviderCost(params: {
   provider?: string;
   model?: string;
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
 }): ModelCostConfig | undefined {
   const key = toResolvedModelKey(params);
   if (!key) {
@@ -151,7 +151,7 @@ function findConfiguredProviderCost(params: {
 export function resolveModelCostConfig(params: {
   provider?: string;
   model?: string;
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
 }): ModelCostConfig | undefined {
   const key = toResolvedModelKey(params);
   if (!key) {

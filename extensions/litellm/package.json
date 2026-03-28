@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/litellm-provider",
+  "name": "@foxfang/litellm-provider",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw LiteLLM provider plugin",
+  "description": "FoxFang LiteLLM provider plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

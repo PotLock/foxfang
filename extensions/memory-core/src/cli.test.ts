@@ -20,9 +20,9 @@ const resolveCommandSecretRefsViaGateway = vi.hoisted(() =>
   })),
 );
 
-vi.mock("openclaw/plugin-sdk/memory-core-host-runtime-core", async (importOriginal) => {
+vi.mock("foxfang/plugin-sdk/memory-core-host-runtime-core", async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import("openclaw/plugin-sdk/memory-core-host-runtime-core")>();
+    await importOriginal<typeof import("foxfang/plugin-sdk/memory-core-host-runtime-core")>();
   return {
     ...actual,
     loadConfig,
@@ -30,9 +30,9 @@ vi.mock("openclaw/plugin-sdk/memory-core-host-runtime-core", async (importOrigin
   };
 });
 
-vi.mock("openclaw/plugin-sdk/memory-core-host-runtime-cli", async (importOriginal) => {
+vi.mock("foxfang/plugin-sdk/memory-core-host-runtime-cli", async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import("openclaw/plugin-sdk/memory-core-host-runtime-cli")>();
+    await importOriginal<typeof import("foxfang/plugin-sdk/memory-core-host-runtime-cli")>();
   return {
     ...actual,
     resolveCommandSecretRefsViaGateway,
@@ -48,14 +48,14 @@ vi.mock("./memory/index.js", async (importOriginal) => {
 });
 
 let registerMemoryCli: typeof import("./cli.js").registerMemoryCli;
-let defaultRuntime: typeof import("openclaw/plugin-sdk/memory-core-host-runtime-cli").defaultRuntime;
-let isVerbose: typeof import("openclaw/plugin-sdk/memory-core-host-runtime-cli").isVerbose;
-let setVerbose: typeof import("openclaw/plugin-sdk/memory-core-host-runtime-cli").setVerbose;
+let defaultRuntime: typeof import("foxfang/plugin-sdk/memory-core-host-runtime-cli").defaultRuntime;
+let isVerbose: typeof import("foxfang/plugin-sdk/memory-core-host-runtime-cli").isVerbose;
+let setVerbose: typeof import("foxfang/plugin-sdk/memory-core-host-runtime-cli").setVerbose;
 
 beforeAll(async () => {
   ({ registerMemoryCli } = await import("./cli.js"));
   ({ defaultRuntime, isVerbose, setVerbose } =
-    await import("openclaw/plugin-sdk/memory-core-host-runtime-cli"));
+    await import("foxfang/plugin-sdk/memory-core-host-runtime-cli"));
 });
 
 beforeEach(() => {
@@ -88,7 +88,7 @@ describe("memory cli", () => {
       files: 0,
       chunks: 0,
       dirty: false,
-      workspaceDir: "/tmp/openclaw",
+      workspaceDir: "/tmp/foxfang",
       dbPath: "/tmp/memory.sqlite",
       provider: "openai",
       model: "text-embedding-3-small",
@@ -261,11 +261,11 @@ describe("memory cli", () => {
   it("documents memory help examples", () => {
     const helpText = getMemoryHelpText();
 
-    expect(helpText).toContain("openclaw memory status --deep");
+    expect(helpText).toContain("foxfang memory status --deep");
     expect(helpText).toContain("Probe embedding provider readiness.");
-    expect(helpText).toContain('openclaw memory search "meeting notes"');
+    expect(helpText).toContain('foxfang memory search "meeting notes"');
     expect(helpText).toContain("Quick search using positional query.");
-    expect(helpText).toContain('openclaw memory search --query "deployment" --max-results 20');
+    expect(helpText).toContain('foxfang memory search --query "deployment" --max-results 20');
     expect(helpText).toContain("Limit results for focused troubleshooting.");
   });
 

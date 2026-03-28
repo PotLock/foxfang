@@ -1,17 +1,17 @@
 import {
   createSubsystemLogger,
   resolveGlobalSingleton,
-  type OpenClawConfig,
-} from "openclaw/plugin-sdk/memory-core-host-engine-foundation";
+  type FoxFangConfig,
+} from "foxfang/plugin-sdk/memory-core-host-engine-foundation";
 import {
   resolveMemoryBackendConfig,
   type MemoryEmbeddingProbeResult,
   type MemorySearchManager,
   type MemorySyncProgressUpdate,
   type ResolvedQmdConfig,
-} from "openclaw/plugin-sdk/memory-core-host-engine-storage";
+} from "foxfang/plugin-sdk/memory-core-host-engine-storage";
 
-const MEMORY_SEARCH_MANAGER_CACHE_KEY = Symbol.for("openclaw.memorySearchManagerCache");
+const MEMORY_SEARCH_MANAGER_CACHE_KEY = Symbol.for("foxfang.memorySearchManagerCache");
 type MemorySearchManagerCacheStore = {
   qmdManagerCache: Map<string, MemorySearchManager>;
 };
@@ -41,7 +41,7 @@ export type MemorySearchManagerResult = {
 };
 
 export async function getMemorySearchManager(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   agentId: string;
   purpose?: "default" | "status";
 }): Promise<MemorySearchManagerResult> {

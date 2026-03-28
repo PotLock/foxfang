@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import { writeConfigFile } from "../config/config.js";
 import { type HookInstallUpdate, recordHookInstall } from "../hooks/installs.js";
 import { enablePluginInConfig } from "../plugins/enable.js";
@@ -13,12 +13,12 @@ import {
 } from "./plugins-command-helpers.js";
 
 export async function persistPluginInstall(params: {
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   pluginId: string;
   install: Omit<PluginInstallUpdate, "pluginId">;
   successMessage?: string;
   warningMessage?: string;
-}): Promise<OpenClawConfig> {
+}): Promise<FoxFangConfig> {
   let next = enablePluginInConfig(params.config, params.pluginId).config;
   next = recordPluginInstall(next, {
     pluginId: params.pluginId,
@@ -37,12 +37,12 @@ export async function persistPluginInstall(params: {
 }
 
 export async function persistHookPackInstall(params: {
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   hookPackId: string;
   hooks: string[];
   install: Omit<HookInstallUpdate, "hookId" | "hooks">;
   successMessage?: string;
-}): Promise<OpenClawConfig> {
+}): Promise<FoxFangConfig> {
   let next = enableInternalHookEntries(params.config, params.hooks);
   next = recordHookInstall(next, {
     hookId: params.hookPackId,

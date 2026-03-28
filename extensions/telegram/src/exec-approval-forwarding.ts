@@ -2,14 +2,14 @@ import {
   buildExecApprovalPendingReplyPayload,
   resolveExecApprovalCommandDisplay,
   type ExecApprovalRequest,
-} from "openclaw/plugin-sdk/approval-runtime";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import { normalizeMessageChannel } from "openclaw/plugin-sdk/routing";
+} from "foxfang/plugin-sdk/approval-runtime";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import { normalizeMessageChannel } from "foxfang/plugin-sdk/routing";
 import { buildTelegramExecApprovalButtons } from "./approval-buttons.js";
 import { isTelegramExecApprovalClientEnabled } from "./exec-approvals.js";
 
 export function shouldSuppressTelegramExecApprovalForwardingFallback(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   target: { channel: string; accountId?: string | null };
   request: ExecApprovalRequest;
 }): boolean {

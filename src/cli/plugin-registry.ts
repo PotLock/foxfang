@@ -6,7 +6,7 @@ import {
   resolveChannelPluginIds,
   resolveConfiguredChannelPluginIds,
 } from "../plugins/channel-plugin-ids.js";
-import { loadOpenClawPlugins } from "../plugins/loader.js";
+import { loadFoxFangPlugins } from "../plugins/loader.js";
 import { getActivePluginRegistry } from "../plugins/runtime.js";
 import type { PluginLogger } from "../plugins/types.js";
 
@@ -90,7 +90,7 @@ export function ensurePluginRegistryLoaded(options?: { scope?: PluginRegistrySco
     error: (msg) => log.error(msg),
     debug: (msg) => log.debug(msg),
   };
-  loadOpenClawPlugins({
+  loadFoxFangPlugins({
     config: resolvedConfig,
     workspaceDir,
     logger,

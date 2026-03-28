@@ -3,26 +3,26 @@
 
 export type {
   ChannelPlugin,
-  OpenClawConfig,
-  OpenClawPluginApi,
+  FoxFangConfig,
+  FoxFangPluginApi,
   PluginRuntime,
-} from "openclaw/plugin-sdk/core";
-export { clearAccountEntryFields } from "openclaw/plugin-sdk/core";
-export { buildChannelConfigSchema } from "openclaw/plugin-sdk/channel-config-schema";
-export type { ReplyPayload } from "openclaw/plugin-sdk/reply-runtime";
-export type { ChannelAccountSnapshot, ChannelGatewayContext } from "openclaw/plugin-sdk/testing";
-export type { ChannelStatusIssue } from "openclaw/plugin-sdk/channel-contract";
-export type { ChannelSetupDmPolicy, ChannelSetupWizard } from "openclaw/plugin-sdk/setup";
+} from "foxfang/plugin-sdk/core";
+export { clearAccountEntryFields } from "foxfang/plugin-sdk/core";
+export { buildChannelConfigSchema } from "foxfang/plugin-sdk/channel-config-schema";
+export type { ReplyPayload } from "foxfang/plugin-sdk/reply-runtime";
+export type { ChannelAccountSnapshot, ChannelGatewayContext } from "foxfang/plugin-sdk/testing";
+export type { ChannelStatusIssue } from "foxfang/plugin-sdk/channel-contract";
+export type { ChannelSetupDmPolicy, ChannelSetupWizard } from "foxfang/plugin-sdk/setup";
 export {
   buildComputedAccountStatusSnapshot,
   buildTokenChannelStatusSummary,
-} from "openclaw/plugin-sdk/status-helpers";
+} from "foxfang/plugin-sdk/status-helpers";
 export {
   DEFAULT_ACCOUNT_ID,
   formatDocsLink,
   setSetupChannelEnabled,
   splitSetupEntries,
-} from "openclaw/plugin-sdk/setup";
+} from "foxfang/plugin-sdk/setup";
 // Keep named exports explicit here so the runtime barrel stays self-contained
 // and plugin-sdk can re-export this file directly without reaching into
 // extension internals.

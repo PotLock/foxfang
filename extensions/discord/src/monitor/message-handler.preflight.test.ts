@@ -64,7 +64,7 @@ function createThreadBinding(
 }
 
 function createPreflightArgs(params: {
-  cfg: import("../../../../src/config/config.js").OpenClawConfig;
+  cfg: import("../../../../src/config/config.js").FoxFangConfig;
   discordConfig: DiscordConfig;
   data: DiscordMessageEvent;
   client: DiscordClient;
@@ -156,7 +156,7 @@ async function runGuildPreflight(params: {
   guildId: string;
   message: import("@buape/carbon").Message;
   discordConfig: DiscordConfig;
-  cfg?: import("../../../../src/config/config.js").OpenClawConfig;
+  cfg?: import("../../../../src/config/config.js").FoxFangConfig;
   guildEntries?: Parameters<typeof preflightDiscordMessage>[0]["guildEntries"];
   includeGuildObject?: boolean;
 }) {
@@ -280,7 +280,7 @@ describe("preflightDiscordMessage", () => {
       author: {
         id: "relay-bot-1",
         bot: true,
-        username: "OpenClaw",
+        username: "FoxFang",
       },
     });
 
@@ -312,8 +312,8 @@ describe("preflightDiscordMessage", () => {
               },
               metadata: {
                 pluginBindingOwner: "plugin",
-                pluginId: "openclaw-codex-app-server",
-                pluginRoot: "/Users/huntharo/github/openclaw-app-server",
+                pluginId: "foxfang-codex-app-server",
+                pluginRoot: "/Users/huntharo/github/foxfang-app-server",
               },
             })
           : null,
@@ -346,7 +346,7 @@ describe("preflightDiscordMessage", () => {
       },
       metadata: {
         pluginBindingOwner: "plugin",
-        pluginId: "openclaw-codex-app-server",
+        pluginId: "foxfang-codex-app-server",
       },
     });
   });
@@ -473,7 +473,7 @@ describe("preflightDiscordMessage", () => {
       createPreflightArgs({
         cfg: {
           ...DEFAULT_PREFLIGHT_CFG,
-        } as import("../../../../src/config/config.js").OpenClawConfig,
+        } as import("../../../../src/config/config.js").FoxFangConfig,
         discordConfig: {
           allowBots: true,
         } as DiscordConfig,
@@ -517,8 +517,8 @@ describe("preflightDiscordMessage", () => {
     const message = createDiscordMessage({
       id: "m-bot-mentions-on",
       channelId,
-      content: "hi <@openclaw-bot>",
-      mentionedUsers: [{ id: "openclaw-bot" }],
+      content: "hi <@foxfang-bot>",
+      mentionedUsers: [{ id: "foxfang-bot" }],
       author: {
         id: "relay-bot-1",
         bot: true,
@@ -699,7 +699,7 @@ describe("preflightDiscordMessage", () => {
   });
 
   it("uses attachment content_type for guild audio preflight mention detection", async () => {
-    transcribeFirstAudioMock.mockResolvedValue("hey openclaw");
+    transcribeFirstAudioMock.mockResolvedValue("hey foxfang");
 
     const channelId = "channel-audio-1";
     const client = createGuildTextClient(channelId);
@@ -729,10 +729,10 @@ describe("preflightDiscordMessage", () => {
           ...DEFAULT_PREFLIGHT_CFG,
           messages: {
             groupChat: {
-              mentionPatterns: ["openclaw"],
+              mentionPatterns: ["foxfang"],
             },
           },
-        } as import("../../../../src/config/config.js").OpenClawConfig,
+        } as import("../../../../src/config/config.js").FoxFangConfig,
         discordConfig: {} as DiscordConfig,
         data: createGuildEvent({
           channelId,

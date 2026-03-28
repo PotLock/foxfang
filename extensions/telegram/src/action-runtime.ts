@@ -1,6 +1,6 @@
 import type { AgentToolResult } from "@mariozechner/pi-agent-core";
-import { readBooleanParam } from "openclaw/plugin-sdk/boolean-param";
-import { resolveReactionMessageId } from "openclaw/plugin-sdk/channel-actions";
+import { readBooleanParam } from "foxfang/plugin-sdk/boolean-param";
+import { resolveReactionMessageId } from "foxfang/plugin-sdk/channel-actions";
 import {
   jsonResult,
   readNumberParam,
@@ -9,7 +9,7 @@ import {
   readStringOrNumberParam,
   readStringParam,
   resolvePollMaxSelections,
-  type OpenClawConfig,
+  type FoxFangConfig,
   type TelegramActionConfig,
 } from "../runtime-api.js";
 import { createTelegramActionGate, resolveTelegramPollActionGateState } from "./accounts.js";
@@ -211,7 +211,7 @@ function readTelegramSendContent(params: {
 
 export async function handleTelegramAction(
   params: Record<string, unknown>,
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   options?: {
     mediaLocalRoots?: readonly string[];
   },

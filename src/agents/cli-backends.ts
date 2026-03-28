@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import type { CliBackendConfig } from "../config/types.js";
 import { resolveRuntimeCliBackends } from "../plugins/cli-backends.runtime.js";
 import { normalizeProviderId } from "./model-selection.js";
@@ -72,7 +72,7 @@ function mergeBackendConfig(base: CliBackendConfig, override?: CliBackendConfig)
   };
 }
 
-export function resolveCliBackendIds(cfg?: OpenClawConfig): Set<string> {
+export function resolveCliBackendIds(cfg?: FoxFangConfig): Set<string> {
   const ids = new Set<string>();
   for (const backend of resolveRuntimeCliBackends()) {
     ids.add(normalizeBackendKey(backend.id));
@@ -86,7 +86,7 @@ export function resolveCliBackendIds(cfg?: OpenClawConfig): Set<string> {
 
 export function resolveCliBackendConfig(
   provider: string,
-  cfg?: OpenClawConfig,
+  cfg?: FoxFangConfig,
 ): ResolvedCliBackend | null {
   const normalized = normalizeBackendKey(provider);
   const configured = cfg?.agents?.defaults?.cliBackends ?? {};

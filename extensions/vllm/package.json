@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/vllm-provider",
+  "name": "@foxfang/vllm-provider",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw vLLM provider plugin",
+  "description": "FoxFang vLLM provider plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

@@ -10,7 +10,7 @@ import {
 } from "./status.test-helpers.js";
 
 const loadConfigMock = vi.fn();
-const loadOpenClawPluginsMock = vi.fn();
+const loadFoxFangPluginsMock = vi.fn();
 const applyPluginAutoEnableMock = vi.fn();
 const resolveBundledProviderCompatPluginIdsMock = vi.fn();
 const withBundledPluginAllowlistCompatMock = vi.fn();
@@ -32,7 +32,7 @@ vi.mock("../config/plugin-auto-enable.js", () => ({
 }));
 
 vi.mock("./loader.js", () => ({
-  loadOpenClawPlugins: (...args: unknown[]) => loadOpenClawPluginsMock(...args),
+  loadFoxFangPlugins: (...args: unknown[]) => loadFoxFangPluginsMock(...args),
 }));
 
 vi.mock("./providers.js", () => ({
@@ -57,7 +57,7 @@ vi.mock("../agents/workspace.js", () => ({
 }));
 
 function setPluginLoadResult(overrides: Partial<ReturnType<typeof createPluginLoadResult>>) {
-  loadOpenClawPluginsMock.mockReturnValue(
+  loadFoxFangPluginsMock.mockReturnValue(
     createPluginLoadResult({
       plugins: [],
       ...overrides,
@@ -91,7 +91,7 @@ function expectPluginLoaderCall(params: {
   workspaceDir?: string;
   env?: NodeJS.ProcessEnv;
 }) {
-  expect(loadOpenClawPluginsMock).toHaveBeenCalledWith(
+  expect(loadFoxFangPluginsMock).toHaveBeenCalledWith(
     expect.objectContaining({
       ...(params.config !== undefined ? { config: params.config } : {}),
       ...(params.workspaceDir ? { workspaceDir: params.workspaceDir } : {}),
@@ -217,7 +217,7 @@ describe("buildPluginStatusReport", () => {
   beforeEach(async () => {
     vi.resetModules();
     loadConfigMock.mockReset();
-    loadOpenClawPluginsMock.mockReset();
+    loadFoxFangPluginsMock.mockReset();
     applyPluginAutoEnableMock.mockReset();
     resolveBundledProviderCompatPluginIdsMock.mockReset();
     withBundledPluginAllowlistCompatMock.mockReset();
@@ -247,7 +247,7 @@ describe("buildPluginStatusReport", () => {
   });
 
   it("forwards an explicit env to plugin loading", () => {
-    const env = { HOME: "/tmp/openclaw-home" } as NodeJS.ProcessEnv;
+    const env = { HOME: "/tmp/foxfang-home" } as NodeJS.ProcessEnv;
 
     buildPluginStatusReport({
       config: {},
@@ -347,7 +347,7 @@ describe("buildPluginStatusReport", () => {
     const report = buildPluginStatusReport({
       config: {},
       env: {
-        OPENCLAW_VERSION: "2026.3.23-1",
+        FOXFANG_VERSION: "2026.3.23-1",
       } as NodeJS.ProcessEnv,
     });
 

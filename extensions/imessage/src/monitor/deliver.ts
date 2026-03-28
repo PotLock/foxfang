@@ -1,13 +1,13 @@
-import { loadConfig } from "openclaw/plugin-sdk/config-runtime";
-import { resolveMarkdownTableMode } from "openclaw/plugin-sdk/config-runtime";
+import { loadConfig } from "foxfang/plugin-sdk/config-runtime";
+import { resolveMarkdownTableMode } from "foxfang/plugin-sdk/config-runtime";
 import {
   deliverTextOrMediaReply,
   resolveSendableOutboundReplyParts,
-} from "openclaw/plugin-sdk/reply-payload";
-import { chunkTextWithMode, resolveChunkMode } from "openclaw/plugin-sdk/reply-runtime";
-import type { ReplyPayload } from "openclaw/plugin-sdk/reply-runtime";
-import type { RuntimeEnv } from "openclaw/plugin-sdk/runtime-env";
-import { convertMarkdownTables } from "openclaw/plugin-sdk/text-runtime";
+} from "foxfang/plugin-sdk/reply-payload";
+import { chunkTextWithMode, resolveChunkMode } from "foxfang/plugin-sdk/reply-runtime";
+import type { ReplyPayload } from "foxfang/plugin-sdk/reply-runtime";
+import type { RuntimeEnv } from "foxfang/plugin-sdk/runtime-env";
+import { convertMarkdownTables } from "foxfang/plugin-sdk/text-runtime";
 import type { createIMessageRpcClient } from "../client.js";
 import { sendMessageIMessage } from "../send.js";
 import type { SentMessageCache } from "./echo-cache.js";

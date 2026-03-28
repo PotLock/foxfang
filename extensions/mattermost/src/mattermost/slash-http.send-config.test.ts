@@ -1,6 +1,6 @@
 import { ServerResponse, type IncomingMessage } from "node:http";
 import { PassThrough } from "node:stream";
-import type { OpenClawConfig, RuntimeEnv } from "openclaw/plugin-sdk/mattermost";
+import type { FoxFangConfig, RuntimeEnv } from "foxfang/plugin-sdk/mattermost";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ResolvedMattermostAccount } from "./accounts.js";
 
@@ -39,7 +39,7 @@ const mockState = vi.hoisted(() => ({
   normalizeMattermostAllowList: vi.fn((value: unknown) => value),
 }));
 
-vi.mock("openclaw/plugin-sdk/mattermost", () => ({
+vi.mock("foxfang/plugin-sdk/mattermost", () => ({
   buildModelsProviderData: mockState.buildModelsProviderData,
   createReplyPrefixOptions: vi.fn(() => ({})),
   createTypingCallbacks: vi.fn(() => ({ onReplyStart: vi.fn() })),
@@ -195,7 +195,7 @@ describe("slash-http cfg threading", () => {
           botToken: "exec:secret-ref",
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     const handler = createSlashCommandHttpHandler({
       account: accountFixture,
       cfg,

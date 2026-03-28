@@ -1,28 +1,28 @@
 import {
   buildDmGroupAccountAllowlistAdapter,
   createNestedAllowlistOverrideResolver,
-} from "openclaw/plugin-sdk/allowlist-config-edit";
-import { buildPluginApprovalRequestMessage } from "openclaw/plugin-sdk/approval-runtime";
-import { createPairingPrefixStripper } from "openclaw/plugin-sdk/channel-pairing";
-import { createAllowlistProviderRouteAllowlistWarningCollector } from "openclaw/plugin-sdk/channel-policy";
-import { attachChannelToResult } from "openclaw/plugin-sdk/channel-send-result";
-import { createChatChannelPlugin } from "openclaw/plugin-sdk/core";
-import { createChannelDirectoryAdapter } from "openclaw/plugin-sdk/directory-runtime";
+} from "foxfang/plugin-sdk/allowlist-config-edit";
+import { buildPluginApprovalRequestMessage } from "foxfang/plugin-sdk/approval-runtime";
+import { createPairingPrefixStripper } from "foxfang/plugin-sdk/channel-pairing";
+import { createAllowlistProviderRouteAllowlistWarningCollector } from "foxfang/plugin-sdk/channel-policy";
+import { attachChannelToResult } from "foxfang/plugin-sdk/channel-send-result";
+import { createChatChannelPlugin } from "foxfang/plugin-sdk/core";
+import { createChannelDirectoryAdapter } from "foxfang/plugin-sdk/directory-runtime";
 import {
   resolveOutboundSendDep,
   type OutboundSendDeps,
-} from "openclaw/plugin-sdk/outbound-runtime";
+} from "foxfang/plugin-sdk/outbound-runtime";
 import {
   buildOutboundBaseSessionKey,
   normalizeMessageChannel,
   normalizeOutboundThreadId,
   resolveThreadSessionKeys,
   type RoutePeer,
-} from "openclaw/plugin-sdk/routing";
+} from "foxfang/plugin-sdk/routing";
 import {
   createComputedAccountStatusAdapter,
   createDefaultChannelRuntimeState,
-} from "openclaw/plugin-sdk/status-helpers";
+} from "foxfang/plugin-sdk/status-helpers";
 import { parseTelegramTopicConversation } from "../runtime-api.js";
 import {
   buildTokenChannelStatusSummary,
@@ -32,7 +32,7 @@ import {
   projectCredentialSnapshotFields,
   resolveConfiguredFromCredentialStatuses,
   type ChannelMessageActionAdapter,
-  type OpenClawConfig,
+  type FoxFangConfig,
 } from "../runtime-api.js";
 import {
   listTelegramAccountIds,
@@ -128,7 +128,7 @@ function resolveTelegramMonitor() {
 }
 
 function buildTelegramSendOptions(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   mediaUrl?: string | null;
   mediaLocalRoots?: readonly string[] | null;
   accountId?: string | null;
@@ -155,7 +155,7 @@ function buildTelegramSendOptions(params: {
 }
 
 async function sendTelegramOutbound(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   to: string;
   text: string;
   mediaUrl?: string | null;
@@ -263,7 +263,7 @@ function parseTelegramExplicitTarget(raw: string) {
 }
 
 function buildTelegramBaseSessionKey(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   agentId: string;
   accountId?: string | null;
   peer: RoutePeer;
@@ -272,7 +272,7 @@ function buildTelegramBaseSessionKey(params: {
 }
 
 function resolveTelegramOutboundSessionRoute(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   agentId: string;
   accountId?: string | null;
   target: string;
@@ -322,7 +322,7 @@ function resolveTelegramOutboundSessionRoute(params: {
   };
 }
 
-function hasTelegramExecApprovalDmRoute(cfg: OpenClawConfig): boolean {
+function hasTelegramExecApprovalDmRoute(cfg: FoxFangConfig): boolean {
   return listTelegramAccountIds(cfg).some((accountId) => {
     if (!isTelegramExecApprovalClientEnabled({ cfg, accountId })) {
       return false;
@@ -673,7 +673,7 @@ export const telegramPlugin = createChatChannelPlugin({
       },
       logoutAccount: async ({ accountId, cfg }) => {
         const envToken = process.env.TELEGRAM_BOT_TOKEN?.trim() ?? "";
-        const nextCfg = { ...cfg } as OpenClawConfig;
+        const nextCfg = { ...cfg } as FoxFangConfig;
         const nextTelegram = cfg.channels?.telegram ? { ...cfg.channels.telegram } : undefined;
         let cleared = false;
         let changed = false;

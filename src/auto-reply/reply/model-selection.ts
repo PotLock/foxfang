@@ -14,7 +14,7 @@ import {
   resolveReasoningDefault,
   resolveThinkingDefault,
 } from "../../agents/model-selection.js";
-import type { OpenClawConfig } from "../../config/config.js";
+import type { FoxFangConfig } from "../../config/config.js";
 import type { SessionEntry } from "../../config/sessions/types.js";
 import { applyModelOverrideToSessionEntry } from "../../sessions/model-overrides.js";
 import { resolveThreadParentSessionKey } from "../../sessions/session-key-utils.js";
@@ -42,7 +42,7 @@ type ModelSelectionState = {
 };
 
 function shouldLogModelSelectionTiming(): boolean {
-  return process.env.OPENCLAW_DEBUG_INGRESS_TIMING === "1";
+  return process.env.FOXFANG_DEBUG_INGRESS_TIMING === "1";
 }
 
 let modelCatalogRuntimePromise:
@@ -286,9 +286,9 @@ function scoreFuzzyMatch(params: {
 }
 
 export async function createModelSelectionState(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   agentId?: string;
-  agentCfg: NonNullable<NonNullable<OpenClawConfig["agents"]>["defaults"]> | undefined;
+  agentCfg: NonNullable<NonNullable<FoxFangConfig["agents"]>["defaults"]> | undefined;
   sessionEntry?: SessionEntry;
   sessionStore?: Record<string, SessionEntry>;
   sessionKey?: string;
@@ -672,8 +672,8 @@ export function resolveModelDirectiveSelection(params: {
 }
 
 export function resolveContextTokens(params: {
-  cfg: OpenClawConfig;
-  agentCfg: NonNullable<NonNullable<OpenClawConfig["agents"]>["defaults"]> | undefined;
+  cfg: FoxFangConfig;
+  agentCfg: NonNullable<NonNullable<FoxFangConfig["agents"]>["defaults"]> | undefined;
   provider: string;
   model: string;
 }): number {

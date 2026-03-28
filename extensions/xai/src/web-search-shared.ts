@@ -1,4 +1,4 @@
-import { postTrustedWebToolsJson, wrapWebContent } from "openclaw/plugin-sdk/provider-web-search";
+import { postTrustedWebToolsJson, wrapWebContent } from "foxfang/plugin-sdk/provider-web-search";
 import { normalizeXaiModelId } from "../api.js";
 
 export const XAI_WEB_SEARCH_ENDPOINT = "https://api.x.ai/v1/responses";

@@ -1,86 +1,86 @@
 ---
-summary: "CLI reference for `openclaw devices` (device pairing + token rotation/revocation)"
+summary: "CLI reference for `foxfang devices` (device pairing + token rotation/revocation)"
 read_when:
   - You are approving device pairing requests
   - You need to rotate or revoke device tokens
 title: "devices"
 ---
 
-# `openclaw devices`
+# `foxfang devices`
 
 Manage device pairing requests and device-scoped tokens.
 
 ## Commands
 
-### `openclaw devices list`
+### `foxfang devices list`
 
 List pending pairing requests and paired devices.
 
 ```
-openclaw devices list
-openclaw devices list --json
+foxfang devices list
+foxfang devices list --json
 ```
 
 Pending request output includes the requested role and scopes so approvals can
 be reviewed before you approve.
 
-### `openclaw devices remove <deviceId>`
+### `foxfang devices remove <deviceId>`
 
 Remove one paired device entry.
 
 ```
-openclaw devices remove <deviceId>
-openclaw devices remove <deviceId> --json
+foxfang devices remove <deviceId>
+foxfang devices remove <deviceId> --json
 ```
 
-### `openclaw devices clear --yes [--pending]`
+### `foxfang devices clear --yes [--pending]`
 
 Clear paired devices in bulk.
 
 ```
-openclaw devices clear --yes
-openclaw devices clear --yes --pending
-openclaw devices clear --yes --pending --json
+foxfang devices clear --yes
+foxfang devices clear --yes --pending
+foxfang devices clear --yes --pending --json
 ```
 
-### `openclaw devices approve [requestId] [--latest]`
+### `foxfang devices approve [requestId] [--latest]`
 
-Approve a pending device pairing request. If `requestId` is omitted, OpenClaw
+Approve a pending device pairing request. If `requestId` is omitted, FoxFang
 automatically approves the most recent pending request.
 
 Note: if a device retries pairing with changed auth details (role/scopes/public
-key), OpenClaw supersedes the previous pending entry and issues a new
-`requestId`. Run `openclaw devices list` right before approval to use the
+key), FoxFang supersedes the previous pending entry and issues a new
+`requestId`. Run `foxfang devices list` right before approval to use the
 current ID.
 
 ```
-openclaw devices approve
-openclaw devices approve <requestId>
-openclaw devices approve --latest
+foxfang devices approve
+foxfang devices approve <requestId>
+foxfang devices approve --latest
 ```
 
-### `openclaw devices reject <requestId>`
+### `foxfang devices reject <requestId>`
 
 Reject a pending device pairing request.
 
 ```
-openclaw devices reject <requestId>
+foxfang devices reject <requestId>
 ```
 
-### `openclaw devices rotate --device <id> --role <role> [--scope <scope...>]`
+### `foxfang devices rotate --device <id> --role <role> [--scope <scope...>]`
 
 Rotate a device token for a specific role (optionally updating scopes).
 
 ```
-openclaw devices rotate --device <deviceId> --role operator --scope operator.read --scope operator.write
+foxfang devices rotate --device <deviceId> --role operator --scope operator.read --scope operator.write
 ```
 
-### `openclaw devices revoke --device <id> --role <role>`
+### `foxfang devices revoke --device <id> --role <role>`
 
 Revoke a device token for a specific role.
 
 ```
-openclaw devices revoke --device <deviceId> --role node
+foxfang devices revoke --device <deviceId> --role node
 ```
 
 ## Common options
@@ -108,27 +108,27 @@ Use this when Control UI or other clients keep failing with `AUTH_TOKEN_MISMATCH
 1. Confirm current gateway token source:
 
 ```bash
-openclaw config get gateway.auth.token
+foxfang config get gateway.auth.token
 ```
 
 2. List paired devices and identify the affected device id:
 
 ```bash
-openclaw devices list
+foxfang devices list
 ```
 
 3. Rotate operator token for the affected device:
 
 ```bash
-openclaw devices rotate --device <deviceId> --role operator
+foxfang devices rotate --device <deviceId> --role operator
 ```
 
 4. If rotation is not enough, remove stale pairing and approve again:
 
 ```bash
-openclaw devices remove <deviceId>
-openclaw devices list
-openclaw devices approve <requestId>
+foxfang devices remove <deviceId>
+foxfang devices list
+foxfang devices approve <requestId>
 ```
 
 5. Retry client connection with the current shared token/password.

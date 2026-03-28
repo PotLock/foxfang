@@ -6,7 +6,7 @@ import { resolveStateDir } from "../config/paths.js";
 import { normalizeEnv } from "../infra/env.js";
 import { formatUncaughtError } from "../infra/errors.js";
 import { isMainModule } from "../infra/is-main.js";
-import { ensureOpenClawCliOnPath } from "../infra/path-env.js";
+import { ensureFoxFangCliOnPath } from "../infra/path-env.js";
 import { assertSupportedRuntime } from "../infra/runtime-guard.js";
 import { enableConsoleCapture } from "../logging.js";
 import { hasMemoryRuntime } from "../plugins/memory-state.js";
@@ -107,7 +107,7 @@ export async function runCli(argv: string[] = process.argv) {
     applyCliProfileEnv({ profile: parsedProfile.profile });
   }
   const containerTargetName =
-    parsedContainer.container ?? process.env.OPENCLAW_CONTAINER?.trim() ?? null;
+    parsedContainer.container ?? process.env.FOXFANG_CONTAINER?.trim() ?? null;
   if (containerTargetName && parsedProfile.profile) {
     throw new Error("--container cannot be combined with --profile/--dev");
   }
@@ -127,7 +127,7 @@ export async function runCli(argv: string[] = process.argv) {
   }
   normalizeEnv();
   if (shouldEnsureCliPath(normalizedArgv)) {
-    ensureOpenClawCliOnPath();
+    ensureFoxFangCliOnPath();
   }
 
   // Enforce the minimum supported runtime before doing any work.
@@ -156,7 +156,7 @@ export async function runCli(argv: string[] = process.argv) {
     installUnhandledRejectionHandler();
 
     process.on("uncaughtException", (error) => {
-      console.error("[openclaw] Uncaught exception:", formatUncaughtError(error));
+      console.error("[foxfang] Uncaught exception:", formatUncaughtError(error));
       process.exit(1);
     });
 

@@ -47,7 +47,7 @@ Supported keys:
 - `seed`, `normalize`, `lang`, `output_format`, `latency_tier`
 - `once`
 
-## Config (`~/.foxfang/openclaw.json`)
+## Config (`~/.foxfang/foxfang.json`)
 
 ```json5
 {

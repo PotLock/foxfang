@@ -3,7 +3,7 @@ import { DEFAULT_CONTEXT_TOKENS, DEFAULT_MODEL, DEFAULT_PROVIDER } from "../agen
 import { normalizeProviderId } from "../agents/provider-id.js";
 import { resolveAgentModelPrimaryValue } from "../config/model-input.js";
 import type { SessionEntry } from "../config/sessions/types.js";
-import type { OpenClawConfig } from "../config/types.js";
+import type { FoxFangConfig } from "../config/types.js";
 
 function parseStatusModelRef(
   raw: string,
@@ -26,7 +26,7 @@ function parseStatusModelRef(
 }
 
 function resolveStatusModelRefFromRaw(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   rawModel: string;
   defaultProvider: string;
 }): { provider: string; model: string } | null {
@@ -54,7 +54,7 @@ function resolveStatusModelRefFromRaw(params: {
 }
 
 function resolveConfiguredStatusModelRef(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   defaultProvider: string;
   defaultModel: string;
   agentId?: string;
@@ -99,7 +99,7 @@ function resolveConfiguredStatusModelRef(params: {
 }
 
 function resolveConfiguredProviderContextWindow(
-  cfg: OpenClawConfig | undefined,
+  cfg: FoxFangConfig | undefined,
   provider: string,
   model: string,
 ): number | undefined {
@@ -143,7 +143,7 @@ function classifySessionKey(key: string, entry?: SessionEntry) {
 }
 
 function resolveSessionModelRef(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   entry?:
     | SessionEntry
     | Pick<SessionEntry, "model" | "modelProvider" | "modelOverride" | "providerOverride">,
@@ -190,7 +190,7 @@ function resolveSessionModelRef(
 }
 
 function resolveContextTokensForModel(params: {
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   provider?: string;
   model?: string;
   contextTokensOverride?: number;

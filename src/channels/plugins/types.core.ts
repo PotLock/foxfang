@@ -2,7 +2,7 @@ import type { AgentTool, AgentToolResult } from "@mariozechner/pi-agent-core";
 import type { TSchema } from "@sinclair/typebox";
 import type { MsgContext } from "../../auto-reply/templating.js";
 import type { ReplyPayload } from "../../auto-reply/types.js";
-import type { OpenClawConfig } from "../../config/config.js";
+import type { FoxFangConfig } from "../../config/config.js";
 import type { PollInput } from "../../polls.js";
 import type { GatewayClientMode, GatewayClientName } from "../../utils/message-channel.js";
 import type { ChatType } from "../chat-type.js";
@@ -20,7 +20,7 @@ export type ChannelAgentTool = AgentTool<TSchema, unknown> & {
 };
 
 /** Lazy agent-tool factory used when tool availability depends on config. */
-export type ChannelAgentToolFactory = (params: { cfg?: OpenClawConfig }) => ChannelAgentTool[];
+export type ChannelAgentToolFactory = (params: { cfg?: FoxFangConfig }) => ChannelAgentTool[];
 
 /**
  * Discovery-time inputs passed to channel action adapters when the core is
@@ -29,7 +29,7 @@ export type ChannelAgentToolFactory = (params: { cfg?: OpenClawConfig }) => Chan
  * tool params or runtime handles.
  */
 export type ChannelMessageActionDiscoveryContext = {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   currentChannelId?: string | null;
   currentChannelProvider?: string | null;
   currentThreadTs?: string | null;
@@ -214,7 +214,7 @@ export type ChannelLogSink = {
 };
 
 export type ChannelGroupContext = {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   groupId?: string | null;
   /** Human label for channel-like group conversations (e.g. #general). */
   groupChannel?: string | null;
@@ -252,7 +252,7 @@ export type ChannelSecurityDmPolicy = {
 };
 
 export type ChannelSecurityContext<ResolvedAccount = unknown> = {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId?: string | null;
   account: ResolvedAccount;
 };
@@ -260,18 +260,18 @@ export type ChannelSecurityContext<ResolvedAccount = unknown> = {
 export type ChannelMentionAdapter = {
   stripRegexes?: (params: {
     ctx: MsgContext;
-    cfg: OpenClawConfig | undefined;
+    cfg: FoxFangConfig | undefined;
     agentId?: string;
   }) => RegExp[];
   stripPatterns?: (params: {
     ctx: MsgContext;
-    cfg: OpenClawConfig | undefined;
+    cfg: FoxFangConfig | undefined;
     agentId?: string;
   }) => string[];
   stripMentions?: (params: {
     text: string;
     ctx: MsgContext;
-    cfg: OpenClawConfig | undefined;
+    cfg: FoxFangConfig | undefined;
     agentId?: string;
   }) => string;
 };
@@ -290,7 +290,7 @@ export type ChannelStructuredComponents = unknown[];
 export type ChannelCrossContextComponentsFactory = (params: {
   originLabel: string;
   message: string;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId?: string | null;
 }) => ChannelStructuredComponents;
 
@@ -321,7 +321,7 @@ export type ChannelOutboundSessionRoute = {
 
 export type ChannelThreadingAdapter = {
   resolveReplyToMode?: (params: {
-    cfg: OpenClawConfig;
+    cfg: FoxFangConfig;
     accountId?: string | null;
     chatType?: string | null;
   }) => "off" | "first" | "all";
@@ -337,26 +337,26 @@ export type ChannelThreadingAdapter = {
    */
   allowTagsWhenOff?: boolean;
   buildToolContext?: (params: {
-    cfg: OpenClawConfig;
+    cfg: FoxFangConfig;
     accountId?: string | null;
     context: ChannelThreadingContext;
     hasRepliedRef?: { value: boolean };
   }) => ChannelThreadingToolContext | undefined;
   resolveAutoThreadId?: (params: {
-    cfg: OpenClawConfig;
+    cfg: FoxFangConfig;
     accountId?: string | null;
     to: string;
     toolContext?: ChannelThreadingToolContext;
     replyToId?: string | null;
   }) => string | undefined;
   resolveReplyTransport?: (params: {
-    cfg: OpenClawConfig;
+    cfg: FoxFangConfig;
     accountId?: string | null;
     threadId?: string | number | null;
     replyToId?: string | null;
   }) => ChannelReplyTransport | null;
   resolveFocusedBinding?: (params: {
-    cfg: OpenClawConfig;
+    cfg: FoxFangConfig;
     accountId?: string | null;
     context: ChannelThreadingContext;
   }) => ChannelFocusedBindingContext | null;
@@ -411,7 +411,7 @@ export type ChannelMessagingAdapter = {
   inferTargetChatType?: (params: { to: string }) => ChatType | undefined;
   buildCrossContextComponents?: ChannelCrossContextComponentsFactory;
   enableInteractiveReplies?: (params: {
-    cfg: OpenClawConfig;
+    cfg: FoxFangConfig;
     accountId?: string | null;
   }) => boolean;
   hasStructuredReplyPayload?: (params: { payload: ReplyPayload }) => boolean;
@@ -423,7 +423,7 @@ export type ChannelMessagingAdapter = {
      * resolution. This should complement directory lookup, not duplicate it.
      */
     resolveTarget?: (params: {
-      cfg: OpenClawConfig;
+      cfg: FoxFangConfig;
       accountId?: string | null;
       input: string;
       normalized: string;
@@ -445,7 +445,7 @@ export type ChannelMessagingAdapter = {
    * Keep session-key orchestration in core and channel-native routing rules here.
    */
   resolveOutboundSessionRoute?: (params: {
-    cfg: OpenClawConfig;
+    cfg: FoxFangConfig;
     agentId: string;
     accountId?: string | null;
     target: string;
@@ -461,7 +461,7 @@ export type ChannelMessagingAdapter = {
 };
 
 export type ChannelAgentPromptAdapter = {
-  messageToolHints?: (params: { cfg: OpenClawConfig; accountId?: string | null }) => string[];
+  messageToolHints?: (params: { cfg: FoxFangConfig; accountId?: string | null }) => string[];
 };
 
 export type ChannelDirectoryEntryKind = "user" | "group" | "channel";
@@ -482,7 +482,7 @@ export type ChannelMessageActionName = ChannelMessageActionNameFromList;
 export type ChannelMessageActionContext = {
   channel: ChannelId;
   action: ChannelMessageActionName;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   params: Record<string, unknown>;
   mediaLocalRoots?: readonly string[];
   accountId?: string | null;
@@ -545,7 +545,7 @@ export type ChannelPollResult = {
 
 /** Shared poll input after core has normalized the common poll model. */
 export type ChannelPollContext = {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   to: string;
   poll: PollInput;
   accountId?: string | null;

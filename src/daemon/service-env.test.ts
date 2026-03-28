@@ -285,15 +285,15 @@ describe("buildServiceEnvironment", () => {
     } else {
       expect(env.PATH).toContain("/usr/bin");
     }
-    expect(env.OPENCLAW_GATEWAY_PORT).toBe("18789");
-    expect(env.OPENCLAW_GATEWAY_TOKEN).toBeUndefined();
-    expect(env.OPENCLAW_SERVICE_MARKER).toBe("openclaw");
-    expect(env.OPENCLAW_SERVICE_KIND).toBe("gateway");
-    expect(typeof env.OPENCLAW_SERVICE_VERSION).toBe("string");
-    expect(env.OPENCLAW_SYSTEMD_UNIT).toBe("openclaw-gateway.service");
-    expect(env.OPENCLAW_WINDOWS_TASK_NAME).toBe("OpenClaw Gateway");
+    expect(env.FOXFANG_GATEWAY_PORT).toBe("18789");
+    expect(env.FOXFANG_GATEWAY_TOKEN).toBeUndefined();
+    expect(env.FOXFANG_SERVICE_MARKER).toBe("foxfang");
+    expect(env.FOXFANG_SERVICE_KIND).toBe("gateway");
+    expect(typeof env.FOXFANG_SERVICE_VERSION).toBe("string");
+    expect(env.FOXFANG_SYSTEMD_UNIT).toBe("foxfang-gateway.service");
+    expect(env.FOXFANG_WINDOWS_TASK_NAME).toBe("FoxFang Gateway");
     if (process.platform === "darwin") {
-      expect(env.OPENCLAW_LAUNCHD_LABEL).toBe("ai.openclaw.gateway");
+      expect(env.FOXFANG_LAUNCHD_LABEL).toBe("ai.foxfang.gateway");
     }
   });
 
@@ -315,13 +315,13 @@ describe("buildServiceEnvironment", () => {
 
   it("uses profile-specific unit and label", () => {
     const env = buildServiceEnvironment({
-      env: { HOME: "/home/user", OPENCLAW_PROFILE: "work" },
+      env: { HOME: "/home/user", FOXFANG_PROFILE: "work" },
       port: 18789,
     });
-    expect(env.OPENCLAW_SYSTEMD_UNIT).toBe("openclaw-gateway-work.service");
-    expect(env.OPENCLAW_WINDOWS_TASK_NAME).toBe("OpenClaw Gateway (work)");
+    expect(env.FOXFANG_SYSTEMD_UNIT).toBe("foxfang-gateway-work.service");
+    expect(env.FOXFANG_WINDOWS_TASK_NAME).toBe("FoxFang Gateway (work)");
     if (process.platform === "darwin") {
-      expect(env.OPENCLAW_LAUNCHD_LABEL).toBe("ai.openclaw.work");
+      expect(env.FOXFANG_LAUNCHD_LABEL).toBe("ai.foxfang.work");
     }
   });
 
@@ -356,7 +356,7 @@ describe("buildServiceEnvironment", () => {
     });
 
     expect(env).not.toHaveProperty("PATH");
-    expect(env.OPENCLAW_WINDOWS_TASK_NAME).toBe("OpenClaw Gateway");
+    expect(env.FOXFANG_WINDOWS_TASK_NAME).toBe("FoxFang Gateway");
   });
 
   it("prepends extra runtime directories to the gateway service PATH", () => {
@@ -381,21 +381,21 @@ describe("buildNodeServiceEnvironment", () => {
     expect(env.HOME).toBe("/home/user");
   });
 
-  it("passes through OPENCLAW_GATEWAY_TOKEN for node services", () => {
+  it("passes through FOXFANG_GATEWAY_TOKEN for node services", () => {
     const env = buildNodeServiceEnvironment({
-      env: { HOME: "/home/user", OPENCLAW_GATEWAY_TOKEN: " node-token " },
+      env: { HOME: "/home/user", FOXFANG_GATEWAY_TOKEN: " node-token " },
     });
-    expect(env.OPENCLAW_GATEWAY_TOKEN).toBe("node-token");
+    expect(env.FOXFANG_GATEWAY_TOKEN).toBe("node-token");
   });
 
-  it("omits OPENCLAW_GATEWAY_TOKEN when the env var is empty", () => {
+  it("omits FOXFANG_GATEWAY_TOKEN when the env var is empty", () => {
     const env = buildNodeServiceEnvironment({
       env: {
         HOME: "/home/user",
-        OPENCLAW_GATEWAY_TOKEN: "   ",
+        FOXFANG_GATEWAY_TOKEN: "   ",
       },
     });
-    expect(env.OPENCLAW_GATEWAY_TOKEN).toBeUndefined();
+    expect(env.FOXFANG_GATEWAY_TOKEN).toBeUndefined();
   });
 
   it("forwards proxy environment variables for node services", () => {
@@ -490,28 +490,28 @@ describe("resolveGatewayStateDir", () => {
   });
 
   it("appends the profile suffix when set", () => {
-    const env = { HOME: "/Users/test", OPENCLAW_PROFILE: "rescue" };
-    expect(resolveGatewayStateDir(env)).toBe(path.join("/Users/test", ".openclaw-rescue"));
+    const env = { HOME: "/Users/test", FOXFANG_PROFILE: "rescue" };
+    expect(resolveGatewayStateDir(env)).toBe(path.join("/Users/test", ".foxfang-rescue"));
   });
 
   it("treats default profiles as the base state dir", () => {
-    const env = { HOME: "/Users/test", OPENCLAW_PROFILE: "Default" };
+    const env = { HOME: "/Users/test", FOXFANG_PROFILE: "Default" };
     expect(resolveGatewayStateDir(env)).toBe(path.join("/Users/test", ".foxfang"));
   });
 
-  it("uses OPENCLAW_STATE_DIR when provided", () => {
-    const env = { HOME: "/Users/test", OPENCLAW_STATE_DIR: "/var/lib/openclaw" };
-    expect(resolveGatewayStateDir(env)).toBe(path.resolve("/var/lib/openclaw"));
+  it("uses FOXFANG_STATE_DIR when provided", () => {
+    const env = { HOME: "/Users/test", FOXFANG_STATE_DIR: "/var/lib/foxfang" };
+    expect(resolveGatewayStateDir(env)).toBe(path.resolve("/var/lib/foxfang"));
   });
 
-  it("expands ~ in OPENCLAW_STATE_DIR", () => {
-    const env = { HOME: "/Users/test", OPENCLAW_STATE_DIR: "~/openclaw-state" };
-    expect(resolveGatewayStateDir(env)).toBe(path.resolve("/Users/test/openclaw-state"));
+  it("expands ~ in FOXFANG_STATE_DIR", () => {
+    const env = { HOME: "/Users/test", FOXFANG_STATE_DIR: "~/foxfang-state" };
+    expect(resolveGatewayStateDir(env)).toBe(path.resolve("/Users/test/foxfang-state"));
   });
 
   it("preserves Windows absolute paths without HOME", () => {
-    const env = { OPENCLAW_STATE_DIR: "C:\\State\\openclaw" };
-    expect(resolveGatewayStateDir(env)).toBe("C:\\State\\openclaw");
+    const env = { FOXFANG_STATE_DIR: "C:\\State\\foxfang" };
+    expect(resolveGatewayStateDir(env)).toBe("C:\\State\\foxfang");
   });
 });
 

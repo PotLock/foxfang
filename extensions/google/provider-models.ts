@@ -1,8 +1,8 @@
 import type {
   ProviderResolveDynamicModelContext,
   ProviderRuntimeModel,
-} from "openclaw/plugin-sdk/plugin-entry";
-import { cloneFirstTemplateModel } from "openclaw/plugin-sdk/provider-model-shared";
+} from "foxfang/plugin-sdk/plugin-entry";
+import { cloneFirstTemplateModel } from "foxfang/plugin-sdk/provider-model-shared";
 
 const GEMINI_3_1_PRO_PREFIX = "gemini-3.1-pro";
 const GEMINI_3_1_FLASH_PREFIX = "gemini-3.1-flash";

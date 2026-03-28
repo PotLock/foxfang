@@ -16,11 +16,11 @@ describe("cli json stdout contract", () => {
           ...process.env,
           HOME: tempHome,
           USERPROFILE: tempHome,
-          OPENCLAW_TEST_FAST: "1",
+          FOXFANG_TEST_FAST: "1",
         };
-        delete env.OPENCLAW_HOME;
-        delete env.OPENCLAW_STATE_DIR;
-        delete env.OPENCLAW_CONFIG_PATH;
+        delete env.FOXFANG_HOME;
+        delete env.FOXFANG_STATE_DIR;
+        delete env.FOXFANG_CONFIG_PATH;
         delete env.VITEST;
 
         const entry = path.resolve(process.cwd(), "foxfang.mjs");
@@ -38,7 +38,7 @@ describe("cli json stdout contract", () => {
         expect(stdout).not.toContain("Doctor changes");
         expect(stdout).not.toContain("Config invalid");
       },
-      { prefix: "openclaw-json-e2e-" },
+      { prefix: "foxfang-json-e2e-" },
     );
   });
 });

@@ -1,10 +1,10 @@
-import type { ImageGenerationProvider } from "openclaw/plugin-sdk/image-generation";
-import { resolveApiKeyForProvider } from "openclaw/plugin-sdk/image-generation-core";
+import type { ImageGenerationProvider } from "foxfang/plugin-sdk/image-generation";
+import { resolveApiKeyForProvider } from "foxfang/plugin-sdk/image-generation-core";
 import {
   assertOkOrThrowHttpError,
   normalizeBaseUrl,
   postJsonRequest,
-} from "openclaw/plugin-sdk/provider-http";
+} from "foxfang/plugin-sdk/provider-http";
 import {
   DEFAULT_GOOGLE_API_BASE_URL,
   normalizeGoogleApiBaseUrl,

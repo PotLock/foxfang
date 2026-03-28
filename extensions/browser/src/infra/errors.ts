@@ -1,1 +1,1 @@
-export { extractErrorCode, formatErrorMessage } from "openclaw/plugin-sdk/browser-support";
+export { extractErrorCode, formatErrorMessage } from "foxfang/plugin-sdk/browser-support";

@@ -6,16 +6,16 @@ read_when:
 title: "Skills"
 ---
 
-# Skills (OpenClaw)
+# Skills (FoxFang)
 
-OpenClaw uses **[AgentSkills](https://agentskills.io)-compatible** skill folders to teach the agent how to use tools. Each skill is a directory containing a `SKILL.md` with YAML frontmatter and instructions. OpenClaw loads **bundled skills** plus optional local overrides, and filters them at load time based on environment, config, and binary presence.
+FoxFang uses **[AgentSkills](https://agentskills.io)-compatible** skill folders to teach the agent how to use tools. Each skill is a directory containing a `SKILL.md` with YAML frontmatter and instructions. FoxFang loads **bundled skills** plus optional local overrides, and filters them at load time based on environment, config, and binary presence.
 
 ## Locations and precedence
 
-OpenClaw loads skills from these sources:
+FoxFang loads skills from these sources:
 
 1. **Extra skill folders**: configured with `skills.load.extraDirs`
-2. **Bundled skills**: shipped with the install (npm package or OpenClaw.app)
+2. **Bundled skills**: shipped with the install (npm package or FoxFang.app)
 3. **Managed/local skills**: `~/.foxfang/skills`
 4. **Personal agent skills**: `~/.agents/skills`
 5. **Project agent skills**: `<workspace>/.agents/skills`
@@ -46,18 +46,18 @@ then managed/local, then bundled, then extra dirs.
 ## Plugins + skills
 
 Plugins can ship their own skills by listing `skills` directories in
-`openclaw.plugin.json` (paths relative to the plugin root). Plugin skills load
+`foxfang.plugin.json` (paths relative to the plugin root). Plugin skills load
 when the plugin is enabled. Today those directories are merged into the same
 low-precedence path as `skills.load.extraDirs`, so a same-named bundled,
 managed, agent, or workspace skill overrides them.
-You can gate them via `metadata.openclaw.requires.config` on the plugin’s config
+You can gate them via `metadata.foxfang.requires.config` on the plugin’s config
 entry. See [Plugins](/tools/plugin) for discovery/config and [Tools](/tools) for the
 tool surface those skills teach.
 
 ## ClawHub (install + sync)
 
-ClawHub is the public skills registry for OpenClaw. Browse at
-[https://clawhub.com](https://clawhub.com). Use native `openclaw skills`
+ClawHub is the public skills registry for FoxFang. Browse at
+[https://clawhub.com](https://clawhub.com). Use native `foxfang skills`
 commands to discover/install/update skills, or the separate `clawhub` CLI when
 you need publish/sync workflows.
 Full guide: [ClawHub](/tools/clawhub).
@@ -65,16 +65,16 @@ Full guide: [ClawHub](/tools/clawhub).
 Common flows:
 
 - Install a skill into your workspace:
-  - `openclaw skills install <skill-slug>`
+  - `foxfang skills install <skill-slug>`
 - Update all installed skills:
-  - `openclaw skills update --all`
+  - `foxfang skills update --all`
 - Sync (scan + publish updates):
   - `clawhub sync --all`
 
-Native `openclaw skills install` installs into the active workspace `skills/`
+Native `foxfang skills install` installs into the active workspace `skills/`
 directory. The separate `clawhub` CLI also installs into `./skills` under your
-current working directory (or falls back to the configured OpenClaw workspace).
-OpenClaw picks that up as `<workspace>/skills` on the next session.
+current working directory (or falls back to the configured FoxFang workspace).
+FoxFang picks that up as `<workspace>/skills` on the next session.
 
 ## Security notes
 
@@ -103,7 +103,7 @@ Notes:
 - `metadata` should be a **single-line JSON object**.
 - Use `{baseDir}` in instructions to reference the skill folder path.
 - Optional frontmatter keys:
-  - `homepage` — URL surfaced as “Website” in the macOS Skills UI (also supported via `metadata.openclaw.homepage`).
+  - `homepage` — URL surfaced as “Website” in the macOS Skills UI (also supported via `metadata.foxfang.homepage`).
   - `user-invocable` — `true|false` (default: `true`). When `true`, the skill is exposed as a user slash command.
   - `disable-model-invocation` — `true|false` (default: `false`). When `true`, the skill is excluded from the model prompt (still available via user invocation).
   - `command-dispatch` — `tool` (optional). When set to `tool`, the slash command bypasses the model and dispatches directly to a tool.
@@ -115,7 +115,7 @@ Notes:
 
 ## Gating (load-time filters)
 
-OpenClaw **filters skills at load time** using `metadata` (single-line JSON):
+FoxFang **filters skills at load time** using `metadata` (single-line JSON):
 
 ```markdown
 ---
@@ -123,7 +123,7 @@ name: image-lab
 description: Generate or edit images via a provider-backed image workflow
 metadata:
   {
-    "openclaw":
+    "foxfang":
       {
         "requires": { "bins": ["uv"], "env": ["GEMINI_API_KEY"], "config": ["browser.enabled"] },
         "primaryEnv": "GEMINI_API_KEY",
@@ -132,7 +132,7 @@ metadata:
 ---
 ```
 
-Fields under `metadata.openclaw`:
+Fields under `metadata.foxfang`:
 
 - `always: true` — always include the skill (skip other gates).
 - `emoji` — optional emoji used by the macOS Skills UI.
@@ -141,7 +141,7 @@ Fields under `metadata.openclaw`:
 - `requires.bins` — list; each must exist on `PATH`.
 - `requires.anyBins` — list; at least one must exist on `PATH`.
 - `requires.env` — list; env var must exist **or** be provided in config.
-- `requires.config` — list of `openclaw.json` paths that must be truthy.
+- `requires.config` — list of `foxfang.json` paths that must be truthy.
 - `primaryEnv` — env var name associated with `skills.entries.<name>.apiKey`.
 - `install` — optional array of installer specs used by the macOS Skills UI (brew/node/go/uv/download).
 
@@ -163,7 +163,7 @@ name: gemini
 description: Use Gemini CLI for coding assistance and Google search lookups.
 metadata:
   {
-    "openclaw":
+    "foxfang":
       {
         "emoji": "♊️",
         "requires": { "bins": ["gemini"] },
@@ -185,18 +185,18 @@ metadata:
 Notes:
 
 - If multiple installers are listed, the gateway picks a **single** preferred option (brew when available, otherwise node).
-- If all installers are `download`, OpenClaw lists each entry so you can see the available artifacts.
+- If all installers are `download`, FoxFang lists each entry so you can see the available artifacts.
 - Installer specs can include `os: ["darwin"|"linux"|"win32"]` to filter options by platform.
-- Node installs honor `skills.install.nodeManager` in `openclaw.json` (default: npm; options: npm/pnpm/yarn/bun).
+- Node installs honor `skills.install.nodeManager` in `foxfang.json` (default: npm; options: npm/pnpm/yarn/bun).
   This only affects **skill installs**; the Gateway runtime should still be Node
   (Bun is not recommended for WhatsApp/Telegram).
 - Go installs: if `go` is missing and `brew` is available, the gateway installs Go via Homebrew first and sets `GOBIN` to Homebrew’s `bin` when possible.
 - Download installs: `url` (required), `archive` (`tar.gz` | `tar.bz2` | `zip`), `extract` (default: auto when archive detected), `stripComponents`, `targetDir` (default: `~/.foxfang/tools/<skillKey>`).
 
-If no `metadata.openclaw` is present, the skill is always eligible (unless
+If no `metadata.foxfang` is present, the skill is always eligible (unless
 disabled in config or blocked by `skills.allowBundled` for bundled skills).
 
-## Config overrides (`~/.foxfang/openclaw.json`)
+## Config overrides (`~/.foxfang/foxfang.json`)
 
 Bundled/managed skills can be toggled and supplied with env values:
 
@@ -224,7 +224,7 @@ Bundled/managed skills can be toggled and supplied with env values:
 
 Note: if the skill name contains hyphens, quote the key (JSON5 allows quoted keys).
 
-If you want stock image generation/editing inside OpenClaw itself, use the core
+If you want stock image generation/editing inside FoxFang itself, use the core
 `image_generate` tool with `agents.defaults.imageGenerationModel` instead of a
 bundled skill. Skill examples here are for custom or third-party workflows.
 
@@ -235,13 +235,13 @@ For native image generation/editing, use `image_generate` with
 key too.
 
 Config keys match the **skill name** by default. If a skill defines
-`metadata.openclaw.skillKey`, use that key under `skills.entries`.
+`metadata.foxfang.skillKey`, use that key under `skills.entries`.
 
 Rules:
 
 - `enabled: false` disables the skill even if it’s bundled/installed.
 - `env`: injected **only if** the variable isn’t already set in the process.
-- `apiKey`: convenience for skills that declare `metadata.openclaw.primaryEnv`.
+- `apiKey`: convenience for skills that declare `metadata.foxfang.primaryEnv`.
   Supports plaintext string or SecretRef object (`{ source, provider, id }`).
 - `config`: optional bag for custom per-skill fields; custom keys must live here.
 - `allowBundled`: optional allowlist for **bundled** skills only. If set, only
@@ -249,7 +249,7 @@ Rules:
 
 ## Environment injection (per agent run)
 
-When an agent run starts, OpenClaw:
+When an agent run starts, FoxFang:
 
 1. Reads skill metadata.
 2. Applies any `skills.entries.<key>.env` or `skills.entries.<key>.apiKey` to
@@ -261,19 +261,19 @@ This is **scoped to the agent run**, not a global shell environment.
 
 ## Session snapshot (performance)
 
-OpenClaw snapshots the eligible skills **when a session starts** and reuses that list for subsequent turns in the same session. Changes to skills or config take effect on the next new session.
+FoxFang snapshots the eligible skills **when a session starts** and reuses that list for subsequent turns in the same session. Changes to skills or config take effect on the next new session.
 
 Skills can also refresh mid-session when the skills watcher is enabled or when a new eligible remote node appears (see below). Think of this as a **hot reload**: the refreshed list is picked up on the next agent turn.
 
 ## Remote macOS nodes (Linux gateway)
 
-If the Gateway is running on Linux but a **macOS node** is connected **with `system.run` allowed** (Exec approvals security not set to `deny`), OpenClaw can treat macOS-only skills as eligible when the required binaries are present on that node. The agent should execute those skills via the `nodes` tool (typically `nodes.run`).
+If the Gateway is running on Linux but a **macOS node** is connected **with `system.run` allowed** (Exec approvals security not set to `deny`), FoxFang can treat macOS-only skills as eligible when the required binaries are present on that node. The agent should execute those skills via the `nodes` tool (typically `nodes.run`).
 
 This relies on the node reporting its command support and on a bin probe via `system.run`. If the macOS node goes offline later, the skills remain visible; invocations may fail until the node reconnects.
 
 ## Skills watcher (auto-refresh)
 
-By default, OpenClaw watches skill folders and bumps the skills snapshot when `SKILL.md` files change. Configure this under `skills.load`:
+By default, FoxFang watches skill folders and bumps the skills snapshot when `SKILL.md` files change. Configure this under `skills.load`:
 
 ```json5
 {
@@ -288,7 +288,7 @@ By default, OpenClaw watches skill folders and bumps the skills snapshot when `S
 
 ## Token impact (skills list)
 
-When skills are eligible, OpenClaw injects a compact XML list of available skills into the system prompt (via `formatSkillsForPrompt` in `pi-coding-agent`). The cost is deterministic:
+When skills are eligible, FoxFang injects a compact XML list of available skills into the system prompt (via `formatSkillsForPrompt` in `pi-coding-agent`). The cost is deterministic:
 
 - **Base overhead (only when ≥1 skill):** 195 characters.
 - **Per skill:** 97 characters + the length of the XML-escaped `<name>`, `<description>`, and `<location>` values.
@@ -306,8 +306,8 @@ Notes:
 
 ## Managed skills lifecycle
 
-OpenClaw ships a baseline set of skills as **bundled skills** as part of the
-install (npm package or OpenClaw.app). `~/.foxfang/skills` exists for local
+FoxFang ships a baseline set of skills as **bundled skills** as part of the
+install (npm package or FoxFang.app). `~/.foxfang/skills` exists for local
 overrides (for example, pinning/patching a skill without changing the bundled
 copy). Workspace skills are user-owned and override both on name conflicts.
 

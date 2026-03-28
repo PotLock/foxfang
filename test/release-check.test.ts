@@ -49,14 +49,14 @@ describe("collectBundledExtensionManifestErrors", () => {
         {
           id: "broken",
           packageJson: {
-            openclaw: {
+            foxfang: {
               install: { npmSpec: "   " },
             },
           },
         },
       ]),
     ).toEqual([
-      "bundled extension 'broken' manifest invalid | openclaw.install.npmSpec must be a non-empty string",
+      "bundled extension 'broken' manifest invalid | foxfang.install.npmSpec must be a non-empty string",
     ]);
   });
 
@@ -66,14 +66,14 @@ describe("collectBundledExtensionManifestErrors", () => {
         {
           id: "broken",
           packageJson: {
-            openclaw: {
-              install: { npmSpec: "@openclaw/broken", minHostVersion: "2026.3.14" },
+            foxfang: {
+              install: { npmSpec: "@foxfang/broken", minHostVersion: "2026.3.14" },
             },
           },
         },
       ]),
     ).toEqual([
-      "bundled extension 'broken' manifest invalid | openclaw.install.minHostVersion must use a semver floor in the form \">=x.y.z\"",
+      "bundled extension 'broken' manifest invalid | foxfang.install.minHostVersion must use a semver floor in the form \">=x.y.z\"",
     ]);
   });
 
@@ -83,7 +83,7 @@ describe("collectBundledExtensionManifestErrors", () => {
         {
           id: "irc",
           packageJson: {
-            openclaw: {
+            foxfang: {
               install: { minHostVersion: ">=2026.3.14" },
             },
           },
@@ -98,13 +98,13 @@ describe("collectBundledExtensionManifestErrors", () => {
         {
           id: "broken",
           packageJson: {
-            openclaw: {
+            foxfang: {
               install: 123,
             },
           },
         },
       ]),
-    ).toEqual(["bundled extension 'broken' manifest invalid | openclaw.install must be an object"]);
+    ).toEqual(["bundled extension 'broken' manifest invalid | foxfang.install must be an object"]);
   });
 });
 
@@ -115,9 +115,9 @@ describe("collectForbiddenPackPaths", () => {
         "dist/index.js",
         "dist/extensions/discord/node_modules/@buape/carbon/index.js",
         "extensions/tlon/node_modules/.bin/tlon",
-        "node_modules/.bin/openclaw",
+        "node_modules/.bin/foxfang",
       ]),
-    ).toEqual(["extensions/tlon/node_modules/.bin/tlon", "node_modules/.bin/openclaw"]);
+    ).toEqual(["extensions/tlon/node_modules/.bin/tlon", "node_modules/.bin/foxfang"]);
   });
 });
 
@@ -140,11 +140,11 @@ describe("collectMissingPackPaths", () => {
         "dist/extensions/matrix/helper-api.js",
         "dist/extensions/matrix/runtime-api.js",
         "dist/extensions/matrix/thread-bindings-runtime.js",
-        "dist/extensions/matrix/openclaw.plugin.json",
+        "dist/extensions/matrix/foxfang.plugin.json",
         "dist/extensions/matrix/package.json",
         "dist/extensions/whatsapp/light-runtime-api.js",
         "dist/extensions/whatsapp/runtime-api.js",
-        "dist/extensions/whatsapp/openclaw.plugin.json",
+        "dist/extensions/whatsapp/foxfang.plugin.json",
         "dist/extensions/whatsapp/package.json",
       ]),
     );
@@ -181,23 +181,23 @@ describe("collectMissingPackPaths", () => {
 describe("collectPackUnpackedSizeErrors", () => {
   it("accepts pack results within the unpacked size budget", () => {
     expect(
-      collectPackUnpackedSizeErrors([makePackResult("openclaw-2026.3.14.tgz", 120_354_302)]),
+      collectPackUnpackedSizeErrors([makePackResult("foxfang-2026.3.14.tgz", 120_354_302)]),
     ).toEqual([]);
   });
 
   it("flags oversized pack results that risk low-memory startup failures", () => {
     expect(
-      collectPackUnpackedSizeErrors([makePackResult("openclaw-2026.3.12.tgz", 224_002_564)]),
+      collectPackUnpackedSizeErrors([makePackResult("foxfang-2026.3.12.tgz", 224_002_564)]),
     ).toEqual([
-      "openclaw-2026.3.12.tgz unpackedSize 224002564 bytes (213.6 MiB) exceeds budget 199229440 bytes (190.0 MiB). Investigate duplicate channel shims, copied extension trees, or other accidental pack bloat before release.",
+      "foxfang-2026.3.12.tgz unpackedSize 224002564 bytes (213.6 MiB) exceeds budget 199229440 bytes (190.0 MiB). Investigate duplicate channel shims, copied extension trees, or other accidental pack bloat before release.",
     ]);
   });
 
   it("fails closed when npm pack output omits unpackedSize for every result", () => {
     expect(
       collectPackUnpackedSizeErrors([
-        { filename: "openclaw-2026.3.14.tgz" },
-        { filename: "openclaw-extra.tgz", unpackedSize: Number.NaN },
+        { filename: "foxfang-2026.3.14.tgz" },
+        { filename: "foxfang-extra.tgz", unpackedSize: Number.NaN },
       ]),
     ).toEqual([
       "npm pack --dry-run produced no unpackedSize data; pack size budget was not verified.",

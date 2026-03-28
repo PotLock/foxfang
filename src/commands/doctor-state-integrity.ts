@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { resolveDefaultAgentId } from "../agents/agent-scope.js";
 import { formatCliCommand } from "../cli/command-format.js";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import { resolveOAuthDir, resolveStateDir } from "../config/paths.js";
 import {
   formatSessionArchiveTimestamp,
@@ -366,7 +366,7 @@ export function formatLinuxSdBackedStateDirWarning(
   return [
     `- State directory appears to be on SD/eMMC storage (${displayStateDir}; device ${safeSource}, fs ${safeFsType}, mount ${safeMountPoint}).`,
     "- SD/eMMC media can be slower for random I/O and wear faster under session/log churn.",
-    "- For better startup and state durability, prefer SSD/NVMe (or USB SSD on Raspberry Pi) for OPENCLAW_STATE_DIR.",
+    "- For better startup and state durability, prefer SSD/NVMe (or USB SSD on Raspberry Pi) for FOXFANG_STATE_DIR.",
   ].join("\n");
 }
 
@@ -387,7 +387,7 @@ export function detectMacCloudSyncedStateDir(
   }
 
   // Cloud-sync roots should always be anchored to the OS account home on macOS.
-  // OPENCLAW_HOME can relocate app data defaults, but iCloud/CloudStorage remain under the OS home.
+  // FOXFANG_HOME can relocate app data defaults, but iCloud/CloudStorage remain under the OS home.
   const homedir = deps?.homedir ?? os.homedir();
   const roots = [
     {
@@ -453,8 +453,8 @@ function isSlashRoutingSessionKey(sessionKey: string): boolean {
   return /^[^:]+:slash:[^:]+(?:$|:)/.test(scoped);
 }
 
-function shouldRequireOAuthDir(cfg: OpenClawConfig, env: NodeJS.ProcessEnv): boolean {
-  if (env.OPENCLAW_OAUTH_DIR?.trim()) {
+function shouldRequireOAuthDir(cfg: FoxFangConfig, env: NodeJS.ProcessEnv): boolean {
+  if (env.FOXFANG_OAUTH_DIR?.trim()) {
     return true;
   }
   const channels = cfg.channels;
@@ -478,7 +478,7 @@ function shouldRequireOAuthDir(cfg: OpenClawConfig, env: NodeJS.ProcessEnv): boo
 }
 
 export async function noteStateIntegrity(
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   prompter: DoctorPrompterLike,
   configPath?: string,
 ) {
@@ -509,7 +509,7 @@ export async function noteStateIntegrity(
         `- State directory is under macOS cloud-synced storage (${displayStateDir}; ${cloudSyncedStateDir.storage}).`,
         "- This can cause slow I/O and sync/lock races for sessions and credentials.",
         "- Prefer a local non-synced state dir (for example: ~/.foxfang).",
-        `  Set locally: OPENCLAW_STATE_DIR=~/.foxfang ${formatCliCommand("openclaw doctor")}`,
+        `  Set locally: FOXFANG_STATE_DIR=~/.foxfang ${formatCliCommand("foxfang doctor")}`,
       ].join("\n"),
     );
   }
@@ -730,9 +730,9 @@ export async function noteStateIntegrity(
       warnings.push(
         [
           `- ${missing.length}/${recentTranscriptCandidates.length} recent sessions are missing transcripts.`,
-          `  Verify sessions in store: ${formatCliCommand(`openclaw sessions --store "${absoluteStorePath}"`)}`,
-          `  Preview cleanup impact: ${formatCliCommand(`openclaw sessions cleanup --store "${absoluteStorePath}" --dry-run`)}`,
-          `  Prune missing entries: ${formatCliCommand(`openclaw sessions cleanup --store "${absoluteStorePath}" --enforce --fix-missing`)}`,
+          `  Verify sessions in store: ${formatCliCommand(`foxfang sessions --store "${absoluteStorePath}"`)}`,
+          `  Preview cleanup impact: ${formatCliCommand(`foxfang sessions cleanup --store "${absoluteStorePath}" --dry-run`)}`,
+          `  Prune missing entries: ${formatCliCommand(`foxfang sessions cleanup --store "${absoluteStorePath}" --enforce --fix-missing`)}`,
         ].join("\n"),
       );
     }

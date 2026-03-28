@@ -1,1 +1,1 @@
-export { ensurePortAvailable } from "openclaw/plugin-sdk/browser-support";
+export { ensurePortAvailable } from "foxfang/plugin-sdk/browser-support";

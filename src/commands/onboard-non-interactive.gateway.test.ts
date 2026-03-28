@@ -148,7 +148,7 @@ async function expectLocalJsonSetupFailure(stateDir: string, runtimeWithCapture:
       {
         nonInteractive: true,
         mode: "local",
-        workspace: path.join(stateDir, "openclaw"),
+        workspace: path.join(stateDir, "foxfang"),
         authChoice: "skip",
         skipSkills: true,
         skipHealth: false,
@@ -170,8 +170,8 @@ describe("onboard (non-interactive): gateway and remote auth", () => {
       throw new Error("temp home not initialized");
     }
     const stateDir = await fs.mkdtemp(path.join(tempHome, prefix));
-    process.env.OPENCLAW_STATE_DIR = stateDir;
-    delete process.env.OPENCLAW_CONFIG_PATH;
+    process.env.FOXFANG_STATE_DIR = stateDir;
+    delete process.env.FOXFANG_CONFIG_PATH;
     return stateDir;
   };
   const withStateDir = async (
@@ -188,25 +188,25 @@ describe("onboard (non-interactive): gateway and remote auth", () => {
   beforeAll(async () => {
     envSnapshot = captureEnv([
       "HOME",
-      "OPENCLAW_STATE_DIR",
-      "OPENCLAW_CONFIG_PATH",
-      "OPENCLAW_SKIP_CHANNELS",
-      "OPENCLAW_SKIP_GMAIL_WATCHER",
-      "OPENCLAW_SKIP_CRON",
-      "OPENCLAW_SKIP_CANVAS_HOST",
-      "OPENCLAW_SKIP_BROWSER_CONTROL_SERVER",
-      "OPENCLAW_GATEWAY_TOKEN",
-      "OPENCLAW_GATEWAY_PASSWORD",
+      "FOXFANG_STATE_DIR",
+      "FOXFANG_CONFIG_PATH",
+      "FOXFANG_SKIP_CHANNELS",
+      "FOXFANG_SKIP_GMAIL_WATCHER",
+      "FOXFANG_SKIP_CRON",
+      "FOXFANG_SKIP_CANVAS_HOST",
+      "FOXFANG_SKIP_BROWSER_CONTROL_SERVER",
+      "FOXFANG_GATEWAY_TOKEN",
+      "FOXFANG_GATEWAY_PASSWORD",
     ]);
-    process.env.OPENCLAW_SKIP_CHANNELS = "1";
-    process.env.OPENCLAW_SKIP_GMAIL_WATCHER = "1";
-    process.env.OPENCLAW_SKIP_CRON = "1";
-    process.env.OPENCLAW_SKIP_CANVAS_HOST = "1";
-    process.env.OPENCLAW_SKIP_BROWSER_CONTROL_SERVER = "1";
-    delete process.env.OPENCLAW_GATEWAY_TOKEN;
-    delete process.env.OPENCLAW_GATEWAY_PASSWORD;
+    process.env.FOXFANG_SKIP_CHANNELS = "1";
+    process.env.FOXFANG_SKIP_GMAIL_WATCHER = "1";
+    process.env.FOXFANG_SKIP_CRON = "1";
+    process.env.FOXFANG_SKIP_CANVAS_HOST = "1";
+    process.env.FOXFANG_SKIP_BROWSER_CONTROL_SERVER = "1";
+    delete process.env.FOXFANG_GATEWAY_TOKEN;
+    delete process.env.FOXFANG_GATEWAY_PASSWORD;
 
-    tempHome = await makeTempWorkspace("openclaw-onboard-");
+    tempHome = await makeTempWorkspace("foxfang-onboard-");
     process.env.HOME = tempHome;
 
     await loadGatewayOnboardModules();
@@ -235,7 +235,7 @@ describe("onboard (non-interactive): gateway and remote auth", () => {
   it("writes gateway token auth into config", async () => {
     await withStateDir("state-noninteractive-", async (stateDir) => {
       const token = "tok_test_123";
-      const workspace = path.join(stateDir, "openclaw");
+      const workspace = path.join(stateDir, "foxfang");
 
       await runNonInteractiveSetup(
         {
@@ -267,12 +267,12 @@ describe("onboard (non-interactive): gateway and remote auth", () => {
     });
   }, 60_000);
 
-  it("uses OPENCLAW_GATEWAY_TOKEN when --gateway-token is omitted", async () => {
+  it("uses FOXFANG_GATEWAY_TOKEN when --gateway-token is omitted", async () => {
     await withStateDir("state-env-token-", async (stateDir) => {
       const envToken = "tok_env_fallback_123";
-      const workspace = path.join(stateDir, "openclaw");
-      const prevToken = process.env.OPENCLAW_GATEWAY_TOKEN;
-      process.env.OPENCLAW_GATEWAY_TOKEN = envToken;
+      const workspace = path.join(stateDir, "foxfang");
+      const prevToken = process.env.FOXFANG_GATEWAY_TOKEN;
+      process.env.FOXFANG_GATEWAY_TOKEN = envToken;
 
       try {
         await runNonInteractiveSetup(
@@ -299,9 +299,9 @@ describe("onboard (non-interactive): gateway and remote auth", () => {
         expect(cfg?.gateway?.auth?.token).toBe(envToken);
       } finally {
         if (prevToken === undefined) {
-          delete process.env.OPENCLAW_GATEWAY_TOKEN;
+          delete process.env.FOXFANG_GATEWAY_TOKEN;
         } else {
-          process.env.OPENCLAW_GATEWAY_TOKEN = prevToken;
+          process.env.FOXFANG_GATEWAY_TOKEN = prevToken;
         }
       }
     });
@@ -310,9 +310,9 @@ describe("onboard (non-interactive): gateway and remote auth", () => {
   it("writes gateway token SecretRef from --gateway-token-ref-env", async () => {
     await withStateDir("state-env-token-ref-", async (stateDir) => {
       const envToken = "tok_env_ref_123";
-      const workspace = path.join(stateDir, "openclaw");
-      const prevToken = process.env.OPENCLAW_GATEWAY_TOKEN;
-      process.env.OPENCLAW_GATEWAY_TOKEN = envToken;
+      const workspace = path.join(stateDir, "foxfang");
+      const prevToken = process.env.FOXFANG_GATEWAY_TOKEN;
+      process.env.FOXFANG_GATEWAY_TOKEN = envToken;
 
       try {
         await runNonInteractiveSetup(
@@ -326,7 +326,7 @@ describe("onboard (non-interactive): gateway and remote auth", () => {
             installDaemon: false,
             gatewayBind: "loopback",
             gatewayAuth: "token",
-            gatewayTokenRefEnv: "OPENCLAW_GATEWAY_TOKEN",
+            gatewayTokenRefEnv: "FOXFANG_GATEWAY_TOKEN",
           },
           runtime,
         );
@@ -340,13 +340,13 @@ describe("onboard (non-interactive): gateway and remote auth", () => {
         expect(cfg?.gateway?.auth?.token).toEqual({
           source: "env",
           provider: "default",
-          id: "OPENCLAW_GATEWAY_TOKEN",
+          id: "FOXFANG_GATEWAY_TOKEN",
         });
       } finally {
         if (prevToken === undefined) {
-          delete process.env.OPENCLAW_GATEWAY_TOKEN;
+          delete process.env.FOXFANG_GATEWAY_TOKEN;
         } else {
-          process.env.OPENCLAW_GATEWAY_TOKEN = prevToken;
+          process.env.FOXFANG_GATEWAY_TOKEN = prevToken;
         }
       }
     });
@@ -354,7 +354,7 @@ describe("onboard (non-interactive): gateway and remote auth", () => {
 
   it("fails when --gateway-token-ref-env points to a missing env var", async () => {
     await withStateDir("state-env-token-ref-missing-", async (stateDir) => {
-      const workspace = path.join(stateDir, "openclaw");
+      const workspace = path.join(stateDir, "foxfang");
       const previous = process.env.MISSING_GATEWAY_TOKEN_ENV;
       delete process.env.MISSING_GATEWAY_TOKEN_ENV;
       try {
@@ -430,7 +430,7 @@ describe("onboard (non-interactive): gateway and remote auth", () => {
           {
             nonInteractive: true,
             mode: "local",
-            workspace: path.join(stateDir, "openclaw"),
+            workspace: path.join(stateDir, "foxfang"),
             authChoice: "skip",
             skipSkills: true,
             skipHealth: false,
@@ -457,7 +457,7 @@ describe("onboard (non-interactive): gateway and remote auth", () => {
         {
           nonInteractive: true,
           mode: "local",
-          workspace: path.join(stateDir, "openclaw"),
+          workspace: path.join(stateDir, "foxfang"),
           authChoice: "skip",
           skipSkills: true,
           skipHealth: false,
@@ -551,7 +551,7 @@ describe("onboard (non-interactive): gateway and remote auth", () => {
       expect(parsed.installDaemon).toBe(true);
       expect(parsed.detail).toContain("1006 abnormal closure");
       expect(parsed.gateway?.wsUrl).toContain("ws://127.0.0.1:");
-      expect(parsed.hints).toContain("Run `openclaw gateway status --deep` for more detail.");
+      expect(parsed.hints).toContain("Run `foxfang gateway status --deep` for more detail.");
       expect(parsed.diagnostics?.service?.label).toBe("LaunchAgent");
       expect(parsed.diagnostics?.service?.loaded).toBe(true);
       expect(parsed.diagnostics?.service?.runtimeStatus).toBe("running");
@@ -566,11 +566,11 @@ describe("onboard (non-interactive): gateway and remote auth", () => {
       return;
     }
     await withStateDir("state-lan-", async (stateDir) => {
-      process.env.OPENCLAW_STATE_DIR = stateDir;
-      process.env.OPENCLAW_CONFIG_PATH = path.join(stateDir, "openclaw.json");
+      process.env.FOXFANG_STATE_DIR = stateDir;
+      process.env.FOXFANG_CONFIG_PATH = path.join(stateDir, "foxfang.json");
 
       const port = getPseudoPort(40_000);
-      const workspace = path.join(stateDir, "openclaw");
+      const workspace = path.join(stateDir, "foxfang");
 
       await runNonInteractiveSetup(
         {

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { loadIncludePatternsFromEnv } from "../vitest.extensions.config.ts";
 import { createPatternFileHelper } from "./helpers/pattern-file.js";
 
-const patternFiles = createPatternFileHelper("openclaw-vitest-extensions-config-");
+const patternFiles = createPatternFileHelper("foxfang-vitest-extensions-config-");
 
 afterEach(() => {
   patternFiles.cleanup();
@@ -23,7 +23,7 @@ describe("extensions vitest include patterns", () => {
 
     expect(
       loadIncludePatternsFromEnv({
-        OPENCLAW_VITEST_INCLUDE_FILE: filePath,
+        FOXFANG_VITEST_INCLUDE_FILE: filePath,
       }),
     ).toEqual(["extensions/feishu/index.test.ts", "extensions/msteams/src/monitor.test.ts"]);
   });
@@ -35,7 +35,7 @@ describe("extensions vitest include patterns", () => {
 
     expect(() =>
       loadIncludePatternsFromEnv({
-        OPENCLAW_VITEST_INCLUDE_FILE: filePath,
+        FOXFANG_VITEST_INCLUDE_FILE: filePath,
       }),
     ).toThrow(/JSON array/u);
   });

@@ -1,14 +1,14 @@
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
 import {
   readConfigFileSnapshotForWrite,
   writeConfigFile,
-} from "openclaw/plugin-sdk/config-runtime";
+} from "foxfang/plugin-sdk/config-runtime";
 import {
   loadCronStore,
   resolveCronStorePath,
   saveCronStore,
-} from "openclaw/plugin-sdk/config-runtime";
-import { createSubsystemLogger } from "openclaw/plugin-sdk/runtime-env";
+} from "foxfang/plugin-sdk/config-runtime";
+import { createSubsystemLogger } from "foxfang/plugin-sdk/runtime-env";
 import {
   normalizeTelegramChatId,
   normalizeTelegramLookupTarget,
@@ -99,7 +99,7 @@ function rewriteTargetIfMatch(params: {
 }
 
 function replaceTelegramDefaultToTargets(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   matchKey: string;
   resolvedTarget: string;
 }): boolean {
@@ -138,7 +138,7 @@ function replaceTelegramDefaultToTargets(params: {
 }
 
 export async function maybePersistResolvedTelegramTarget(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   rawTarget: string;
   resolvedChatId: string;
   verbose?: boolean;

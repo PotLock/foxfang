@@ -1,23 +1,23 @@
 {
-  "name": "@openclaw/zalo",
+  "name": "@foxfang/zalo",
   "version": "2026.3.27",
-  "description": "OpenClaw Zalo channel plugin",
+  "description": "FoxFang Zalo channel plugin",
   "type": "module",
   "dependencies": {
     "undici": "7.24.6"
   },
   "devDependencies": {
-    "openclaw": "workspace:*"
+    "foxfang": "workspace:*"
   },
   "peerDependencies": {
-    "openclaw": ">=2026.3.27"
+    "foxfang": ">=2026.3.27"
   },
   "peerDependenciesMeta": {
-    "openclaw": {
+    "foxfang": {
       "optional": true
     }
   },
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ],
@@ -36,7 +36,7 @@
       "quickstartAllowFrom": true
     },
     "install": {
-      "npmSpec": "@openclaw/zalo",
+      "npmSpec": "@foxfang/zalo",
       "localPath": "extensions/zalo",
       "defaultChoice": "npm",
       "minHostVersion": ">=2026.3.27"

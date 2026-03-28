@@ -1,9 +1,9 @@
 {
-  "name": "@openclaw/irc",
+  "name": "@foxfang/irc",
   "version": "2026.3.27",
-  "description": "OpenClaw IRC channel plugin",
+  "description": "FoxFang IRC channel plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ],

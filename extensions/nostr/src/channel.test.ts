@@ -5,7 +5,7 @@ import {
   runSetupWizardConfigure,
   type WizardPrompter,
 } from "../../../test/helpers/extensions/setup-wizard.js";
-import type { OpenClawConfig } from "../runtime-api.js";
+import type { FoxFangConfig } from "../runtime-api.js";
 import { nostrPlugin } from "./channel.js";
 import {
   TEST_HEX_PRIVATE_KEY,
@@ -192,7 +192,7 @@ describe("nostr setup wizard", () => {
 
     const result = await runSetupWizardConfigure({
       configure: nostrConfigure,
-      cfg: {} as OpenClawConfig,
+      cfg: {} as FoxFangConfig,
       prompter,
       options: {},
     });

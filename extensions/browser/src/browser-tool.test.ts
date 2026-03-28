@@ -55,7 +55,7 @@ const browserConfigMocks = vi.hoisted(() => ({
     enabled: true,
     controlPort: 18791,
     profiles: {},
-    defaultProfile: "openclaw",
+    defaultProfile: "foxfang",
   })),
   resolveProfile: vi.fn((resolved: Record<string, unknown>, name: string) => {
     const profile = (resolved.profiles as Record<string, Record<string, unknown>> | undefined)?.[
@@ -64,7 +64,7 @@ const browserConfigMocks = vi.hoisted(() => ({
     if (!profile) {
       return null;
     }
-    const driver = profile.driver === "existing-session" ? "existing-session" : "openclaw";
+    const driver = profile.driver === "existing-session" ? "existing-session" : "foxfang";
     if (driver === "existing-session") {
       return {
         name,
@@ -159,7 +159,7 @@ function resetBrowserToolMocks() {
     enabled: true,
     controlPort: 18791,
     profiles: {},
-    defaultProfile: "openclaw",
+    defaultProfile: "foxfang",
   });
   nodesUtilsMocks.listNodes.mockResolvedValue([]);
   browserToolTesting.setDepsForTest({
@@ -195,7 +195,7 @@ function resetBrowserToolMocks() {
 
 function setResolvedBrowserProfiles(
   profiles: Record<string, Record<string, unknown>>,
-  defaultProfile = "openclaw",
+  defaultProfile = "foxfang",
 ) {
   browserConfigMocks.resolveBrowserConfig.mockReturnValue({
     enabled: true,

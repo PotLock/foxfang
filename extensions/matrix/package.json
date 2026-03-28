@@ -1,7 +1,7 @@
 {
-  "name": "@openclaw/matrix",
+  "name": "@foxfang/matrix",
   "version": "2026.3.27",
-  "description": "OpenClaw Matrix channel plugin",
+  "description": "FoxFang Matrix channel plugin",
   "type": "module",
   "dependencies": {
     "@matrix-org/matrix-sdk-crypto-nodejs": "^0.4.0",
@@ -11,17 +11,17 @@
     "music-metadata": "^11.12.3"
   },
   "devDependencies": {
-    "openclaw": "workspace:*"
+    "foxfang": "workspace:*"
   },
   "peerDependencies": {
-    "openclaw": ">=2026.3.27"
+    "foxfang": ">=2026.3.27"
   },
   "peerDependenciesMeta": {
-    "openclaw": {
+    "foxfang": {
       "optional": true
     }
   },
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ],
@@ -37,7 +37,7 @@
       "quickstartAllowFrom": true
     },
     "install": {
-      "npmSpec": "@openclaw/matrix",
+      "npmSpec": "@foxfang/matrix",
       "localPath": "extensions/matrix",
       "defaultChoice": "npm",
       "minHostVersion": ">=2026.3.27"

@@ -10,7 +10,7 @@ import {
   type WizardPrompter,
 } from "../../../test/helpers/extensions/setup-wizard.js";
 import { createStartAccountContext } from "../../../test/helpers/extensions/start-account-context.js";
-import type { OpenClawConfig, PluginRuntime, ResolvedLineAccount } from "../api.js";
+import type { FoxFangConfig, PluginRuntime, ResolvedLineAccount } from "../api.js";
 import { linePlugin } from "./channel.js";
 import { clearLineRuntime, setLineRuntime } from "./runtime.js";
 
@@ -110,7 +110,7 @@ function collectRuntimeApiPreExports(runtimeApiPath: string): string[] {
     if (!moduleSpecifier) {
       continue;
     }
-    if (moduleSpecifier === "openclaw/plugin-sdk/line-runtime") {
+    if (moduleSpecifier === "foxfang/plugin-sdk/line-runtime") {
       pluginSdkLineRuntimeSeen = true;
       break;
     }
@@ -162,7 +162,7 @@ describe("line setup wizard", () => {
 
     const result = await runSetupWizardConfigure({
       configure: lineConfigure,
-      cfg: {} as OpenClawConfig,
+      cfg: {} as FoxFangConfig,
       prompter,
       options: {},
     });
@@ -205,9 +205,9 @@ describe("probeLineBot", () => {
 
   it("returns bot info when available", async () => {
     getBotInfoMock.mockResolvedValue({
-      displayName: "OpenClaw",
+      displayName: "FoxFang",
       userId: "U123",
-      basicId: "@openclaw",
+      basicId: "@foxfang",
       pictureUrl: "https://example.com/bot.png",
     });
 
@@ -225,9 +225,9 @@ describe("linePlugin status.probeAccount", () => {
       return { getBotInfo: getBotInfoMock };
     });
     getBotInfoMock.mockResolvedValue({
-      displayName: "OpenClaw",
+      displayName: "FoxFang",
       userId: "U123",
-      basicId: "@openclaw",
+      basicId: "@foxfang",
       pictureUrl: "https://example.com/bot.png",
     });
 
@@ -236,7 +236,7 @@ describe("linePlugin status.probeAccount", () => {
     const { probeLineBot: directProbeLineBot } = await import("./probe.js");
     clearFreshLineRuntime();
     const params = {
-      cfg: {} as OpenClawConfig,
+      cfg: {} as FoxFangConfig,
       account: {
         accountId: "default",
         enabled: true,
@@ -267,7 +267,7 @@ describe("line runtime api", () => {
           "probeLineBot",
           "pushMessageLine",
         ],
-        realPluginSdkSpecifiers: ["openclaw/plugin-sdk/line-runtime"],
+        realPluginSdkSpecifiers: ["foxfang/plugin-sdk/line-runtime"],
       }),
     ).toEqual({
       buildTemplateMessageFromPayload: "function",
@@ -283,7 +283,7 @@ describe("line runtime api", () => {
     expect(collectRuntimeApiPreExports(runtimeApiPath)).toEqual([]);
     const runtimeApiSource = readFileSync(runtimeApiPath, "utf8");
 
-    expect(runtimeApiSource).not.toContain("openclaw/plugin-sdk/line-runtime");
+    expect(runtimeApiSource).not.toContain("foxfang/plugin-sdk/line-runtime");
     expect(collectRuntimeApiPreExports(runtimeApiPath)).toEqual([]);
   });
 });

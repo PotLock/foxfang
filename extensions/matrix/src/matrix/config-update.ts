@@ -1,5 +1,5 @@
-import { DEFAULT_ACCOUNT_ID } from "openclaw/plugin-sdk/account-id";
-import { coerceSecretRef } from "openclaw/plugin-sdk/config-runtime";
+import { DEFAULT_ACCOUNT_ID } from "foxfang/plugin-sdk/account-id";
+import { coerceSecretRef } from "foxfang/plugin-sdk/config-runtime";
 import { normalizeAccountId, normalizeSecretInputString } from "../runtime-api.js";
 import type { CoreConfig, MatrixConfig } from "../types.js";
 import { findMatrixAccountConfig } from "./account-config.js";

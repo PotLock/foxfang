@@ -20,14 +20,14 @@ describe("waitForever", () => {
 
 describe("shouldSkipRespawnForArgv", () => {
   it.each([
-    { argv: ["node", "openclaw", "--help"] },
-    { argv: ["node", "openclaw", "-V"] },
+    { argv: ["node", "foxfang", "--help"] },
+    { argv: ["node", "foxfang", "-V"] },
   ] as const)("skips respawn for argv %j", ({ argv }) => {
     expect(shouldSkipRespawnForArgv([...argv]), argv.join(" ")).toBe(true);
   });
 
   it("keeps respawn path for normal commands", () => {
-    expect(shouldSkipRespawnForArgv(["node", "openclaw", "status"])).toBe(false);
+    expect(shouldSkipRespawnForArgv(["node", "foxfang", "status"])).toBe(false);
   });
 });
 
@@ -52,10 +52,10 @@ describe("dns cli", () => {
     try {
       const program = new Command();
       registerDnsCli(program);
-      await program.parseAsync(["dns", "setup", "--domain", "openclaw.internal"], { from: "user" });
+      await program.parseAsync(["dns", "setup", "--domain", "foxfang.internal"], { from: "user" });
       const output = log.mock.calls.map((call) => call.join(" ")).join("\\n");
       expect(output).toContain("DNS setup");
-      expect(output).toContain("openclaw.internal");
+      expect(output).toContain("foxfang.internal");
     } finally {
       log.mockRestore();
     }

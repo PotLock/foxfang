@@ -24,9 +24,9 @@ inside a sandbox workspace under `~/.foxfang/sandboxes`, not your host workspace
 ## Default location
 
 - Default: `~/.foxfang/workspace`
-- If `OPENCLAW_PROFILE` is set and not `"default"`, the default becomes
+- If `FOXFANG_PROFILE` is set and not `"default"`, the default becomes
   `~/.foxfang/workspace-<profile>`.
-- Override in `~/.foxfang/openclaw.json`:
+- Override in `~/.foxfang/foxfang.json`:
 
 ```json5
 {
@@ -36,7 +36,7 @@ inside a sandbox workspace under `~/.foxfang/sandboxes`, not your host workspace
 }
 ```
 
-`openclaw onboard`, `openclaw configure`, or `openclaw setup` will create the
+`foxfang onboard`, `foxfang configure`, or `foxfang setup` will create the
 workspace and seed the bootstrap files if they are missing.
 Sandbox seed copies only accept regular in-workspace files; symlink/hardlink
 aliases that resolve outside the source workspace are ignored.
@@ -50,20 +50,20 @@ file creation:
 
 ## Extra workspace folders
 
-Older installs may have created `~/openclaw`. Keeping multiple workspace
+Older installs may have created `~/foxfang`. Keeping multiple workspace
 directories around can cause confusing auth or state drift, because only one
 workspace is active at a time.
 
 **Recommendation:** keep a single active workspace. If you no longer use the
-extra folders, archive or move them to Trash (for example `trash ~/openclaw`).
+extra folders, archive or move them to Trash (for example `trash ~/foxfang`).
 If you intentionally keep multiple workspaces, make sure
 `agents.defaults.workspace` points to the active one.
 
-`openclaw doctor` warns when it detects extra workspace directories.
+`foxfang doctor` warns when it detects extra workspace directories.
 
 ## Workspace file map (what each file means)
 
-These are the standard files OpenClaw expects inside the workspace:
+These are the standard files FoxFang expects inside the workspace:
 
 - `AGENTS.md`
   - Operating instructions for the agent and how it should use memory.
@@ -116,18 +116,18 @@ See [Memory](/concepts/memory) for the workflow and automatic memory flush.
 - `canvas/` (optional)
   - Canvas UI files for node displays (for example `canvas/index.html`).
 
-If any bootstrap file is missing, OpenClaw injects a "missing file" marker into
+If any bootstrap file is missing, FoxFang injects a "missing file" marker into
 the session and continues. Large bootstrap files are truncated when injected;
 adjust limits with `agents.defaults.bootstrapMaxChars` (default: 20000) and
 `agents.defaults.bootstrapTotalMaxChars` (default: 150000).
-`openclaw setup` can recreate missing defaults without overwriting existing
+`foxfang setup` can recreate missing defaults without overwriting existing
 files.
 
 ## What is NOT in the workspace
 
 These live under `~/.foxfang/` and should NOT be committed to the workspace repo:
 
-- `~/.foxfang/openclaw.json` (config)
+- `~/.foxfang/foxfang.json` (config)
 - `~/.foxfang/credentials/` (OAuth tokens, API keys)
 - `~/.foxfang/agents/<agentId>/sessions/` (session transcripts + metadata)
 - `~/.foxfang/skills/` (managed skills)
@@ -174,7 +174,7 @@ Option B: GitHub CLI (`gh`)
 
 ```bash
 gh auth login
-gh repo create openclaw-workspace --private --source . --remote origin --push
+gh repo create foxfang-workspace --private --source . --remote origin --push
 ```
 
 Option C: GitLab web UI
@@ -223,8 +223,8 @@ Suggested `.gitignore` starter:
 ## Moving the workspace to a new machine
 
 1. Clone the repo to the desired path (default `~/.foxfang/workspace`).
-2. Set `agents.defaults.workspace` to that path in `~/.foxfang/openclaw.json`.
-3. Run `openclaw setup --workspace <path>` to seed any missing files.
+2. Set `agents.defaults.workspace` to that path in `~/.foxfang/foxfang.json`.
+3. Run `foxfang setup --workspace <path>` to seed any missing files.
 4. If you need sessions, copy `~/.foxfang/agents/<agentId>/sessions/` from the
    old machine separately.
 

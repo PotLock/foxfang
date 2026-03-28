@@ -1,7 +1,7 @@
 {
-  "name": "@openclaw/diagnostics-otel",
+  "name": "@foxfang/diagnostics-otel",
   "version": "2026.3.27",
-  "description": "OpenClaw diagnostics OpenTelemetry exporter",
+  "description": "FoxFang diagnostics OpenTelemetry exporter",
   "type": "module",
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",
@@ -16,7 +16,7 @@
     "@opentelemetry/sdk-trace-base": "^2.6.1",
     "@opentelemetry/semantic-conventions": "^1.40.0"
   },
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ],

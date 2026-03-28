@@ -24,15 +24,15 @@ function writeRuntimeFixtureText(rootDir: string, relativePath: string, value: s
 }
 
 function createBundledWhatsAppRuntimeFixture() {
-  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "openclaw-whatsapp-boundary-"));
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "foxfang-whatsapp-boundary-"));
   tempDirs.push(rootDir);
   for (const [relativePath, value] of Object.entries({
     "package.json": JSON.stringify(
       {
-        name: "openclaw",
+        name: "foxfang",
         type: "module",
         bin: {
-          openclaw: "foxfang.mjs",
+          foxfang: "foxfang.mjs",
         },
         exports: {
           "./plugin-sdk": {
@@ -50,7 +50,7 @@ function createBundledWhatsAppRuntimeFixture() {
     "dist/extensions/whatsapp/runtime-api.js":
       'export { getActiveWebListener, setActiveWebListener } from "../../active-listener.js";\n',
     "dist/active-listener.js": [
-      'const key = Symbol.for("openclaw.whatsapp.activeListenerState");',
+      'const key = Symbol.for("foxfang.whatsapp.activeListenerState");',
       "const g = globalThis;",
       "if (!g[key]) {",
       "  g[key] = { listeners: new Map(), current: null };",

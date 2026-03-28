@@ -24,12 +24,12 @@ afterEach(() => {
 
 describe("buildOfficialChannelCatalog", () => {
   it("includes publishable official channel plugins and skips non-publishable entries", () => {
-    const repoRoot = makeRepoRoot("openclaw-official-channel-catalog-");
+    const repoRoot = makeRepoRoot("foxfang-official-channel-catalog-");
     writeJson(path.join(repoRoot, "extensions", "whatsapp", "package.json"), {
-      name: "@openclaw/whatsapp",
+      name: "@foxfang/whatsapp",
       version: "2026.3.23",
-      description: "OpenClaw WhatsApp channel plugin",
-      openclaw: {
+      description: "FoxFang WhatsApp channel plugin",
+      foxfang: {
         channel: {
           id: "whatsapp",
           label: "WhatsApp",
@@ -39,7 +39,7 @@ describe("buildOfficialChannelCatalog", () => {
           blurb: "works with your own number; recommend a separate phone + eSIM.",
         },
         install: {
-          npmSpec: "@openclaw/whatsapp",
+          npmSpec: "@foxfang/whatsapp",
           localPath: "extensions/whatsapp",
           defaultChoice: "npm",
         },
@@ -49,8 +49,8 @@ describe("buildOfficialChannelCatalog", () => {
       },
     });
     writeJson(path.join(repoRoot, "extensions", "local-only", "package.json"), {
-      name: "@openclaw/local-only",
-      openclaw: {
+      name: "@foxfang/local-only",
+      foxfang: {
         channel: {
           id: "local-only",
           label: "Local Only",
@@ -70,10 +70,10 @@ describe("buildOfficialChannelCatalog", () => {
     expect(buildOfficialChannelCatalog({ repoRoot })).toEqual({
       entries: [
         {
-          name: "@openclaw/whatsapp",
+          name: "@foxfang/whatsapp",
           version: "2026.3.23",
-          description: "OpenClaw WhatsApp channel plugin",
-          openclaw: {
+          description: "FoxFang WhatsApp channel plugin",
+          foxfang: {
             channel: {
               id: "whatsapp",
               label: "WhatsApp",
@@ -83,7 +83,7 @@ describe("buildOfficialChannelCatalog", () => {
               blurb: "works with your own number; recommend a separate phone + eSIM.",
             },
             install: {
-              npmSpec: "@openclaw/whatsapp",
+              npmSpec: "@foxfang/whatsapp",
               localPath: "extensions/whatsapp",
               defaultChoice: "npm",
             },
@@ -94,10 +94,10 @@ describe("buildOfficialChannelCatalog", () => {
   });
 
   it("writes the official catalog under dist", () => {
-    const repoRoot = makeRepoRoot("openclaw-official-channel-catalog-write-");
+    const repoRoot = makeRepoRoot("foxfang-official-channel-catalog-write-");
     writeJson(path.join(repoRoot, "extensions", "whatsapp", "package.json"), {
-      name: "@openclaw/whatsapp",
-      openclaw: {
+      name: "@foxfang/whatsapp",
+      foxfang: {
         channel: {
           id: "whatsapp",
           label: "WhatsApp",
@@ -106,7 +106,7 @@ describe("buildOfficialChannelCatalog", () => {
           blurb: "wa",
         },
         install: {
-          npmSpec: "@openclaw/whatsapp",
+          npmSpec: "@foxfang/whatsapp",
         },
         release: {
           publishToNpm: true,
@@ -121,8 +121,8 @@ describe("buildOfficialChannelCatalog", () => {
     expect(JSON.parse(fs.readFileSync(outputPath, "utf8"))).toEqual({
       entries: [
         {
-          name: "@openclaw/whatsapp",
-          openclaw: {
+          name: "@foxfang/whatsapp",
+          foxfang: {
             channel: {
               id: "whatsapp",
               label: "WhatsApp",
@@ -131,7 +131,7 @@ describe("buildOfficialChannelCatalog", () => {
               blurb: "wa",
             },
             install: {
-              npmSpec: "@openclaw/whatsapp",
+              npmSpec: "@foxfang/whatsapp",
             },
           },
         },

@@ -9,7 +9,7 @@ import {
 import { makeBootstrapWarn, resolveBootstrapContextForRun } from "../bootstrap-files.js";
 import { resolveCliBackendConfig } from "../cli-backends.js";
 import { hashCliSessionText, resolveCliSessionReuse } from "../cli-session.js";
-import { resolveOpenClawDocsPath } from "../docs-path.js";
+import { resolveFoxFangDocsPath } from "../docs-path.js";
 import {
   resolveBootstrapMaxChars,
   resolveBootstrapPromptTruncationWarningMode,
@@ -107,7 +107,7 @@ export async function prepareCliRunContext(
     sessionAgentId === defaultAgentId
       ? resolveHeartbeatPrompt(params.config?.agents?.defaults?.heartbeat?.prompt)
       : undefined;
-  const docsPath = await resolveOpenClawDocsPath({
+  const docsPath = await resolveFoxFangDocsPath({
     workspaceDir,
     argv1: process.argv[1],
     cwd: process.cwd(),

@@ -8,7 +8,7 @@ title: "Skills Config"
 
 # Skills Config
 
-All skills-related configuration lives under `skills` in `~/.foxfang/openclaw.json`.
+All skills-related configuration lives under `skills` in `~/.foxfang/foxfang.json`.
 
 ```json5
 {
@@ -76,7 +76,7 @@ Per-skill fields:
 ## Notes
 
 - Keys under `entries` map to the skill name by default. If a skill defines
-  `metadata.openclaw.skillKey`, use that key instead.
+  `metadata.foxfang.skillKey`, use that key instead.
 - Load precedence is `<workspace>/skills` → `<workspace>/.agents/skills` →
   `~/.agents/skills` → `~/.foxfang/skills` → bundled skills →
   `skills.load.extraDirs`.

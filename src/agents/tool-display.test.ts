@@ -81,11 +81,11 @@ describe("tool display details", () => {
     const detail = formatToolDetail(
       resolveToolDisplay({
         name: "web_search",
-        args: { query: "OpenClaw docs", count: 3 },
+        args: { query: "FoxFang docs", count: 3 },
       }),
     );
 
-    expect(detail).toBe('for "OpenClaw docs" (top 3)');
+    expect(detail).toBe('for "FoxFang docs" (top 3)');
   });
 
   it("summarizes exec commands with context", () => {
@@ -101,7 +101,7 @@ describe("tool display details", () => {
     );
 
     expect(detail).toContain("check git status -> show first 3 lines");
-    expect(detail).toContain(".openclaw/workspace)");
+    expect(detail).toContain(".foxfang/workspace)");
   });
 
   it("moves cd path to context suffix and appends raw command", () => {

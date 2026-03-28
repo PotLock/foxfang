@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, vi } from "vitest";
 import { withTempHome as withTempHomeBase } from "../../test/helpers/temp-home.js";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import type { MockFn } from "../test-utils/vitest-mock-fn.js";
 import { resolveImplicitProviders } from "./models-config.providers.implicit.js";
 
 export function withModelsTempHome<T>(fn: (home: string) => Promise<T>): Promise<T> {
-  return withTempHomeBase(fn, { prefix: "openclaw-models-" });
+  return withTempHomeBase(fn, { prefix: "foxfang-models-" });
 }
 
 export function installModelsConfigTestHooks(opts?: { restoreFetch?: boolean }) {
@@ -96,7 +96,7 @@ export const MODELS_CONFIG_IMPLICIT_ENV_VARS = [
   "MOONSHOT_API_KEY",
   "NVIDIA_API_KEY",
   "OLLAMA_API_KEY",
-  "OPENCLAW_AGENT_DIR",
+  "FOXFANG_AGENT_DIR",
   "OPENAI_API_KEY",
   "OPENROUTER_API_KEY",
   "PI_CODING_AGENT_DIR",
@@ -154,7 +154,7 @@ export function resolveImplicitProvidersForTest(
   });
 }
 
-export const CUSTOM_PROXY_MODELS_CONFIG: OpenClawConfig = {
+export const CUSTOM_PROXY_MODELS_CONFIG: FoxFangConfig = {
   models: {
     providers: {
       "custom-proxy": {

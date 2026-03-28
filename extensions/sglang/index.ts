@@ -1,8 +1,8 @@
 import {
   definePluginEntry,
-  type OpenClawPluginApi,
+  type FoxFangPluginApi,
   type ProviderAuthMethodNonInteractiveContext,
-} from "openclaw/plugin-sdk/plugin-entry";
+} from "foxfang/plugin-sdk/plugin-entry";
 import {
   SGLANG_DEFAULT_API_KEY_ENV_VAR,
   SGLANG_DEFAULT_BASE_URL,
@@ -14,14 +14,14 @@ import {
 const PROVIDER_ID = "sglang";
 
 async function loadProviderSetup() {
-  return await import("openclaw/plugin-sdk/self-hosted-provider-setup");
+  return await import("foxfang/plugin-sdk/self-hosted-provider-setup");
 }
 
 export default definePluginEntry({
   id: "sglang",
   name: "SGLang Provider",
   description: "Bundled SGLang provider plugin",
-  register(api: OpenClawPluginApi) {
+  register(api: FoxFangPluginApi) {
     api.registerProvider({
       id: PROVIDER_ID,
       label: "SGLang",

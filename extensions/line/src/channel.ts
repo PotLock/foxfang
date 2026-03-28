@@ -1,16 +1,16 @@
-import { createPairingPrefixStripper } from "openclaw/plugin-sdk/channel-pairing";
-import { createRestrictSendersChannelSecurity } from "openclaw/plugin-sdk/channel-policy";
+import { createPairingPrefixStripper } from "foxfang/plugin-sdk/channel-pairing";
+import { createRestrictSendersChannelSecurity } from "foxfang/plugin-sdk/channel-policy";
 import {
   createAttachedChannelResultAdapter,
   createEmptyChannelResult,
-} from "openclaw/plugin-sdk/channel-send-result";
-import { createChatChannelPlugin } from "openclaw/plugin-sdk/core";
-import { createEmptyChannelDirectoryAdapter } from "openclaw/plugin-sdk/directory-runtime";
-import { resolveOutboundMediaUrls } from "openclaw/plugin-sdk/reply-payload";
+} from "foxfang/plugin-sdk/channel-send-result";
+import { createChatChannelPlugin } from "foxfang/plugin-sdk/core";
+import { createEmptyChannelDirectoryAdapter } from "foxfang/plugin-sdk/directory-runtime";
+import { resolveOutboundMediaUrls } from "foxfang/plugin-sdk/reply-payload";
 import {
   createComputedAccountStatusAdapter,
   createDefaultChannelRuntimeState,
-} from "openclaw/plugin-sdk/status-helpers";
+} from "foxfang/plugin-sdk/status-helpers";
 import {
   buildTokenChannelStatusSummary,
   clearAccountEntryFields,
@@ -20,7 +20,7 @@ import {
   type ChannelStatusIssue,
   type LineConfig,
   type LineChannelData,
-  type OpenClawConfig,
+  type FoxFangConfig,
   type ResolvedLineAccount,
 } from "../api.js";
 import { lineChannelPluginCommon } from "./channel-shared.js";
@@ -41,7 +41,7 @@ const lineSecurityAdapter = createRestrictSendersChannelSecurity<ResolvedLineAcc
   groupAllowFromPath: "channels.line.groupAllowFrom",
   mentionGated: false,
   policyPathSuffix: "dmPolicy",
-  approveHint: "openclaw pairing approve line <code>",
+  approveHint: "foxfang pairing approve line <code>",
   normalizeDmEntry: (raw) => raw.replace(/^line:(?:user:)?/i, ""),
 });
 
@@ -164,7 +164,7 @@ export const linePlugin: ChannelPlugin<ResolvedLineAccount> = createChatChannelP
       },
       logoutAccount: async ({ accountId, cfg }) => {
         const envToken = process.env.LINE_CHANNEL_ACCESS_TOKEN?.trim() ?? "";
-        const nextCfg = { ...cfg } as OpenClawConfig;
+        const nextCfg = { ...cfg } as FoxFangConfig;
         const lineConfig = (cfg.channels?.line ?? {}) as LineConfig;
         const nextLine = { ...lineConfig };
         let cleared = false;
@@ -281,7 +281,7 @@ export const linePlugin: ChannelPlugin<ResolvedLineAccount> = createChatChannelP
   pairing: {
     text: {
       idLabel: "lineUserId",
-      message: "OpenClaw: your access has been approved.",
+      message: "FoxFang: your access has been approved.",
       // LINE IDs are case-sensitive; only strip prefix variants (line: / line:user:).
       normalizeAllowEntry: createPairingPrefixStripper(/^line:(?:user:)?/i),
       notify: async ({ cfg, id, message }) => {

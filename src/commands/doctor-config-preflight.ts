@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import { readConfigFileSnapshot } from "../config/config.js";
 import { formatConfigIssueLines } from "../config/issue-format.js";
 import { note } from "../terminal/note.js";
@@ -15,7 +15,7 @@ async function maybeMigrateLegacyConfig(): Promise<string[]> {
   }
 
   const targetDir = path.join(home, ".foxfang");
-  const targetPath = path.join(targetDir, "openclaw.json");
+  const targetPath = path.join(targetDir, "foxfang.json");
   try {
     await fs.access(targetPath);
     return changes;
@@ -55,7 +55,7 @@ async function maybeMigrateLegacyConfig(): Promise<string[]> {
 
 export type DoctorConfigPreflightResult = {
   snapshot: Awaited<ReturnType<typeof readConfigFileSnapshot>>;
-  baseConfig: OpenClawConfig;
+  baseConfig: FoxFangConfig;
 };
 
 export async function runDoctorConfigPreflight(

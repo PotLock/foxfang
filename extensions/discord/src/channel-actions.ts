@@ -2,13 +2,13 @@ import { Type } from "@sinclair/typebox";
 import {
   createUnionActionGate,
   listTokenSourcedAccounts,
-} from "openclaw/plugin-sdk/channel-actions";
+} from "foxfang/plugin-sdk/channel-actions";
 import type {
   ChannelMessageActionAdapter,
   ChannelMessageActionName,
   ChannelMessageToolDiscovery,
-} from "openclaw/plugin-sdk/channel-contract";
-import type { DiscordActionConfig } from "openclaw/plugin-sdk/config-runtime";
+} from "foxfang/plugin-sdk/channel-contract";
+import type { DiscordActionConfig } from "foxfang/plugin-sdk/config-runtime";
 import { createDiscordActionGate, listEnabledDiscordAccounts } from "./accounts.js";
 import { handleDiscordMessageAction } from "./actions/handle-action.js";
 import { createDiscordMessageToolComponentsSchema } from "./message-tool-schema.js";

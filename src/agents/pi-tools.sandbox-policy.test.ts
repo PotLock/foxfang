@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
-import type { OpenClawConfig } from "../config/config.js";
-import { createOpenClawCodingTools } from "./pi-tools.js";
+import type { FoxFangConfig } from "../config/config.js";
+import { createFoxFangCodingTools } from "./pi-tools.js";
 import { resolveSandboxConfigForAgent } from "./sandbox/config.js";
 import { createHostSandboxFsBridge } from "./test-helpers/host-sandbox-fs-bridge.js";
 import { createPiToolsSandboxContext } from "./test-helpers/pi-tools-sandbox-context.js";
 
 function listToolNames(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   agentId?: string;
   sessionKey?: string;
   sandboxAgentId?: string;
 }): string[] {
-  const workspaceDir = "/tmp/openclaw-sandbox-policy";
+  const workspaceDir = "/tmp/foxfang-sandbox-policy";
   const sessionKey = params.sessionKey ?? "agent:tavern:main";
   const sandboxAgentId = params.sandboxAgentId ?? params.agentId ?? "tavern";
   const sandbox = createPiToolsSandboxContext({
@@ -20,7 +20,7 @@ function listToolNames(params: {
     sessionKey,
     tools: resolveSandboxConfigForAgent(params.cfg, sandboxAgentId).tools,
   });
-  return createOpenClawCodingTools({
+  return createFoxFangCodingTools({
     config: params.cfg,
     agentId: params.agentId,
     sessionKey,
@@ -52,7 +52,7 @@ describe("pi-tools sandbox policy", () => {
             },
           ],
         },
-      } as OpenClawConfig,
+      } as FoxFangConfig,
     });
 
     expect(names).toContain("message");
@@ -75,7 +75,7 @@ describe("pi-tools sandbox policy", () => {
             },
           },
         },
-      } as OpenClawConfig,
+      } as FoxFangConfig,
     });
 
     expect(names).toContain("browser");
@@ -102,7 +102,7 @@ describe("pi-tools sandbox policy", () => {
           },
         ],
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
 
     const names = listToolNames({
       cfg,
@@ -131,7 +131,7 @@ describe("pi-tools sandbox policy", () => {
             },
           },
         },
-      } as OpenClawConfig,
+      } as FoxFangConfig,
     });
 
     expect(names).toContain("browser");
@@ -155,7 +155,7 @@ describe("pi-tools sandbox policy", () => {
             },
           },
         },
-      } as OpenClawConfig,
+      } as FoxFangConfig,
     });
 
     expect(names).not.toContain("browser");

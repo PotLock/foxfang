@@ -1,6 +1,6 @@
 # Bundled Hooks
 
-This directory contains hooks that ship with OpenClaw. These hooks are automatically discovered and can be enabled/disabled via CLI or configuration.
+This directory contains hooks that ship with FoxFang. These hooks are automatically discovered and can be enabled/disabled via CLI or configuration.
 
 ## Available Hooks
 
@@ -15,7 +15,7 @@ Automatically saves session context to memory when you issue `/new` or `/reset`.
 **Enable**:
 
 ```bash
-openclaw hooks enable session-memory
+foxfang hooks enable session-memory
 ```
 
 ### 📎 bootstrap-extra-files
@@ -29,7 +29,7 @@ Injects extra bootstrap files (for example monorepo `AGENTS.md`/`TOOLS.md`) duri
 **Enable**:
 
 ```bash
-openclaw hooks enable bootstrap-extra-files
+foxfang hooks enable bootstrap-extra-files
 ```
 
 ### 📝 command-logger
@@ -43,7 +43,7 @@ Logs all command events to a centralized audit file.
 **Enable**:
 
 ```bash
-openclaw hooks enable command-logger
+foxfang hooks enable command-logger
 ```
 
 ### 🚀 boot-md
@@ -57,7 +57,7 @@ Runs `BOOT.md` whenever the gateway starts (after channels start).
 **Enable**:
 
 ```bash
-openclaw hooks enable boot-md
+foxfang hooks enable boot-md
 ```
 
 ## Hook Structure
@@ -81,9 +81,9 @@ session-memory/
 ---
 name: my-hook
 description: "Short description"
-homepage: https://docs.openclaw.ai/automation/hooks#my-hook
+homepage: https://docs.foxfang.ai/automation/hooks#my-hook
 metadata:
-  { "openclaw": { "emoji": "🔗", "events": ["command:new"], "requires": { "bins": ["node"] } } }
+  { "foxfang": { "emoji": "🔗", "events": ["command:new"], "requires": { "bins": ["node"] } } }
 ---
 # Hook Title
 
@@ -116,31 +116,31 @@ Custom hooks follow the same structure as bundled hooks.
 List all hooks:
 
 ```bash
-openclaw hooks list
+foxfang hooks list
 ```
 
 Show hook details:
 
 ```bash
-openclaw hooks info session-memory
+foxfang hooks info session-memory
 ```
 
 Check hook status:
 
 ```bash
-openclaw hooks check
+foxfang hooks check
 ```
 
 Enable/disable:
 
 ```bash
-openclaw hooks enable session-memory
-openclaw hooks disable command-logger
+foxfang hooks enable session-memory
+foxfang hooks disable command-logger
 ```
 
 ## Configuration
 
-Hooks can be configured in `~/.foxfang/openclaw.json`:
+Hooks can be configured in `~/.foxfang/foxfang.json`:
 
 ```json
 {
@@ -213,11 +213,11 @@ export default myHandler;
 Test your hooks by:
 
 1. Place hook in workspace hooks directory
-2. Restart gateway: `pkill -9 -f 'openclaw.*gateway' && pnpm openclaw gateway`
-3. Enable the hook: `openclaw hooks enable my-hook`
+2. Restart gateway: `pkill -9 -f 'foxfang.*gateway' && pnpm foxfang gateway`
+3. Enable the hook: `foxfang hooks enable my-hook`
 4. Trigger the event (e.g., send `/new` command)
 5. Check gateway logs for hook execution
 
 ## Documentation
 
-Full documentation: https://docs.openclaw.ai/automation/hooks
+Full documentation: https://docs.foxfang.ai/automation/hooks

@@ -12,7 +12,7 @@ import {
   validateConfigObjectWithPlugins,
   writeConfigFile,
 } from "../../config/config.js";
-import type { OpenClawConfig } from "../../config/config.js";
+import type { FoxFangConfig } from "../../config/config.js";
 import type { PluginInstallRecord } from "../../config/types.plugins.js";
 import { resolveArchiveKind } from "../../infra/archive.js";
 import { parseClawHubPluginSpec } from "../../infra/clawhub.js";
@@ -45,7 +45,7 @@ function renderJsonBlock(label: string, value: unknown): string {
 
 function buildPluginInspectJson(params: {
   id: string;
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   report: PluginStatusReport;
 }): {
   inspect: NonNullable<ReturnType<typeof buildPluginInspectReport>>;
@@ -76,7 +76,7 @@ function buildPluginInspectJson(params: {
 }
 
 function buildAllPluginInspectJson(params: {
-  config: OpenClawConfig;
+  config: FoxFangConfig;
   report: PluginStatusReport;
 }): Array<{
   inspect: ReturnType<typeof buildAllPluginInspectReports>[number];
@@ -118,8 +118,8 @@ function formatPluginsList(report: PluginStatusReport): string {
     `🔌 Plugins (${loaded}/${report.plugins.length} loaded)`,
     ...report.plugins.map((plugin) => {
       const format = plugin.bundleFormat
-        ? `${plugin.format ?? "openclaw"}/${plugin.bundleFormat}`
-        : (plugin.format ?? "openclaw");
+        ? `${plugin.format ?? "foxfang"}/${plugin.bundleFormat}`
+        : (plugin.format ?? "foxfang");
       return `- ${formatPluginLabel(plugin)} [${plugin.status}] ${format}`;
     }),
   ];
@@ -154,7 +154,7 @@ function looksLikeLocalPluginInstallSpec(raw: string): boolean {
 
 async function installPluginFromPluginsCommand(params: {
   raw: string;
-  config: OpenClawConfig;
+  config: FoxFangConfig;
 }): Promise<{ ok: true; pluginId: string } | { ok: false; error: string }> {
   const fileSpec = resolveFileNpmSpecToLocalPath(params.raw);
   if (fileSpec && !fileSpec.ok) {
@@ -276,7 +276,7 @@ async function loadPluginCommandState(workspaceDir: string): Promise<
   | {
       ok: true;
       path: string;
-      config: OpenClawConfig;
+      config: FoxFangConfig;
       report: PluginStatusReport;
     }
   | { ok: false; path: string; error: string }

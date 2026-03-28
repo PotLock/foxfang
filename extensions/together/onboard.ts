@@ -1,14 +1,14 @@
 import {
   createModelCatalogPresetAppliers,
-  type OpenClawConfig,
-} from "openclaw/plugin-sdk/provider-onboard";
+  type FoxFangConfig,
+} from "foxfang/plugin-sdk/provider-onboard";
 import { buildTogetherModelDefinition, TOGETHER_BASE_URL, TOGETHER_MODEL_CATALOG } from "./api.js";
 
 export const TOGETHER_DEFAULT_MODEL_REF = "together/moonshotai/Kimi-K2.5";
 
 const togetherPresetAppliers = createModelCatalogPresetAppliers({
   primaryModelRef: TOGETHER_DEFAULT_MODEL_REF,
-  resolveParams: (_cfg: OpenClawConfig) => ({
+  resolveParams: (_cfg: FoxFangConfig) => ({
     providerId: "together",
     api: "openai-completions",
     baseUrl: TOGETHER_BASE_URL,
@@ -17,10 +17,10 @@ const togetherPresetAppliers = createModelCatalogPresetAppliers({
   }),
 });
 
-export function applyTogetherProviderConfig(cfg: OpenClawConfig): OpenClawConfig {
+export function applyTogetherProviderConfig(cfg: FoxFangConfig): FoxFangConfig {
   return togetherPresetAppliers.applyProviderConfig(cfg);
 }
 
-export function applyTogetherConfig(cfg: OpenClawConfig): OpenClawConfig {
+export function applyTogetherConfig(cfg: FoxFangConfig): FoxFangConfig {
   return togetherPresetAppliers.applyConfig(cfg);
 }

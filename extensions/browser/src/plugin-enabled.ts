@@ -1,10 +1,10 @@
-import type { OpenClawConfig } from "openclaw/plugin-sdk/browser-support";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/browser-support";
 import {
   normalizePluginsConfig,
   resolveEffectiveEnableState,
-} from "openclaw/plugin-sdk/browser-support";
+} from "foxfang/plugin-sdk/browser-support";
 
-export function isDefaultBrowserPluginEnabled(cfg: OpenClawConfig): boolean {
+export function isDefaultBrowserPluginEnabled(cfg: FoxFangConfig): boolean {
   return resolveEffectiveEnableState({
     id: "browser",
     origin: "bundled",

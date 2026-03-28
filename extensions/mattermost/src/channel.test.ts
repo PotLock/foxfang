@@ -1,6 +1,6 @@
 import { Type } from "@sinclair/typebox";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../runtime-api.js";
+import type { FoxFangConfig } from "../runtime-api.js";
 import { createChannelReplyPipeline } from "../runtime-api.js";
 
 vi.mock("../../../src/config/bundled-channel-config-runtime.js", () => ({
@@ -20,7 +20,7 @@ vi.mock("./mattermost/send.js", () => ({
   sendMessageMattermost: sendMessageMattermostMock,
 }));
 
-vi.mock("openclaw/plugin-sdk/ssrf-runtime", async (importOriginal) => {
+vi.mock("foxfang/plugin-sdk/ssrf-runtime", async (importOriginal) => {
   const original = (await importOriginal()) as Record<string, unknown>;
   return { ...original, fetchWithSsrFGuard: mockFetchGuard };
 });
@@ -43,7 +43,7 @@ type MattermostSendTextParams = Parameters<MattermostSendText>[0];
 type MattermostSendMedia = NonNullable<NonNullable<typeof mattermostPlugin.outbound>["sendMedia"]>;
 type MattermostSendMediaParams = Parameters<MattermostSendMedia>[0];
 
-function getDescribedActions(cfg: OpenClawConfig): string[] {
+function getDescribedActions(cfg: FoxFangConfig): string[] {
   return [...(mattermostPlugin.actions?.describeMessageTool?.({ cfg })?.actions ?? [])];
 }
 
@@ -150,7 +150,7 @@ describe("mattermostPlugin", () => {
     it("uses replyToMode for channel messages and keeps direct messages off", () => {
       const resolveReplyToMode = requireMattermostReplyToModeResolver();
 
-      const cfg: OpenClawConfig = {
+      const cfg: FoxFangConfig = {
         channels: {
           mattermost: {
             replyToMode: "all",
@@ -201,7 +201,7 @@ describe("mattermostPlugin", () => {
     };
 
     it("exposes react when mattermost is configured", () => {
-      const cfg: OpenClawConfig = {
+      const cfg: FoxFangConfig = {
         channels: {
           mattermost: {
             enabled: true,
@@ -219,7 +219,7 @@ describe("mattermostPlugin", () => {
     });
 
     it("hides react when mattermost is not configured", () => {
-      const cfg: OpenClawConfig = {
+      const cfg: FoxFangConfig = {
         channels: {
           mattermost: {
             enabled: true,
@@ -232,7 +232,7 @@ describe("mattermostPlugin", () => {
     });
 
     it("keeps buttons optional in message tool schema", () => {
-      const cfg: OpenClawConfig = {
+      const cfg: FoxFangConfig = {
         channels: {
           mattermost: {
             enabled: true,
@@ -252,7 +252,7 @@ describe("mattermostPlugin", () => {
     });
 
     it("hides react when actions.reactions is false", () => {
-      const cfg: OpenClawConfig = {
+      const cfg: FoxFangConfig = {
         channels: {
           mattermost: {
             enabled: true,
@@ -269,7 +269,7 @@ describe("mattermostPlugin", () => {
     });
 
     it("respects per-account actions.reactions in message discovery", () => {
-      const cfg: OpenClawConfig = {
+      const cfg: FoxFangConfig = {
         channels: {
           mattermost: {
             enabled: true,
@@ -291,7 +291,7 @@ describe("mattermostPlugin", () => {
     });
 
     it("blocks react when default account disables reactions and accountId is omitted", async () => {
-      const cfg: OpenClawConfig = {
+      const cfg: FoxFangConfig = {
         channels: {
           mattermost: {
             enabled: true,
@@ -444,7 +444,7 @@ describe("mattermostPlugin", () => {
             baseUrl: "https://chat.example.com",
           },
         },
-      } as OpenClawConfig;
+      } as FoxFangConfig;
 
       const params: MattermostSendTextParams = {
         cfg,
@@ -520,14 +520,14 @@ describe("mattermostPlugin", () => {
       const formatAllowFrom = mattermostPlugin.config.formatAllowFrom!;
 
       const formatted = formatAllowFrom({
-        cfg: {} as OpenClawConfig,
+        cfg: {} as FoxFangConfig,
         allowFrom: [" @Alice ", " user:USER123 ", " mattermost:BOT999 "],
       });
       expect(formatted).toEqual(["@alice", "user123", "bot999"]);
     });
 
     it("uses account responsePrefix overrides", () => {
-      const cfg: OpenClawConfig = {
+      const cfg: FoxFangConfig = {
         channels: {
           mattermost: {
             responsePrefix: "[Channel]",

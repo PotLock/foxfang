@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../../src/config/config.js";
+import type { FoxFangConfig } from "../../../src/config/config.js";
 import type { SignalDaemonExitEvent } from "./daemon.js";
 import {
   createSignalToolResultConfig,
@@ -46,7 +46,7 @@ function createAutoAbortController() {
 
 async function runMonitorWithMocks(opts: MonitorSignalProviderOptions) {
   return monitorSignalProvider({
-    config: config as OpenClawConfig,
+    config: config as FoxFangConfig,
     waitForTransportReady: waitForTransportReadyMock as any,
     ...opts,
   });

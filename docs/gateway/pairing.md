@@ -37,11 +37,11 @@ Pending requests expire automatically after **5 minutes**.
 ## CLI workflow (headless friendly)
 
 ```bash
-openclaw nodes pending
-openclaw nodes approve <requestId>
-openclaw nodes reject <requestId>
-openclaw nodes status
-openclaw nodes rename --node <id|name|ip> --name "Living Room iPad"
+foxfang nodes pending
+foxfang nodes approve <requestId>
+foxfang nodes reject <requestId>
+foxfang nodes status
+foxfang nodes rename --node <id|name|ip> --name "Living Room iPad"
 ```
 
 `nodes status` shows paired/connected nodes and their capabilities.
@@ -85,7 +85,7 @@ Pairing state is stored under the Gateway state directory (default `~/.foxfang`)
 - `~/.foxfang/nodes/paired.json`
 - `~/.foxfang/nodes/pending.json`
 
-If you override `OPENCLAW_STATE_DIR`, the `nodes/` folder moves with it.
+If you override `FOXFANG_STATE_DIR`, the `nodes/` folder moves with it.
 
 Security notes:
 

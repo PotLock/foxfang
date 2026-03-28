@@ -1,6 +1,6 @@
 ---
 read_when:
-  - 你想将 Vercel AI Gateway 与 OpenClaw 一起使用
+  - 你想将 Vercel AI Gateway 与 FoxFang 一起使用
   - 你需要 API key 环境变量或 CLI 认证选项
 summary: Vercel AI Gateway 设置（认证 + 模型选择）
 title: Vercel AI Gateway
@@ -20,7 +20,7 @@ x-i18n:
 - 提供商：`vercel-ai-gateway`
 - 认证：`AI_GATEWAY_API_KEY`
 - API：兼容 Anthropic Messages
-- OpenClaw 会自动发现 Gateway 的 `/v1/models` 目录，因此 `/models vercel-ai-gateway`
+- FoxFang 会自动发现 Gateway 的 `/v1/models` 目录，因此 `/models vercel-ai-gateway`
   会包含当前模型引用，例如 `vercel-ai-gateway/openai/gpt-5.4`。
 
 ## 快速开始
@@ -28,7 +28,7 @@ x-i18n:
 1. 设置 API key（推荐：为 Gateway 网关持久保存它）：
 
 ```bash
-openclaw onboard --auth-choice ai-gateway-api-key
+foxfang onboard --auth-choice ai-gateway-api-key
 ```
 
 2. 设置默认模型：
@@ -46,7 +46,7 @@ openclaw onboard --auth-choice ai-gateway-api-key
 ## 非交互式示例
 
 ```bash
-openclaw onboard --non-interactive \
+foxfang onboard --non-interactive \
   --mode local \
   --auth-choice ai-gateway-api-key \
   --ai-gateway-api-key "$AI_GATEWAY_API_KEY"
@@ -60,7 +60,7 @@ openclaw onboard --non-interactive \
 
 ## 模型 ID 简写
 
-OpenClaw 接受 Vercel Claude 简写模型引用，并会在运行时将其规范化：
+FoxFang 接受 Vercel Claude 简写模型引用，并会在运行时将其规范化：
 
 - `vercel-ai-gateway/claude-opus-4.6` -> `vercel-ai-gateway/anthropic/claude-opus-4.6`
 - `vercel-ai-gateway/opus-4.6` -> `vercel-ai-gateway/anthropic/claude-opus-4-6`

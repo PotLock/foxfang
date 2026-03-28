@@ -19,18 +19,18 @@ const localWorkers = resolveLocalVitestMaxWorkers();
 const ciWorkers = isWindows ? 2 : 3;
 export default defineConfig({
   resolve: {
-    // Keep this ordered: the base `openclaw/plugin-sdk` alias is a prefix match.
+    // Keep this ordered: the base `foxfang/plugin-sdk` alias is a prefix match.
     alias: [
       {
-        find: "openclaw/extension-api",
+        find: "foxfang/extension-api",
         replacement: path.join(repoRoot, "src", "extensionAPI.ts"),
       },
       ...pluginSdkSubpaths.map((subpath) => ({
-        find: `openclaw/plugin-sdk/${subpath}`,
+        find: `foxfang/plugin-sdk/${subpath}`,
         replacement: path.join(repoRoot, "src", "plugin-sdk", `${subpath}.ts`),
       })),
       {
-        find: "openclaw/plugin-sdk",
+        find: "foxfang/plugin-sdk",
         replacement: path.join(repoRoot, "src", "plugin-sdk", "index.ts"),
       },
     ],
@@ -96,7 +96,7 @@ export default defineConfig({
       "apps/macos/.build/**",
       "**/node_modules/**",
       "**/vendor/**",
-      "dist/OpenClaw.app/**",
+      "dist/FoxFang.app/**",
       "**/*.live.test.ts",
       "**/*.e2e.test.ts",
     ],

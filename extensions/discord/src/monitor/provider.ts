@@ -12,34 +12,34 @@ import {
   listNativeCommandSpecsForConfig,
   listSkillCommandsForAgents,
   type NativeCommandSpec,
-} from "openclaw/plugin-sdk/command-auth";
+} from "foxfang/plugin-sdk/command-auth";
 import {
   isNativeCommandsExplicitlyDisabled,
   resolveNativeCommandsEnabled,
   resolveNativeSkillsEnabled,
-} from "openclaw/plugin-sdk/config-runtime";
-import type { OpenClawConfig, ReplyToMode } from "openclaw/plugin-sdk/config-runtime";
-import { loadConfig } from "openclaw/plugin-sdk/config-runtime";
+} from "foxfang/plugin-sdk/config-runtime";
+import type { FoxFangConfig, ReplyToMode } from "foxfang/plugin-sdk/config-runtime";
+import { loadConfig } from "foxfang/plugin-sdk/config-runtime";
 import {
   GROUP_POLICY_BLOCKED_LABEL,
   resolveOpenProviderRuntimeGroupPolicy,
   resolveDefaultGroupPolicy,
   warnMissingProviderGroupPolicyFallbackOnce,
-} from "openclaw/plugin-sdk/config-runtime";
-import { createConnectedChannelStatusPatch } from "openclaw/plugin-sdk/gateway-runtime";
-import { getPluginCommandSpecs } from "openclaw/plugin-sdk/plugin-runtime";
-import { resolveTextChunkLimit } from "openclaw/plugin-sdk/reply-runtime";
+} from "foxfang/plugin-sdk/config-runtime";
+import { createConnectedChannelStatusPatch } from "foxfang/plugin-sdk/gateway-runtime";
+import { getPluginCommandSpecs } from "foxfang/plugin-sdk/plugin-runtime";
+import { resolveTextChunkLimit } from "foxfang/plugin-sdk/reply-runtime";
 import {
   danger,
   isVerbose,
   logVerbose,
   shouldLogVerbose,
   warn,
-} from "openclaw/plugin-sdk/runtime-env";
-import { createSubsystemLogger } from "openclaw/plugin-sdk/runtime-env";
-import { createNonExitingRuntime, type RuntimeEnv } from "openclaw/plugin-sdk/runtime-env";
-import { formatErrorMessage } from "openclaw/plugin-sdk/ssrf-runtime";
-import { summarizeStringEntries } from "openclaw/plugin-sdk/text-runtime";
+} from "foxfang/plugin-sdk/runtime-env";
+import { createSubsystemLogger } from "foxfang/plugin-sdk/runtime-env";
+import { createNonExitingRuntime, type RuntimeEnv } from "foxfang/plugin-sdk/runtime-env";
+import { formatErrorMessage } from "foxfang/plugin-sdk/ssrf-runtime";
+import { summarizeStringEntries } from "foxfang/plugin-sdk/text-runtime";
 import { resolveDiscordAccount } from "../accounts.js";
 import { fetchDiscordApplicationId } from "../probe.js";
 import { normalizeDiscordToken } from "../token.js";
@@ -83,7 +83,7 @@ import { formatThreadBindingDurationLabel } from "./thread-bindings.messages.js"
 export type MonitorDiscordOpts = {
   token?: string;
   accountId?: string;
-  config?: OpenClawConfig;
+  config?: FoxFangConfig;
   runtime?: RuntimeEnv;
   abortSignal?: AbortSignal;
   mediaMaxMb?: number;
@@ -230,7 +230,7 @@ function classifyAcpStatusProbeError(params: {
 }
 
 async function probeDiscordAcpBindingHealth(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   sessionKey: string;
   storedState?: "idle" | "running" | "error";
   lastActivityAt?: number;
@@ -952,7 +952,7 @@ export async function monitorDiscordProvider(opts: MonitorDiscordOpts = {}) {
     const logger = createSubsystemLogger("discord/monitor");
     const guildHistories = new Map<
       string,
-      import("openclaw/plugin-sdk/reply-history").HistoryEntry[]
+      import("foxfang/plugin-sdk/reply-history").HistoryEntry[]
     >();
     let { botUserId, botUserName } = await fetchDiscordBotIdentity({
       client,

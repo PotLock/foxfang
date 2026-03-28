@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/brave-plugin",
+  "name": "@foxfang/brave-plugin",
   "version": "2026.3.27",
   "private": true,
-  "description": "OpenClaw Brave plugin",
+  "description": "FoxFang Brave plugin",
   "type": "module",
-  "openclaw": {
+  "foxfang": {
     "extensions": [
       "./index.ts"
     ]

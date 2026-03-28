@@ -1,4 +1,4 @@
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import {
   VLLM_DEFAULT_API_KEY_ENV_VAR,
   VLLM_DEFAULT_BASE_URL,
@@ -20,9 +20,9 @@ export const VLLM_DEFAULT_MAX_TOKENS = SELF_HOSTED_DEFAULT_MAX_TOKENS;
 export const VLLM_DEFAULT_COST = SELF_HOSTED_DEFAULT_COST;
 
 export async function promptAndConfigureVllm(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   prompter: WizardPrompter;
-}): Promise<{ config: OpenClawConfig; modelId: string; modelRef: string }> {
+}): Promise<{ config: FoxFangConfig; modelId: string; modelRef: string }> {
   const result = await promptAndConfigureOpenAICompatibleSelfHostedProvider({
     cfg: params.cfg,
     prompter: params.prompter,

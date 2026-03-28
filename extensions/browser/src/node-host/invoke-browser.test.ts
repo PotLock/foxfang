@@ -22,7 +22,7 @@ const configMocks = vi.hoisted(() => ({
 const browserConfigMocks = vi.hoisted(() => ({
   resolveBrowserConfig: vi.fn(() => ({
     enabled: true,
-    defaultProfile: "openclaw",
+    defaultProfile: "foxfang",
   })),
 }));
 
@@ -56,7 +56,7 @@ describe("runBrowserProxyCommand", () => {
     });
     browserConfigMocks.resolveBrowserConfig.mockReset().mockReturnValue({
       enabled: true,
-      defaultProfile: "openclaw",
+      defaultProfile: "foxfang",
     });
     ({ runBrowserProxyCommand } = await import("./invoke-browser.js"));
     configMocks.loadConfig.mockReturnValue({
@@ -65,7 +65,7 @@ describe("runBrowserProxyCommand", () => {
     });
     browserConfigMocks.resolveBrowserConfig.mockReturnValue({
       enabled: true,
-      defaultProfile: "openclaw",
+      defaultProfile: "foxfang",
     });
     controlServiceMocks.startBrowserControlServiceFromConfig.mockResolvedValue(true);
   });
@@ -91,12 +91,12 @@ describe("runBrowserProxyCommand", () => {
         JSON.stringify({
           method: "GET",
           path: "/snapshot",
-          profile: "openclaw",
+          profile: "foxfang",
           timeoutMs: 5,
         }),
       ),
     ).rejects.toThrow(
-      /browser proxy timed out for GET \/snapshot after 5ms; ws-backed browser action; profile=openclaw; status\(running=true, cdpHttp=true, cdpReady=false, cdpUrl=http:\/\/127\.0\.0\.1:18792\)/,
+      /browser proxy timed out for GET \/snapshot after 5ms; ws-backed browser action; profile=foxfang; status\(running=true, cdpHttp=true, cdpReady=false, cdpUrl=http:\/\/127\.0\.0\.1:18792\)/,
     );
     await vi.advanceTimersByTimeAsync(10);
     await result;
@@ -179,7 +179,7 @@ describe("runBrowserProxyCommand", () => {
         JSON.stringify({
           method: "POST",
           path: "/act",
-          profile: "openclaw",
+          profile: "foxfang",
           timeoutMs: 50,
         }),
       ),
@@ -189,7 +189,7 @@ describe("runBrowserProxyCommand", () => {
   it("rejects unauthorized query.profile when allowProfiles is configured", async () => {
     configMocks.loadConfig.mockReturnValue({
       browser: {},
-      nodeHost: { browserProxy: { enabled: true, allowProfiles: ["openclaw"] } },
+      nodeHost: { browserProxy: { enabled: true, allowProfiles: ["foxfang"] } },
     });
 
     await expect(
@@ -208,7 +208,7 @@ describe("runBrowserProxyCommand", () => {
   it("rejects unauthorized body.profile when allowProfiles is configured", async () => {
     configMocks.loadConfig.mockReturnValue({
       browser: {},
-      nodeHost: { browserProxy: { enabled: true, allowProfiles: ["openclaw"] } },
+      nodeHost: { browserProxy: { enabled: true, allowProfiles: ["foxfang"] } },
     });
 
     await expect(
@@ -227,7 +227,7 @@ describe("runBrowserProxyCommand", () => {
   it("rejects persistent profile creation when allowProfiles is configured", async () => {
     configMocks.loadConfig.mockReturnValue({
       browser: {},
-      nodeHost: { browserProxy: { enabled: true, allowProfiles: ["openclaw"] } },
+      nodeHost: { browserProxy: { enabled: true, allowProfiles: ["foxfang"] } },
     });
 
     await expect(
@@ -248,7 +248,7 @@ describe("runBrowserProxyCommand", () => {
   it("rejects persistent profile deletion when allowProfiles is configured", async () => {
     configMocks.loadConfig.mockReturnValue({
       browser: {},
-      nodeHost: { browserProxy: { enabled: true, allowProfiles: ["openclaw"] } },
+      nodeHost: { browserProxy: { enabled: true, allowProfiles: ["foxfang"] } },
     });
 
     await expect(
@@ -268,7 +268,7 @@ describe("runBrowserProxyCommand", () => {
   it("rejects persistent profile reset when allowProfiles is configured", async () => {
     configMocks.loadConfig.mockReturnValue({
       browser: {},
-      nodeHost: { browserProxy: { enabled: true, allowProfiles: ["openclaw"] } },
+      nodeHost: { browserProxy: { enabled: true, allowProfiles: ["foxfang"] } },
     });
 
     await expect(
@@ -276,7 +276,7 @@ describe("runBrowserProxyCommand", () => {
         JSON.stringify({
           method: "POST",
           path: "/reset-profile",
-          body: { profile: "openclaw", name: "openclaw" },
+          body: { profile: "foxfang", name: "foxfang" },
           timeoutMs: 50,
         }),
       ),
@@ -289,7 +289,7 @@ describe("runBrowserProxyCommand", () => {
   it("canonicalizes an allowlisted body profile into the dispatched query", async () => {
     configMocks.loadConfig.mockReturnValue({
       browser: {},
-      nodeHost: { browserProxy: { enabled: true, allowProfiles: ["openclaw"] } },
+      nodeHost: { browserProxy: { enabled: true, allowProfiles: ["foxfang"] } },
     });
     dispatcherMocks.dispatch.mockResolvedValue({
       status: 200,
@@ -300,7 +300,7 @@ describe("runBrowserProxyCommand", () => {
       JSON.stringify({
         method: "POST",
         path: "/stop",
-        body: { profile: "openclaw" },
+        body: { profile: "foxfang" },
         timeoutMs: 50,
       }),
     );
@@ -308,7 +308,7 @@ describe("runBrowserProxyCommand", () => {
     expect(dispatcherMocks.dispatch).toHaveBeenCalledWith(
       expect.objectContaining({
         path: "/stop",
-        query: { profile: "openclaw" },
+        query: { profile: "foxfang" },
       }),
     );
   });

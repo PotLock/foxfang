@@ -12,7 +12,7 @@ import { authorizeGatewayBearerRequestOrReply } from "./http-auth-helpers.js";
 import { sendJson, sendMethodNotAllowed } from "./http-common.js";
 import { loadSessionEntry } from "./session-utils.js";
 
-const REQUESTER_SESSION_KEY_HEADER = "x-openclaw-requester-session-key";
+const REQUESTER_SESSION_KEY_HEADER = "x-foxfang-requester-session-key";
 
 function resolveSessionKeyFromPath(pathname: string): string | null {
   const match = pathname.match(/^\/sessions\/([^/]+)\/kill$/);

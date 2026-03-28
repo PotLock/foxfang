@@ -1,5 +1,5 @@
 import path from "node:path";
-import { z } from "openclaw/plugin-sdk/zod";
+import { z } from "foxfang/plugin-sdk/zod";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { loadRuntimeApiExportTypesViaJiti } from "../../../../../test/helpers/extensions/jiti-runtime-api.ts";
 
@@ -206,7 +206,7 @@ vi.mock("../config-update.js", () => ({
 
 vi.mock("../device-health.js", () => ({
   summarizeMatrixDeviceHealth: vi.fn(() => ({
-    staleOpenClawDevices: [],
+    staleFoxFangDevices: [],
   })),
 }));
 
@@ -466,17 +466,17 @@ describe("matrix plugin registration", () => {
         modulePath: runtimeApiPath,
         exportNames: [],
         realPluginSdkSpecifiers: [
-          "openclaw/plugin-sdk/account-helpers",
-          "openclaw/plugin-sdk/allow-from",
-          "openclaw/plugin-sdk/channel-config-helpers",
-          "openclaw/plugin-sdk/channel-policy",
-          "openclaw/plugin-sdk/core",
-          "openclaw/plugin-sdk/directory-runtime",
-          "openclaw/plugin-sdk/extension-shared",
-          "openclaw/plugin-sdk/irc",
-          "openclaw/plugin-sdk/signal",
-          "openclaw/plugin-sdk/status-helpers",
-          "openclaw/plugin-sdk/text-runtime",
+          "foxfang/plugin-sdk/account-helpers",
+          "foxfang/plugin-sdk/allow-from",
+          "foxfang/plugin-sdk/channel-config-helpers",
+          "foxfang/plugin-sdk/channel-policy",
+          "foxfang/plugin-sdk/core",
+          "foxfang/plugin-sdk/directory-runtime",
+          "foxfang/plugin-sdk/extension-shared",
+          "foxfang/plugin-sdk/irc",
+          "foxfang/plugin-sdk/signal",
+          "foxfang/plugin-sdk/status-helpers",
+          "foxfang/plugin-sdk/text-runtime",
         ],
       }),
     ).toEqual({});

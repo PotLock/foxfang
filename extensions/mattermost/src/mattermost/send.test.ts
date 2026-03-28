@@ -39,11 +39,11 @@ vi.mock("../../runtime-api.js", () => ({
   loadOutboundMediaFromUrl: mockState.loadOutboundMediaFromUrl,
 }));
 
-vi.mock("openclaw/plugin-sdk/config-runtime", () => ({
+vi.mock("foxfang/plugin-sdk/config-runtime", () => ({
   resolveMarkdownTableMode: vi.fn(() => "off"),
 }));
 
-vi.mock("openclaw/plugin-sdk/text-runtime", () => ({
+vi.mock("foxfang/plugin-sdk/text-runtime", () => ({
   convertMarkdownTables: vi.fn((text: string) => text),
 }));
 

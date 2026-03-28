@@ -1,8 +1,8 @@
 import {
   normalizeAccountId,
   resolveMergedAccountConfig,
-} from "openclaw/plugin-sdk/account-resolution";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/core";
+} from "foxfang/plugin-sdk/account-resolution";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/core";
 import type { AllowlistMatch, ChannelGroupContext, GroupToolPolicyConfig } from "../runtime-api.js";
 import { evaluateSenderGroupAccessForPolicy } from "../runtime-api.js";
 import { normalizeFeishuTarget } from "./targets.js";
@@ -110,7 +110,7 @@ export function isFeishuGroupAllowed(params: {
 
 export function resolveFeishuReplyPolicy(params: {
   isDirectMessage: boolean;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   accountId?: string | null;
   groupId?: string | null;
   /**

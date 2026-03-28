@@ -87,7 +87,7 @@ export function getPluginBoundaryJiti(
     modulePath,
   });
   const aliasMap = {
-    ...(pluginSdkAlias ? { "openclaw/plugin-sdk": pluginSdkAlias } : {}),
+    ...(pluginSdkAlias ? { "foxfang/plugin-sdk": pluginSdkAlias } : {}),
     ...resolvePluginSdkScopedAliasMap({ modulePath }),
   };
   const loader = createJiti(import.meta.url, {

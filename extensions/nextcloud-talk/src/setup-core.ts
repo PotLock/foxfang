@@ -1,6 +1,6 @@
-import type { ChannelSetupAdapter, ChannelSetupInput } from "openclaw/plugin-sdk/channel-setup";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "openclaw/plugin-sdk/routing";
+import type { ChannelSetupAdapter, ChannelSetupInput } from "foxfang/plugin-sdk/channel-setup";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "foxfang/plugin-sdk/routing";
 import {
   createSetupInputPresenceValidator,
   mergeAllowFromEntries,
@@ -11,8 +11,8 @@ import {
   type ChannelSetupDmPolicy,
   type ChannelSetupWizard,
   type WizardPrompter,
-} from "openclaw/plugin-sdk/setup-runtime";
-import { formatDocsLink } from "openclaw/plugin-sdk/setup-tools";
+} from "foxfang/plugin-sdk/setup-runtime";
+import { formatDocsLink } from "foxfang/plugin-sdk/setup-tools";
 import { applyAccountNameToChannelSection, patchScopedAccountConfig } from "../runtime-api.js";
 import {
   listNextcloudTalkAccountIds,
@@ -146,10 +146,10 @@ async function promptNextcloudTalkAllowFrom(params: {
 }
 
 async function promptNextcloudTalkAllowFromForAccount(params: {
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   prompter: WizardPrompter;
   accountId?: string;
-}): Promise<OpenClawConfig> {
+}): Promise<FoxFangConfig> {
   const accountId = resolveSetupAccountId({
     accountId: params.accountId,
     defaultAccountId: resolveDefaultNextcloudTalkAccountId(params.cfg as CoreConfig),

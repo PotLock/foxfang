@@ -29,7 +29,7 @@ const requiredPathGroups = [
   "dist/channel-catalog.json",
   "dist/control-ui/index.html",
 ];
-const forbiddenPrefixes = ["dist-runtime/", "dist/OpenClaw.app/"];
+const forbiddenPrefixes = ["dist-runtime/", "dist/FoxFang.app/"];
 // 2026.3.12 ballooned to ~213.6 MiB unpacked and correlated with low-memory
 // startup/doctor OOM reports. Keep enough headroom for the current pack with
 // restored bundled upgrade surfaces while still catching regressions quickly.
@@ -225,7 +225,7 @@ function checkAppcastSparkleVersions() {
   }
 }
 
-// Critical functions that channel extension plugins import from openclaw/plugin-sdk.
+// Critical functions that channel extension plugins import from foxfang/plugin-sdk.
 // If any are missing from the compiled output, plugins crash at runtime (#27569).
 const requiredPluginSdkExports = [
   "isDangerousNameMatchingEnabled",

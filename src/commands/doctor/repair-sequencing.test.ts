@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { OpenClawConfig } from "../../config/config.js";
+import type { FoxFangConfig } from "../../config/config.js";
 import { runDoctorRepairSequence } from "./repair-sequencing.js";
 
 describe("doctor repair sequencing", () => {
@@ -26,7 +26,7 @@ describe("doctor repair sequencing", () => {
               },
             },
           },
-        } as unknown as OpenClawConfig,
+        } as unknown as FoxFangConfig,
         candidate: {
           channels: {
             discord: {
@@ -47,11 +47,11 @@ describe("doctor repair sequencing", () => {
               },
             },
           },
-        } as unknown as OpenClawConfig,
+        } as unknown as FoxFangConfig,
         pendingChanges: false,
         fixHints: [],
       },
-      doctorFixCommand: "openclaw doctor --fix",
+      doctorFixCommand: "foxfang doctor --fix",
     });
 
     expect(result.state.pendingChanges).toBe(true);

@@ -1,8 +1,8 @@
-import { definePluginEntry } from "openclaw/plugin-sdk/plugin-entry";
+import { definePluginEntry } from "foxfang/plugin-sdk/plugin-entry";
 import {
   createBedrockNoCacheWrapper,
   isAnthropicBedrockModel,
-} from "openclaw/plugin-sdk/provider-stream";
+} from "foxfang/plugin-sdk/provider-stream";
 import {
   mergeImplicitBedrockProvider,
   resolveBedrockConfigApiKey,

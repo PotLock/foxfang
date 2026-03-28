@@ -1,2 +1,2 @@
-// Deprecated compat alias. Prefer openclaw/plugin-sdk/google.
+// Deprecated compat alias. Prefer foxfang/plugin-sdk/google.
 export * from "./google.js";

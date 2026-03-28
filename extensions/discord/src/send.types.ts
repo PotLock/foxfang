@@ -1,6 +1,6 @@
 import type { RequestClient } from "@buape/carbon";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import type { RetryConfig } from "openclaw/plugin-sdk/retry-runtime";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import type { RetryConfig } from "foxfang/plugin-sdk/retry-runtime";
 
 export class DiscordSendError extends Error {
   kind?: "missing-permissions" | "dm-blocked";
@@ -29,7 +29,7 @@ export type DiscordSendResult = {
 };
 
 export type DiscordReactOpts = {
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   token?: string;
   accountId?: string;
   rest?: RequestClient;

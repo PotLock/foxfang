@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { OpenClawConfig } from "../config/config.js";
+import type { FoxFangConfig } from "../config/config.js";
 import {
   applyExclusiveSlotSelection,
   buildPluginStatusReport,
@@ -21,7 +21,7 @@ import {
   writeConfigFile,
 } from "./plugins-cli-test-helpers.js";
 
-function createEnabledPluginConfig(pluginId: string): OpenClawConfig {
+function createEnabledPluginConfig(pluginId: string): FoxFangConfig {
   return {
     plugins: {
       entries: {
@@ -30,13 +30,13 @@ function createEnabledPluginConfig(pluginId: string): OpenClawConfig {
         },
       },
     },
-  } as OpenClawConfig;
+  } as FoxFangConfig;
 }
 
 function createClawHubInstalledConfig(params: {
   pluginId: string;
   install: Record<string, unknown>;
-}): OpenClawConfig {
+}): FoxFangConfig {
   const enabledCfg = createEnabledPluginConfig(params.pluginId);
   return {
     ...enabledCfg,
@@ -46,7 +46,7 @@ function createClawHubInstalledConfig(params: {
         [params.pluginId]: params.install,
       },
     },
-  } as OpenClawConfig;
+  } as FoxFangConfig;
 }
 
 function createClawHubInstallResult(params: {
@@ -58,7 +58,7 @@ function createClawHubInstallResult(params: {
   return {
     ok: true,
     pluginId: params.pluginId,
-    targetDir: `/tmp/openclaw-state/extensions/${params.pluginId}`,
+    targetDir: `/tmp/foxfang-state/extensions/${params.pluginId}`,
     version: params.version,
     packageName: params.packageName,
     clawhub: {
@@ -109,7 +109,7 @@ describe("plugins cli install", () => {
       throw invalidConfigErr;
     });
     readConfigFileSnapshot.mockResolvedValue({
-      path: "/tmp/openclaw-config.json5",
+      path: "/tmp/foxfang-config.json5",
       exists: true,
       raw: '{ "models": { "default": 123 } }',
       parsed: { models: { default: 123 } },
@@ -125,7 +125,7 @@ describe("plugins cli install", () => {
     await expect(runPluginsCommand(["plugins", "install", "alpha"])).rejects.toThrow("__exit__:1");
 
     expect(runtimeErrors.at(-1)).toContain(
-      "Config invalid; run `openclaw doctor --fix` before installing plugins.",
+      "Config invalid; run `foxfang doctor --fix` before installing plugins.",
     );
     expect(installPluginFromMarketplace).not.toHaveBeenCalled();
     expect(installPluginFromNpmSpec).not.toHaveBeenCalled();
@@ -137,7 +137,7 @@ describe("plugins cli install", () => {
       plugins: {
         entries: {},
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     const enabledCfg = {
       plugins: {
         entries: {
@@ -146,7 +146,7 @@ describe("plugins cli install", () => {
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     const installedCfg = {
       ...enabledCfg,
       plugins: {
@@ -154,17 +154,17 @@ describe("plugins cli install", () => {
         installs: {
           alpha: {
             source: "marketplace",
-            installPath: "/tmp/openclaw-state/extensions/alpha",
+            installPath: "/tmp/foxfang-state/extensions/alpha",
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
 
     loadConfig.mockReturnValue(cfg);
     installPluginFromMarketplace.mockResolvedValue({
       ok: true,
       pluginId: "alpha",
-      targetDir: "/tmp/openclaw-state/extensions/alpha",
+      targetDir: "/tmp/foxfang-state/extensions/alpha",
       version: "1.2.3",
       marketplaceName: "Claude",
       marketplaceSource: "local/repo",
@@ -194,14 +194,14 @@ describe("plugins cli install", () => {
       plugins: {
         entries: {},
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     const enabledCfg = createEnabledPluginConfig("demo");
     const installedCfg = createClawHubInstalledConfig({
       pluginId: "demo",
       install: {
         source: "clawhub",
         spec: "clawhub:demo@1.2.3",
-        installPath: "/tmp/openclaw-state/extensions/demo",
+        installPath: "/tmp/foxfang-state/extensions/demo",
         clawhubPackage: "demo",
         clawhubFamily: "code-plugin",
         clawhubChannel: "official",
@@ -253,14 +253,14 @@ describe("plugins cli install", () => {
       plugins: {
         entries: {},
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     const enabledCfg = createEnabledPluginConfig("demo");
     const installedCfg = createClawHubInstalledConfig({
       pluginId: "demo",
       install: {
         source: "clawhub",
         spec: "clawhub:demo@1.2.3",
-        installPath: "/tmp/openclaw-state/extensions/demo",
+        installPath: "/tmp/foxfang-state/extensions/demo",
         clawhubPackage: "demo",
       },
     });
@@ -297,7 +297,7 @@ describe("plugins cli install", () => {
       plugins: {
         entries: {},
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
     const enabledCfg = {
       plugins: {
         entries: {
@@ -306,7 +306,7 @@ describe("plugins cli install", () => {
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
 
     loadConfig.mockReturnValue(cfg);
     installPluginFromClawHub.mockResolvedValue({
@@ -317,7 +317,7 @@ describe("plugins cli install", () => {
     installPluginFromNpmSpec.mockResolvedValue({
       ok: true,
       pluginId: "demo",
-      targetDir: "/tmp/openclaw-state/extensions/demo",
+      targetDir: "/tmp/foxfang-state/extensions/demo",
       version: "1.2.3",
       npmResolution: {
         packageName: "demo",
@@ -349,18 +349,18 @@ describe("plugins cli install", () => {
   it("does not fall back to npm when ClawHub rejects a real package", async () => {
     installPluginFromClawHub.mockResolvedValue({
       ok: false,
-      error: 'Use "openclaw skills install demo" instead.',
+      error: 'Use "foxfang skills install demo" instead.',
       code: "skill_package",
     });
 
     await expect(runPluginsCommand(["plugins", "install", "demo"])).rejects.toThrow("__exit__:1");
 
     expect(installPluginFromNpmSpec).not.toHaveBeenCalled();
-    expect(runtimeErrors.at(-1)).toContain('Use "openclaw skills install demo" instead.');
+    expect(runtimeErrors.at(-1)).toContain('Use "foxfang skills install demo" instead.');
   });
 
   it("falls back to installing hook packs from npm specs", async () => {
-    const cfg = {} as OpenClawConfig;
+    const cfg = {} as FoxFangConfig;
     const installedCfg = {
       hooks: {
         internal: {
@@ -372,7 +372,7 @@ describe("plugins cli install", () => {
           },
         },
       },
-    } as OpenClawConfig;
+    } as FoxFangConfig;
 
     loadConfig.mockReturnValue(cfg);
     installPluginFromClawHub.mockResolvedValue({
@@ -382,7 +382,7 @@ describe("plugins cli install", () => {
     });
     installPluginFromNpmSpec.mockResolvedValue({
       ok: false,
-      error: "package.json missing openclaw.plugin.json",
+      error: "package.json missing foxfang.plugin.json",
     });
     installHooksFromNpmSpec.mockResolvedValue({
       ok: true,

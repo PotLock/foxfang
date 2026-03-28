@@ -1,8 +1,8 @@
 import type { ChannelType, Client, User } from "@buape/carbon";
-import type { ReplyToMode } from "openclaw/plugin-sdk/config-runtime";
-import type { SessionBindingRecord } from "openclaw/plugin-sdk/conversation-runtime";
-import type { HistoryEntry } from "openclaw/plugin-sdk/reply-history";
-import type { resolveAgentRoute } from "openclaw/plugin-sdk/routing";
+import type { ReplyToMode } from "foxfang/plugin-sdk/config-runtime";
+import type { SessionBindingRecord } from "foxfang/plugin-sdk/conversation-runtime";
+import type { HistoryEntry } from "foxfang/plugin-sdk/reply-history";
+import type { resolveAgentRoute } from "foxfang/plugin-sdk/routing";
 import type { DiscordChannelConfigResolved, DiscordGuildEntryResolved } from "./allow-list.js";
 import type { DiscordChannelInfo } from "./message-utils.js";
 import type { DiscordThreadBindingLookup } from "./reply-delivery.js";
@@ -12,16 +12,16 @@ export type { DiscordSenderIdentity } from "./sender-identity.js";
 import type { DiscordThreadChannel } from "./threading.js";
 
 export type LoadedConfig = ReturnType<
-  typeof import("openclaw/plugin-sdk/config-runtime").loadConfig
+  typeof import("foxfang/plugin-sdk/config-runtime").loadConfig
 >;
-export type RuntimeEnv = import("openclaw/plugin-sdk/runtime-env").RuntimeEnv;
+export type RuntimeEnv = import("foxfang/plugin-sdk/runtime-env").RuntimeEnv;
 
 export type DiscordMessageEvent = import("./listeners.js").DiscordMessageEvent;
 
 type DiscordMessagePreflightSharedFields = {
   cfg: LoadedConfig;
   discordConfig: NonNullable<
-    import("openclaw/plugin-sdk/config-runtime").OpenClawConfig["channels"]
+    import("foxfang/plugin-sdk/config-runtime").FoxFangConfig["channels"]
   >["discord"];
   accountId: string;
   token: string;

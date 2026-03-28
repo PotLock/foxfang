@@ -2,7 +2,7 @@
 read_when:
   - 你想管理智能体钩子
   - 你想安装或更新钩子
-summary: CLI 参考：`openclaw hooks`（智能体钩子）
+summary: CLI 参考：`foxfang hooks`（智能体钩子）
 title: hooks
 x-i18n:
   generated_at: "2026-02-03T10:04:32Z"
@@ -13,7 +13,7 @@ x-i18n:
   workflow: 15
 ---
 
-# `openclaw hooks`
+# `foxfang hooks`
 
 管理智能体钩子（针对 `/new`、`/reset` 等命令以及 Gateway 网关启动的事件驱动自动化）。
 
@@ -25,7 +25,7 @@ x-i18n:
 ## 列出所有钩子
 
 ```bash
-openclaw hooks list
+foxfang hooks list
 ```
 
 列出从工作区、托管目录和内置目录中发现的所有钩子。
@@ -50,7 +50,7 @@ Ready:
 **示例（详细模式）：**
 
 ```bash
-openclaw hooks list --verbose
+foxfang hooks list --verbose
 ```
 
 显示不符合条件的钩子缺失的要求。
@@ -58,7 +58,7 @@ openclaw hooks list --verbose
 **示例（JSON）：**
 
 ```bash
-openclaw hooks list --json
+foxfang hooks list --json
 ```
 
 返回结构化 JSON，供程序化使用。
@@ -66,7 +66,7 @@ openclaw hooks list --json
 ## 获取钩子信息
 
 ```bash
-openclaw hooks info <name>
+foxfang hooks info <name>
 ```
 
 显示特定钩子的详细信息。
@@ -82,7 +82,7 @@ openclaw hooks info <name>
 **示例：**
 
 ```bash
-openclaw hooks info session-memory
+foxfang hooks info session-memory
 ```
 
 **输出：**
@@ -93,10 +93,10 @@ openclaw hooks info session-memory
 Save session context to memory when /new command is issued
 
 Details:
-  Source: openclaw-bundled
-  Path: /path/to/openclaw/hooks/bundled/session-memory/HOOK.md
-  Handler: /path/to/openclaw/hooks/bundled/session-memory/handler.ts
-  Homepage: https://docs.openclaw.ai/automation/hooks#session-memory
+  Source: foxfang-bundled
+  Path: /path/to/foxfang/hooks/bundled/session-memory/HOOK.md
+  Handler: /path/to/foxfang/hooks/bundled/session-memory/handler.ts
+  Homepage: https://docs.foxfang.ai/automation/hooks#session-memory
   Events: command:new
 
 Requirements:
@@ -106,7 +106,7 @@ Requirements:
 ## 检查钩子资格
 
 ```bash
-openclaw hooks check
+foxfang hooks check
 ```
 
 显示钩子资格状态摘要（有多少已就绪，有多少未就绪）。
@@ -128,12 +128,12 @@ Not ready: 0
 ## 启用钩子
 
 ```bash
-openclaw hooks enable <name>
+foxfang hooks enable <name>
 ```
 
 通过将特定钩子添加到配置（`~/.foxfang/config.json`）来启用它。
 
-**注意：** 由插件管理的钩子在 `openclaw hooks list` 中显示 `plugin:<id>`，
+**注意：** 由插件管理的钩子在 `foxfang hooks list` 中显示 `plugin:<id>`，
 无法在此处启用/禁用。请改为启用/禁用该插件。
 
 **参数：**
@@ -143,7 +143,7 @@ openclaw hooks enable <name>
 **示例：**
 
 ```bash
-openclaw hooks enable session-memory
+foxfang hooks enable session-memory
 ```
 
 **输出：**
@@ -165,7 +165,7 @@ openclaw hooks enable session-memory
 ## 禁用钩子
 
 ```bash
-openclaw hooks disable <name>
+foxfang hooks disable <name>
 ```
 
 通过更新配置来禁用特定钩子。
@@ -177,7 +177,7 @@ openclaw hooks disable <name>
 **示例：**
 
 ```bash
-openclaw hooks disable command-logger
+foxfang hooks disable command-logger
 ```
 
 **输出：**
@@ -193,7 +193,7 @@ openclaw hooks disable command-logger
 ## 安装钩子
 
 ```bash
-openclaw hooks install <path-or-spec>
+foxfang hooks install <path-or-spec>
 ```
 
 从本地文件夹/压缩包或 npm 安装钩子包。
@@ -214,23 +214,23 @@ openclaw hooks install <path-or-spec>
 
 ```bash
 # 本地目录
-openclaw hooks install ./my-hook-pack
+foxfang hooks install ./my-hook-pack
 
 # 本地压缩包
-openclaw hooks install ./my-hook-pack.zip
+foxfang hooks install ./my-hook-pack.zip
 
 # NPM 包
-openclaw hooks install @openclaw/my-hook-pack
+foxfang hooks install @foxfang/my-hook-pack
 
 # 链接本地目录而不复制
-openclaw hooks install -l ./my-hook-pack
+foxfang hooks install -l ./my-hook-pack
 ```
 
 ## 更新钩子
 
 ```bash
-openclaw hooks update <id>
-openclaw hooks update --all
+foxfang hooks update <id>
+foxfang hooks update --all
 ```
 
 更新已安装的钩子包（仅限 npm 安装）。
@@ -249,7 +249,7 @@ openclaw hooks update --all
 **启用：**
 
 ```bash
-openclaw hooks enable session-memory
+foxfang hooks enable session-memory
 ```
 
 **输出：** `~/.foxfang/workspace/memory/YYYY-MM-DD-slug.md`
@@ -263,7 +263,7 @@ openclaw hooks enable session-memory
 **启用：**
 
 ```bash
-openclaw hooks enable command-logger
+foxfang hooks enable command-logger
 ```
 
 **输出：** `~/.foxfang/logs/commands.log`
@@ -292,7 +292,7 @@ grep '"action":"new"' ~/.foxfang/logs/commands.log | jq .
 **启用**：
 
 ```bash
-openclaw hooks enable boot-md
+foxfang hooks enable boot-md
 ```
 
 **参见：** [boot-md 文档](/automation/hooks#boot-md)

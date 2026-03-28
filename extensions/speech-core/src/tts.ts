@@ -9,20 +9,20 @@ import {
   unlinkSync,
 } from "node:fs";
 import path from "node:path";
-import { normalizeChannelId, type ChannelId } from "openclaw/plugin-sdk/channel-runtime";
+import { normalizeChannelId, type ChannelId } from "foxfang/plugin-sdk/channel-runtime";
 import type {
-  OpenClawConfig,
+  FoxFangConfig,
   TtsAutoMode,
   TtsConfig,
   TtsMode,
   TtsModelOverrideConfig,
   TtsProvider,
-} from "openclaw/plugin-sdk/config-runtime";
-import { resolveSendableOutboundReplyParts } from "openclaw/plugin-sdk/reply-payload";
-import type { ReplyPayload } from "openclaw/plugin-sdk/reply-runtime";
-import { logVerbose } from "openclaw/plugin-sdk/runtime-env";
-import { resolvePreferredOpenClawTmpDir } from "openclaw/plugin-sdk/sandbox";
-import { CONFIG_DIR, resolveUserPath, stripMarkdown } from "openclaw/plugin-sdk/text-runtime";
+} from "foxfang/plugin-sdk/config-runtime";
+import { resolveSendableOutboundReplyParts } from "foxfang/plugin-sdk/reply-payload";
+import type { ReplyPayload } from "foxfang/plugin-sdk/reply-runtime";
+import { logVerbose } from "foxfang/plugin-sdk/runtime-env";
+import { resolvePreferredFoxFangTmpDir } from "foxfang/plugin-sdk/sandbox";
+import { CONFIG_DIR, resolveUserPath, stripMarkdown } from "foxfang/plugin-sdk/text-runtime";
 import {
   canonicalizeSpeechProviderId,
   getSpeechProvider,
@@ -142,7 +142,7 @@ function resolveModelOverridePolicy(
   };
 }
 
-function sortSpeechProvidersForAutoSelection(cfg?: OpenClawConfig) {
+function sortSpeechProvidersForAutoSelection(cfg?: FoxFangConfig) {
   return listSpeechProviders(cfg).toSorted((left, right) => {
     const leftOrder = left.autoSelectOrder ?? Number.MAX_SAFE_INTEGER;
     const rightOrder = right.autoSelectOrder ?? Number.MAX_SAFE_INTEGER;
@@ -153,7 +153,7 @@ function sortSpeechProvidersForAutoSelection(cfg?: OpenClawConfig) {
   });
 }
 
-function resolveRegistryDefaultSpeechProviderId(cfg?: OpenClawConfig): TtsProvider {
+function resolveRegistryDefaultSpeechProviderId(cfg?: FoxFangConfig): TtsProvider {
   return sortSpeechProvidersForAutoSelection(cfg)[0]?.id ?? "";
 }
 
@@ -171,7 +171,7 @@ function asProviderConfigMap(value: unknown): Record<string, unknown> {
 
 function resolveSpeechProviderConfigs(
   raw: TtsConfig,
-  cfg: OpenClawConfig,
+  cfg: FoxFangConfig,
   timeoutMs: number,
 ): Record<string, SpeechProviderConfig> {
   const providerConfigs: Record<string, SpeechProviderConfig> = {};
@@ -194,14 +194,14 @@ function resolveSpeechProviderConfigs(
 export function getResolvedSpeechProviderConfig(
   config: ResolvedTtsConfig,
   providerId: string,
-  cfg?: OpenClawConfig,
+  cfg?: FoxFangConfig,
 ): SpeechProviderConfig {
   const canonical =
     canonicalizeSpeechProviderId(providerId, cfg) ?? providerId.trim().toLowerCase();
   return config.providerConfigs[canonical] ?? {};
 }
 
-export function resolveTtsConfig(cfg: OpenClawConfig): ResolvedTtsConfig {
+export function resolveTtsConfig(cfg: FoxFangConfig): ResolvedTtsConfig {
   const raw: TtsConfig = cfg.messages?.tts ?? {};
   const providerSource = raw.provider ? "config" : "default";
   const timeoutMs = raw.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -226,7 +226,7 @@ export function resolveTtsPrefsPath(config: ResolvedTtsConfig): string {
   if (config.prefsPath?.trim()) {
     return resolveUserPath(config.prefsPath.trim());
   }
-  const envPath = process.env.OPENCLAW_TTS_PREFS?.trim();
+  const envPath = process.env.FOXFANG_TTS_PREFS?.trim();
   if (envPath) {
     return resolveUserPath(envPath);
   }
@@ -260,7 +260,7 @@ export function resolveTtsAutoMode(params: {
   return params.config.auto;
 }
 
-export function buildTtsSystemPromptHint(cfg: OpenClawConfig): string | undefined {
+export function buildTtsSystemPromptHint(cfg: FoxFangConfig): string | undefined {
   const config = resolveTtsConfig(cfg);
   const prefsPath = resolveTtsPrefsPath(config);
   const autoMode = resolveTtsAutoMode({ config, prefsPath });
@@ -404,7 +404,7 @@ function resolveChannelId(channel: string | undefined): ChannelId | null {
   return channel ? normalizeChannelId(channel) : null;
 }
 
-export function resolveTtsProviderOrder(primary: TtsProvider, cfg?: OpenClawConfig): TtsProvider[] {
+export function resolveTtsProviderOrder(primary: TtsProvider, cfg?: FoxFangConfig): TtsProvider[] {
   const normalizedPrimary = canonicalizeSpeechProviderId(primary, cfg) ?? primary;
   const ordered = new Set<TtsProvider>([normalizedPrimary]);
   for (const provider of sortSpeechProvidersForAutoSelection(cfg)) {
@@ -419,7 +419,7 @@ export function resolveTtsProviderOrder(primary: TtsProvider, cfg?: OpenClawConf
 export function isTtsProviderConfigured(
   config: ResolvedTtsConfig,
   provider: TtsProvider,
-  cfg?: OpenClawConfig,
+  cfg?: FoxFangConfig,
 ): boolean {
   const resolvedProvider = getSpeechProvider(provider, cfg);
   if (!resolvedProvider) {
@@ -451,7 +451,7 @@ function buildTtsFailureResult(errors: string[]): { success: false; error: strin
 
 function resolveReadySpeechProvider(params: {
   provider: TtsProvider;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   config: ResolvedTtsConfig;
   errors: string[];
   requireTelephony?: boolean;
@@ -485,7 +485,7 @@ function resolveReadySpeechProvider(params: {
 
 function resolveTtsRequestSetup(params: {
   text: string;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   prefsPath?: string;
   providerOverride?: TtsProvider;
   disableFallback?: boolean;
@@ -516,7 +516,7 @@ function resolveTtsRequestSetup(params: {
 
 export async function textToSpeech(params: {
   text: string;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   prefsPath?: string;
   channel?: string;
   overrides?: TtsDirectiveOverrides;
@@ -527,7 +527,7 @@ export async function textToSpeech(params: {
     return buildTtsFailureResult([synthesis.error ?? "TTS conversion failed"]);
   }
 
-  const tempRoot = resolvePreferredOpenClawTmpDir();
+  const tempRoot = resolvePreferredFoxFangTmpDir();
   mkdirSync(tempRoot, { recursive: true, mode: 0o700 });
   const tempDir = mkdtempSync(path.join(tempRoot, "tts-"));
   const audioPath = path.join(tempDir, `voice-${Date.now()}${synthesis.fileExtension}`);
@@ -546,7 +546,7 @@ export async function textToSpeech(params: {
 
 export async function synthesizeSpeech(params: {
   text: string;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   prefsPath?: string;
   channel?: string;
   overrides?: TtsDirectiveOverrides;
@@ -608,7 +608,7 @@ export async function synthesizeSpeech(params: {
 
 export async function textToSpeechTelephony(params: {
   text: string;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   prefsPath?: string;
 }): Promise<TtsTelephonyResult> {
   const setup = resolveTtsRequestSetup({
@@ -661,7 +661,7 @@ export async function textToSpeechTelephony(params: {
 
 export async function listSpeechVoices(params: {
   provider: string;
-  cfg?: OpenClawConfig;
+  cfg?: FoxFangConfig;
   config?: ResolvedTtsConfig;
   apiKey?: string;
   baseUrl?: string;
@@ -691,7 +691,7 @@ export async function listSpeechVoices(params: {
 
 export async function maybeApplyTtsToPayload(params: {
   payload: ReplyPayload;
-  cfg: OpenClawConfig;
+  cfg: FoxFangConfig;
   channel?: string;
   kind?: "tool" | "block" | "final";
   inboundAudio?: boolean;

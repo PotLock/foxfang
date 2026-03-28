@@ -3,15 +3,15 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT_DIR/scripts/lib/live-docker-auth.sh"
-IMAGE_NAME="${OPENCLAW_IMAGE:-openclaw:local}"
-LIVE_IMAGE_NAME="${OPENCLAW_LIVE_IMAGE:-${IMAGE_NAME}-live}"
-CONFIG_DIR="${OPENCLAW_CONFIG_DIR:-$HOME/.foxfang}"
-WORKSPACE_DIR="${OPENCLAW_WORKSPACE_DIR:-$HOME/.foxfang/workspace}"
-PROFILE_FILE="${OPENCLAW_PROFILE_FILE:-$HOME/.profile}"
-CLI_TOOLS_DIR="${OPENCLAW_DOCKER_CLI_TOOLS_DIR:-$HOME/.cache/openclaw/docker-cli-tools}"
-ACP_AGENT="${OPENCLAW_LIVE_ACP_BIND_AGENT:-claude}"
+IMAGE_NAME="${FOXFANG_IMAGE:-foxfang:local}"
+LIVE_IMAGE_NAME="${FOXFANG_LIVE_IMAGE:-${IMAGE_NAME}-live}"
+CONFIG_DIR="${FOXFANG_CONFIG_DIR:-$HOME/.foxfang}"
+WORKSPACE_DIR="${FOXFANG_WORKSPACE_DIR:-$HOME/.foxfang/workspace}"
+PROFILE_FILE="${FOXFANG_PROFILE_FILE:-$HOME/.profile}"
+CLI_TOOLS_DIR="${FOXFANG_DOCKER_CLI_TOOLS_DIR:-$HOME/.cache/foxfang/docker-cli-tools}"
+ACP_AGENT="${FOXFANG_LIVE_ACP_BIND_AGENT:-claude}"
 # Keep in sync with extensions/acpx/src/config.ts ACPX_PINNED_VERSION.
-ACPX_VERSION="${OPENCLAW_DOCKER_ACPX_VERSION:-0.3.1}"
+ACPX_VERSION="${FOXFANG_DOCKER_ACPX_VERSION:-0.3.1}"
 
 case "$ACP_AGENT" in
   claude)
@@ -25,7 +25,7 @@ case "$ACP_AGENT" in
     CLI_BIN="codex"
     ;;
   *)
-    echo "Unsupported OPENCLAW_LIVE_ACP_BIND_AGENT: $ACP_AGENT (expected claude or codex)" >&2
+    echo "Unsupported FOXFANG_LIVE_ACP_BIND_AGENT: $ACP_AGENT (expected claude or codex)" >&2
     exit 1
     ;;
 esac
@@ -38,18 +38,18 @@ if [[ -f "$PROFILE_FILE" ]]; then
 fi
 
 AUTH_DIRS=()
-if [[ -n "${OPENCLAW_DOCKER_AUTH_DIRS:-}" ]]; then
+if [[ -n "${FOXFANG_DOCKER_AUTH_DIRS:-}" ]]; then
   while IFS= read -r auth_dir; do
     [[ -n "$auth_dir" ]] || continue
     AUTH_DIRS+=("$auth_dir")
-  done < <(openclaw_live_collect_auth_dirs)
+  done < <(foxfang_live_collect_auth_dirs)
 else
   while IFS= read -r auth_dir; do
     [[ -n "$auth_dir" ]] || continue
     AUTH_DIRS+=("$auth_dir")
-  done < <(openclaw_live_collect_auth_dirs_from_csv "$AUTH_PROVIDER")
+  done < <(foxfang_live_collect_auth_dirs_from_csv "$AUTH_PROVIDER")
 fi
-AUTH_DIRS_CSV="$(openclaw_live_join_csv "${AUTH_DIRS[@]}")"
+AUTH_DIRS_CSV="$(foxfang_live_join_csv "${AUTH_DIRS[@]}")"
 
 EXTERNAL_AUTH_MOUNTS=()
 for auth_dir in "${AUTH_DIRS[@]}"; do
@@ -64,9 +64,9 @@ set -euo pipefail
 [ -f "$HOME/.profile" ] && source "$HOME/.profile" || true
 export PATH="$HOME/.npm-global/bin:$PATH"
 if [ ! -x "$HOME/.npm-global/bin/acpx" ]; then
-  npm_config_prefix="$HOME/.npm-global" npm install -g "acpx@${OPENCLAW_DOCKER_ACPX_VERSION:-0.3.1}"
+  npm_config_prefix="$HOME/.npm-global" npm install -g "acpx@${FOXFANG_DOCKER_ACPX_VERSION:-0.3.1}"
 fi
-agent="${OPENCLAW_LIVE_ACP_BIND_AGENT:-claude}"
+agent="${FOXFANG_LIVE_ACP_BIND_AGENT:-claude}"
 case "$agent" in
   claude)
     if [ ! -x "$HOME/.npm-global/bin/claude" ]; then
@@ -80,7 +80,7 @@ case "$agent" in
     fi
     ;;
   *)
-    echo "Unsupported OPENCLAW_LIVE_ACP_BIND_AGENT: $agent" >&2
+    echo "Unsupported FOXFANG_LIVE_ACP_BIND_AGENT: $agent" >&2
     exit 1
     ;;
 esac
@@ -99,12 +99,12 @@ tar -C /src \
 ln -s /app/node_modules "$tmp_dir/node_modules"
 ln -s /app/dist "$tmp_dir/dist"
 if [ -d /app/dist-runtime/extensions ]; then
-  export OPENCLAW_BUNDLED_PLUGINS_DIR=/app/dist-runtime/extensions
+  export FOXFANG_BUNDLED_PLUGINS_DIR=/app/dist-runtime/extensions
 elif [ -d /app/dist/extensions ]; then
-  export OPENCLAW_BUNDLED_PLUGINS_DIR=/app/dist/extensions
+  export FOXFANG_BUNDLED_PLUGINS_DIR=/app/dist/extensions
 fi
 cd "$tmp_dir"
-export OPENCLAW_LIVE_ACP_BIND_ACPX_COMMAND="$HOME/.npm-global/bin/acpx"
+export FOXFANG_LIVE_ACP_BIND_ACPX_COMMAND="$HOME/.npm-global/bin/acpx"
 pnpm test:live src/gateway/gateway-acp-bind.live.test.ts
 EOF
 
@@ -123,13 +123,13 @@ docker run --rm -t \
   -e COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
   -e HOME=/home/node \
   -e NODE_OPTIONS=--disable-warning=ExperimentalWarning \
-  -e OPENCLAW_SKIP_CHANNELS=1 \
-  -e OPENCLAW_VITEST_FS_MODULE_CACHE=0 \
-  -e OPENCLAW_DOCKER_ACPX_VERSION="$ACPX_VERSION" \
-  -e OPENCLAW_LIVE_TEST=1 \
-  -e OPENCLAW_LIVE_ACP_BIND=1 \
-  -e OPENCLAW_LIVE_ACP_BIND_AGENT="$ACP_AGENT" \
-  -e OPENCLAW_LIVE_ACP_BIND_ACPX_COMMAND="${OPENCLAW_LIVE_ACP_BIND_ACPX_COMMAND:-}" \
+  -e FOXFANG_SKIP_CHANNELS=1 \
+  -e FOXFANG_VITEST_FS_MODULE_CACHE=0 \
+  -e FOXFANG_DOCKER_ACPX_VERSION="$ACPX_VERSION" \
+  -e FOXFANG_LIVE_TEST=1 \
+  -e FOXFANG_LIVE_ACP_BIND=1 \
+  -e FOXFANG_LIVE_ACP_BIND_AGENT="$ACP_AGENT" \
+  -e FOXFANG_LIVE_ACP_BIND_ACPX_COMMAND="${FOXFANG_LIVE_ACP_BIND_ACPX_COMMAND:-}" \
   -v "$ROOT_DIR":/src:ro \
   -v "$CONFIG_DIR":/home/node/.foxfang \
   -v "$WORKSPACE_DIR":/home/node/.foxfang/workspace \

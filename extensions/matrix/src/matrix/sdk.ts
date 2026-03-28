@@ -10,7 +10,7 @@ import {
   type MatrixEvent,
 } from "matrix-js-sdk/lib/matrix.js";
 import { VerificationMethod } from "matrix-js-sdk/lib/types.js";
-import { KeyedAsyncQueue } from "openclaw/plugin-sdk/core";
+import { KeyedAsyncQueue } from "foxfang/plugin-sdk/core";
 import type { SsrFPolicy } from "../runtime-api.js";
 import { resolveMatrixRoomKeyBackupReadinessError } from "./backup-health.js";
 import { FileBackedMatrixSyncStore } from "./client/file-sync-store.js";

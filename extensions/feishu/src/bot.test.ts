@@ -1,4 +1,4 @@
-import type * as ConversationRuntime from "openclaw/plugin-sdk/conversation-runtime";
+import type * as ConversationRuntime from "foxfang/plugin-sdk/conversation-runtime";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ResolvedAgentRoute } from "../../../src/routing/resolve-route.js";
 import { createPluginRuntimeMock } from "../../../test/helpers/extensions/plugin-runtime-mock.js";
@@ -244,8 +244,8 @@ vi.mock("./client.js", () => ({
   createFeishuClient: mockCreateFeishuClient,
 }));
 
-vi.mock("openclaw/plugin-sdk/conversation-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/conversation-runtime")>();
+vi.mock("foxfang/plugin-sdk/conversation-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/conversation-runtime")>();
   return {
     ...actual,
     resolveConfiguredBindingRoute: (params: unknown) =>

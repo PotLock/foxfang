@@ -149,14 +149,14 @@ export async function updateAuthProfileStoreWithLock(params: {
  * Normalise a raw auth-profiles.json credential entry.
  *
  * The official format uses `type` and (for api_key credentials) `key`.
- * A common mistake — caused by the similarity with the `openclaw.json`
+ * A common mistake — caused by the similarity with the `foxfang.json`
  * `auth.profiles` section which uses `mode` — is to write `mode` instead of
  * `type` and `apiKey` instead of `key`.  Accept both spellings so users don't
  * silently lose their credentials.
  */
 function normalizeRawCredentialEntry(raw: Record<string, unknown>): Partial<AuthProfileCredential> {
   const entry = { ...raw } as Record<string, unknown>;
-  // mode → type alias (openclaw.json uses "mode"; auth-profiles.json uses "type")
+  // mode → type alias (foxfang.json uses "mode"; auth-profiles.json uses "type")
   if (!("type" in entry) && typeof entry["mode"] === "string") {
     entry["type"] = entry["mode"];
   }
@@ -391,7 +391,7 @@ function loadCoercedStore(authPath: string): AuthProfileStore | null {
 }
 
 function shouldLogAuthStoreTiming(): boolean {
-  return process.env.OPENCLAW_DEBUG_INGRESS_TIMING === "1";
+  return process.env.FOXFANG_DEBUG_INGRESS_TIMING === "1";
 }
 
 function syncExternalCliCredentialsTimed(
@@ -490,7 +490,7 @@ function loadAuthProfileStoreForAgent(
   const mergedOAuth = mergeOAuthFileIntoStore(store);
   // Keep external CLI credentials visible in runtime even during read-only loads.
   const syncedCli = syncExternalCliCredentialsTimed(store, { log: !readOnly });
-  const forceReadOnly = process.env.OPENCLAW_AUTH_STORE_READONLY === "1";
+  const forceReadOnly = process.env.FOXFANG_AUTH_STORE_READONLY === "1";
   const shouldWrite = !readOnly && !forceReadOnly && (legacy !== null || mergedOAuth || syncedCli);
   if (shouldWrite) {
     saveJsonFile(authPath, store);

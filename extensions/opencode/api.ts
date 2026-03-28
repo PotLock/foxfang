@@ -27,9 +27,9 @@ function resolveCurrentPrimaryModel(model: unknown): string | undefined {
 }
 
 export function applyOpencodeZenModelDefault(
-  cfg: import("openclaw/plugin-sdk/provider-onboard").OpenClawConfig,
+  cfg: import("foxfang/plugin-sdk/provider-onboard").FoxFangConfig,
 ): {
-  next: import("openclaw/plugin-sdk/provider-onboard").OpenClawConfig;
+  next: import("foxfang/plugin-sdk/provider-onboard").FoxFangConfig;
   changed: boolean;
 } {
   const current = resolveCurrentPrimaryModel(cfg.agents?.defaults?.model);

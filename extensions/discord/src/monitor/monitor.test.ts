@@ -7,9 +7,9 @@ import type {
 import type { Client } from "@buape/carbon";
 import { ChannelType } from "discord-api-types/v10";
 import type { GatewayPresenceUpdate } from "discord-api-types/v10";
-import type { OpenClawConfig } from "openclaw/plugin-sdk/config-runtime";
-import type { DiscordAccountConfig } from "openclaw/plugin-sdk/config-runtime";
-import { buildPluginBindingApprovalCustomId } from "openclaw/plugin-sdk/conversation-runtime";
+import type { FoxFangConfig } from "foxfang/plugin-sdk/config-runtime";
+import type { DiscordAccountConfig } from "foxfang/plugin-sdk/config-runtime";
+import { buildPluginBindingApprovalCustomId } from "foxfang/plugin-sdk/conversation-runtime";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildPluginBindingResolvedTextMock,
@@ -65,7 +65,7 @@ const dispatchPluginInteractiveHandlerMock = vi.hoisted(() => vi.fn());
 let lastDispatchCtx: Record<string, unknown> | undefined;
 
 async function createChannelRuntimeMock(
-  importOriginal: () => Promise<typeof import("openclaw/plugin-sdk/channel-runtime")>,
+  importOriginal: () => Promise<typeof import("foxfang/plugin-sdk/channel-runtime")>,
 ) {
   const actual = await importOriginal();
   return {
@@ -74,11 +74,11 @@ async function createChannelRuntimeMock(
   };
 }
 
-vi.mock("openclaw/plugin-sdk/channel-runtime", createChannelRuntimeMock);
-vi.mock("openclaw/plugin-sdk/channel-runtime.js", createChannelRuntimeMock);
+vi.mock("foxfang/plugin-sdk/channel-runtime", createChannelRuntimeMock);
+vi.mock("foxfang/plugin-sdk/channel-runtime.js", createChannelRuntimeMock);
 
-vi.mock("openclaw/plugin-sdk/reply-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/reply-runtime")>();
+vi.mock("foxfang/plugin-sdk/reply-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/reply-runtime")>();
   return {
     ...actual,
     dispatchReplyWithBufferedBlockDispatcher: (...args: unknown[]) => dispatchReplyMock(...args),
@@ -98,8 +98,8 @@ vi.mock("../../../../src/auto-reply/reply/provider-dispatcher.js", async (import
   };
 });
 
-vi.mock("openclaw/plugin-sdk/config-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/config-runtime")>();
+vi.mock("foxfang/plugin-sdk/config-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/config-runtime")>();
   return {
     ...actual,
     readSessionUpdatedAt: (...args: unknown[]) => readSessionUpdatedAtMock(...args),
@@ -107,8 +107,8 @@ vi.mock("openclaw/plugin-sdk/config-runtime", async (importOriginal) => {
   };
 });
 
-vi.mock("openclaw/plugin-sdk/plugin-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/plugin-runtime")>();
+vi.mock("foxfang/plugin-sdk/plugin-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("foxfang/plugin-sdk/plugin-runtime")>();
   return {
     ...actual,
     dispatchPluginInteractiveHandler: (...args: unknown[]) =>
@@ -118,14 +118,14 @@ vi.mock("openclaw/plugin-sdk/plugin-runtime", async (importOriginal) => {
 
 describe("discord component interactions", () => {
   let editDiscordComponentMessageMock: ReturnType<typeof vi.spyOn>;
-  const createCfg = (): OpenClawConfig =>
+  const createCfg = (): FoxFangConfig =>
     ({
       channels: {
         discord: {
           replyToMode: "first",
         },
       },
-    }) as OpenClawConfig;
+    }) as FoxFangConfig;
 
   const createDiscordConfig = (overrides?: Partial<DiscordAccountConfig>): DiscordAccountConfig =>
     ({
@@ -265,7 +265,7 @@ describe("discord component interactions", () => {
         cfg: {
           commands: { useAccessGroups: true },
           channels: { discord: { replyToMode: "first" } },
-        } as OpenClawConfig,
+        } as FoxFangConfig,
         allowFrom,
       }),
     );
@@ -341,7 +341,7 @@ describe("discord component interactions", () => {
     });
     recordInboundSessionMock.mockClear().mockResolvedValue(undefined);
     readSessionUpdatedAtMock.mockClear().mockReturnValue(undefined);
-    resolveStorePathMock.mockClear().mockReturnValue("/tmp/openclaw-sessions-test.json");
+    resolveStorePathMock.mockClear().mockReturnValue("/tmp/foxfang-sessions-test.json");
     dispatchPluginInteractiveHandlerMock.mockReset().mockResolvedValue({
       matched: false,
       handled: false,
@@ -462,7 +462,7 @@ describe("discord component interactions", () => {
       createComponentContext({
         cfg: {
           channels: { discord: { replyToMode: "first", groupPolicy: "allowlist" } },
-        } as OpenClawConfig,
+        } as FoxFangConfig,
         discordConfig: createDiscordConfig({ groupPolicy: "allowlist" }),
         guildEntries: {},
       }),
@@ -496,7 +496,7 @@ describe("discord component interactions", () => {
       createComponentContext({
         cfg: {
           channels: { discord: { replyToMode: "first", groupPolicy: "allowlist" } },
-        } as OpenClawConfig,
+        } as FoxFangConfig,
         discordConfig: createDiscordConfig({ groupPolicy: "allowlist" }),
         guildEntries: { g1: { channels: { "guild-channel": { allow: true, enabled: false } } } },
       }),
@@ -530,7 +530,7 @@ describe("discord component interactions", () => {
       createComponentContext({
         cfg: {
           channels: { discord: { replyToMode: "first", groupPolicy: "allowlist" } },
-        } as OpenClawConfig,
+        } as FoxFangConfig,
         discordConfig: createDiscordConfig({ groupPolicy: "allowlist" }),
         guildEntries: { g1: { channels: { "guild-channel": { allow: false } } } },
       }),
@@ -592,7 +592,7 @@ describe("discord component interactions", () => {
         cfg: {
           commands: { useAccessGroups: true },
           channels: { discord: { replyToMode: "first" } },
-        } as OpenClawConfig,
+        } as FoxFangConfig,
         allowFrom: ["owner-1"],
       }),
     );
@@ -624,7 +624,7 @@ describe("discord component interactions", () => {
         cfg: {
           commands: { useAccessGroups: true },
           channels: { discord: { replyToMode: "first" } },
-        } as OpenClawConfig,
+        } as FoxFangConfig,
         allowFrom: ["123456789"],
       }),
     );

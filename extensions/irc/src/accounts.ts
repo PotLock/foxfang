@@ -1,9 +1,9 @@
-import { createAccountListHelpers } from "openclaw/plugin-sdk/account-helpers";
-import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "openclaw/plugin-sdk/account-id";
-import { resolveMergedAccountConfig } from "openclaw/plugin-sdk/account-resolution";
-import { parseOptionalDelimitedEntries } from "openclaw/plugin-sdk/core";
-import { tryReadSecretFileSync } from "openclaw/plugin-sdk/core";
-import { normalizeResolvedSecretInputString } from "openclaw/plugin-sdk/secret-input";
+import { createAccountListHelpers } from "foxfang/plugin-sdk/account-helpers";
+import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "foxfang/plugin-sdk/account-id";
+import { resolveMergedAccountConfig } from "foxfang/plugin-sdk/account-resolution";
+import { parseOptionalDelimitedEntries } from "foxfang/plugin-sdk/core";
+import { tryReadSecretFileSync } from "foxfang/plugin-sdk/core";
+import { normalizeResolvedSecretInputString } from "foxfang/plugin-sdk/secret-input";
 import type { CoreConfig, IrcAccountConfig, IrcNickServConfig } from "./types.js";
 
 const TRUTHY_ENV = new Set(["true", "1", "yes", "on"]);
@@ -158,12 +158,12 @@ export function resolveIrcAccount(params: {
       merged.username?.trim() ||
       (accountId === DEFAULT_ACCOUNT_ID ? process.env.IRC_USERNAME?.trim() : "") ||
       nick ||
-      "openclaw"
+      "foxfang"
     ).trim();
     const realname = (
       merged.realname?.trim() ||
       (accountId === DEFAULT_ACCOUNT_ID ? process.env.IRC_REALNAME?.trim() : "") ||
-      "OpenClaw"
+      "FoxFang"
     ).trim();
 
     const passwordResolution = resolvePassword(accountId, merged);
