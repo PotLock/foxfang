@@ -69,7 +69,7 @@ openclaw acp
 openclaw acp --url wss://gateway-host:18789 --token <token>
 
 # Remote Gateway (token from file)
-openclaw acp --url wss://gateway-host:18789 --token-file ~/.openclaw/gateway.token
+openclaw acp --url wss://gateway-host:18789 --token-file ~/.foxfang/gateway.token
 
 # Attach to an existing session key
 openclaw acp --session agent:main:main
@@ -90,10 +90,10 @@ It spawns the ACP bridge and lets you type prompts interactively.
 openclaw acp client
 
 # Point the spawned bridge at a remote Gateway
-openclaw acp client --server-args --url wss://gateway-host:18789 --token-file ~/.openclaw/gateway.token
+openclaw acp client --server-args --url wss://gateway-host:18789 --token-file ~/.foxfang/gateway.token
 
 # Override the server command (default: openclaw)
-openclaw acp client --server "node" --server-args openclaw.mjs acp --url ws://127.0.0.1:19001
+openclaw acp client --server "node" --server-args foxfang.mjs acp --url ws://127.0.0.1:19001
 ```
 
 Permission model (client debug mode):
@@ -124,7 +124,7 @@ Example direct run (no config write):
 ```bash
 openclaw acp --url wss://gateway-host:18789 --token <token>
 # preferred for local process safety
-openclaw acp --url wss://gateway-host:18789 --token-file ~/.openclaw/gateway.token
+openclaw acp --url wss://gateway-host:18789 --token-file ~/.foxfang/gateway.token
 ```
 
 ## Selecting agents
@@ -177,7 +177,7 @@ time, override the `openclaw` agent command in `~/.acpx/config.json`:
 {
   "agents": {
     "openclaw": {
-      "command": "env OPENCLAW_HIDE_BANNER=1 OPENCLAW_SUPPRESS_NOTES=1 openclaw acp --url ws://127.0.0.1:18789 --token-file ~/.openclaw/gateway.token --session agent:main:main"
+      "command": "env OPENCLAW_HIDE_BANNER=1 OPENCLAW_SUPPRESS_NOTES=1 openclaw acp --url ws://127.0.0.1:18789 --token-file ~/.foxfang/gateway.token --session agent:main:main"
     }
   }
 }
@@ -187,7 +187,7 @@ For a repo-local OpenClaw checkout, use the direct CLI entrypoint instead of the
 dev runner so the ACP stream stays clean. For example:
 
 ```bash
-env OPENCLAW_HIDE_BANNER=1 OPENCLAW_SUPPRESS_NOTES=1 node openclaw.mjs acp ...
+env OPENCLAW_HIDE_BANNER=1 OPENCLAW_SUPPRESS_NOTES=1 node foxfang.mjs acp ...
 ```
 
 This is the easiest way to let Codex, Claude Code, or another ACP-aware client

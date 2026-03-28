@@ -22,7 +22,7 @@ function resolveOpsTarget(cfg: OpenClawConfig, env = process.env) {
 describe("resolveMatrixMigrationAccountTarget", () => {
   it("reuses stored user identity for token-only configs when the access token matches", async () => {
     await withTempHome(async (home) => {
-      const stateDir = path.join(home, ".openclaw");
+      const stateDir = path.join(home, ".foxfang");
       writeMatrixCredentials(stateDir, {
         accountId: MATRIX_OPS_ACCOUNT_ID,
         deviceId: "DEVICE-OPS",
@@ -52,7 +52,7 @@ describe("resolveMatrixMigrationAccountTarget", () => {
 
   it("ignores stored device IDs from stale cached Matrix credentials", async () => {
     await withTempHome(async (home) => {
-      const stateDir = path.join(home, ".openclaw");
+      const stateDir = path.join(home, ".foxfang");
       writeMatrixCredentials(stateDir, {
         accountId: MATRIX_OPS_ACCOUNT_ID,
         userId: "@old-bot:example.org",
@@ -85,7 +85,7 @@ describe("resolveMatrixMigrationAccountTarget", () => {
 
   it("does not trust stale stored creds on the same homeserver when the token changes", async () => {
     await withTempHome(async (home) => {
-      const stateDir = path.join(home, ".openclaw");
+      const stateDir = path.join(home, ".foxfang");
       writeMatrixCredentials(stateDir, {
         accountId: MATRIX_OPS_ACCOUNT_ID,
         userId: "@old-bot:example.org",
@@ -114,7 +114,7 @@ describe("resolveMatrixMigrationAccountTarget", () => {
 
   it("does not inherit the base userId for non-default token-only accounts", async () => {
     await withTempHome(async (home) => {
-      const stateDir = path.join(home, ".openclaw");
+      const stateDir = path.join(home, ".foxfang");
       writeMatrixCredentials(stateDir, {
         accountId: MATRIX_OPS_ACCOUNT_ID,
         deviceId: "DEVICE-OPS",

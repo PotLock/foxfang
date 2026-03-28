@@ -67,7 +67,7 @@ async function writeEnvSkill(workspaceDir: string) {
 beforeAll(async () => {
   await fixtureSuite.setup();
   tempHome = await createTempHomeEnv("openclaw-skills-home-");
-  await fs.mkdir(path.join(tempHome.home, ".openclaw", "agents", "main", "sessions"), {
+  await fs.mkdir(path.join(tempHome.home, ".foxfang", "agents", "main", "sessions"), {
     recursive: true,
   });
 });
@@ -166,7 +166,7 @@ describe("buildWorkspaceSkillCommandSpecs", () => {
 
   it("includes enabled Claude bundle markdown commands as native OpenClaw slash commands", async () => {
     const workspaceDir = await makeWorkspace();
-    const pluginRoot = path.join(tempHome!.home, ".openclaw", "extensions", "compound-bundle");
+    const pluginRoot = path.join(tempHome!.home, ".foxfang", "extensions", "compound-bundle");
     await fs.mkdir(path.join(pluginRoot, ".claude-plugin"), { recursive: true });
     await fs.mkdir(path.join(pluginRoot, "commands"), { recursive: true });
     await fs.writeFile(
@@ -210,7 +210,7 @@ describe("buildWorkspaceSkillCommandSpecs", () => {
     );
     expect(
       commands.find((entry) => entry.skillName === "workflows:review")?.sourceFilePath,
-    ).toContain("/.openclaw/extensions/compound-bundle/commands/workflows-review.md");
+    ).toContain("/.foxfang/extensions/compound-bundle/commands/workflows-review.md");
   });
 });
 

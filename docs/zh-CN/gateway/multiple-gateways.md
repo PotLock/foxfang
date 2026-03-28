@@ -101,12 +101,12 @@ openclaw --profile rescue gateway install
 ## 手动环境变量示例
 
 ```bash
-OPENCLAW_CONFIG_PATH=~/.openclaw/main.json \
-OPENCLAW_STATE_DIR=~/.openclaw-main \
+OPENCLAW_CONFIG_PATH=~/.foxfang/main.json \
+OPENCLAW_STATE_DIR=~/.foxfang-main \
 openclaw gateway --port 18789
 
-OPENCLAW_CONFIG_PATH=~/.openclaw/rescue.json \
-OPENCLAW_STATE_DIR=~/.openclaw-rescue \
+OPENCLAW_CONFIG_PATH=~/.foxfang/rescue.json \
+OPENCLAW_STATE_DIR=~/.foxfang-rescue \
 openclaw gateway --port 19001
 ```
 

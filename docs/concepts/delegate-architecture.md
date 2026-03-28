@@ -96,7 +96,7 @@ Use per-agent tool policy (v2026.1.6+) to enforce boundaries at the Gateway leve
 ```json5
 {
   id: "delegate",
-  workspace: "~/.openclaw/workspace-delegate",
+  workspace: "~/.foxfang/workspace-delegate",
   tools: {
     allow: ["read", "exec", "message", "cron"],
     deny: ["write", "edit", "apply_patch", "browser", "canvas"],
@@ -111,7 +111,7 @@ For high-security deployments, sandbox the delegate agent so it cannot access th
 ```json5
 {
   id: "delegate",
-  workspace: "~/.openclaw/workspace-delegate",
+  workspace: "~/.foxfang/workspace-delegate",
   sandbox: {
     mode: "all",
     scope: "agent",
@@ -125,8 +125,8 @@ See [Sandboxing](/gateway/sandboxing) and [Multi-Agent Sandbox & Tools](/tools/m
 
 Configure logging before the delegate handles any real data:
 
-- Cron run history: `~/.openclaw/cron/runs/<jobId>.jsonl`
-- Session transcripts: `~/.openclaw/agents/delegate/sessions`
+- Cron run history: `~/.foxfang/cron/runs/<jobId>.jsonl`
+- Session transcripts: `~/.foxfang/agents/delegate/sessions`
 - Identity provider audit logs (Exchange, Google Workspace)
 
 All delegate actions flow through OpenClaw's session store. For compliance, ensure these logs are retained and reviewed.
@@ -145,9 +145,9 @@ openclaw agents add delegate
 
 This creates:
 
-- Workspace: `~/.openclaw/workspace-delegate`
-- State: `~/.openclaw/agents/delegate/agent`
-- Sessions: `~/.openclaw/agents/delegate/sessions`
+- Workspace: `~/.foxfang/workspace-delegate`
+- State: `~/.foxfang/agents/delegate/agent`
+- Sessions: `~/.foxfang/agents/delegate/sessions`
 
 Configure the delegate's personality in its workspace files:
 
@@ -208,10 +208,10 @@ Route inbound messages to the delegate agent using [Multi-Agent Routing](/concep
 {
   agents: {
     list: [
-      { id: "main", workspace: "~/.openclaw/workspace" },
+      { id: "main", workspace: "~/.foxfang/workspace" },
       {
         id: "delegate",
-        workspace: "~/.openclaw/workspace-delegate",
+        workspace: "~/.foxfang/workspace-delegate",
         tools: {
           deny: ["browser", "canvas"],
         },
@@ -241,7 +241,7 @@ Copy or create auth profiles for the delegate's `agentDir`:
 
 ```bash
 # Delegate reads from its own auth store
-~/.openclaw/agents/delegate/agent/auth-profiles.json
+~/.foxfang/agents/delegate/agent/auth-profiles.json
 ```
 
 Never share the main agent's `agentDir` with the delegate. See [Multi-Agent Routing](/concepts/multi-agent) for auth isolation details.
@@ -254,12 +254,12 @@ A complete delegate configuration for an organizational assistant that handles e
 {
   agents: {
     list: [
-      { id: "main", default: true, workspace: "~/.openclaw/workspace" },
+      { id: "main", default: true, workspace: "~/.foxfang/workspace" },
       {
         id: "org-assistant",
         name: "[Organization] Assistant",
-        workspace: "~/.openclaw/workspace-org",
-        agentDir: "~/.openclaw/agents/org-assistant/agent",
+        workspace: "~/.foxfang/workspace-org",
+        agentDir: "~/.foxfang/agents/org-assistant/agent",
         identity: { name: "[Organization] Assistant" },
         tools: {
           allow: ["read", "exec", "message", "cron", "sessions_list", "sessions_history"],

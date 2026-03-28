@@ -50,9 +50,9 @@ Hooks 系统允许你：
 
 OpenClaw 自带四个会被自动发现的内置 hook：
 
-- **💾 session-memory**：当你发出 `/new` 时，将会话上下文保存到你的智能体工作区（默认是 `~/.openclaw/workspace/memory/`）
+- **💾 session-memory**：当你发出 `/new` 时，将会话上下文保存到你的智能体工作区（默认是 `~/.foxfang/workspace/memory/`）
 - **📎 bootstrap-extra-files**：在 `agent:bootstrap` 期间，从已配置的 glob/路径模式中注入额外的工作区引导文件
-- **📝 command-logger**：将所有命令事件记录到 `~/.openclaw/logs/commands.log`
+- **📝 command-logger**：将所有命令事件记录到 `~/.foxfang/logs/commands.log`
 - **🚀 boot-md**：当 Gateway 网关启动时运行 `BOOT.md`（需要启用内部 hooks）
 
 列出可用 hooks：
@@ -88,7 +88,7 @@ openclaw hooks info session-memory
 Hooks 会从三个目录中自动发现（按优先级顺序）：
 
 1. **工作区 hooks**：`<workspace>/hooks/`（每个智能体单独配置，优先级最高）
-2. **托管 hooks**：`~/.openclaw/hooks/`（用户安装，在各工作区之间共享）
+2. **托管 hooks**：`~/.foxfang/hooks/`（用户安装，在各工作区之间共享）
 3. **内置 hooks**：`<openclaw>/dist/hooks/bundled/`（随 OpenClaw 一起提供）
 
 托管 hook 目录既可以是 **单个 hook**，也可以是 **hook 包**（包目录）。
@@ -127,7 +127,7 @@ Git/URL/file spec 和 semver 范围会被拒绝。
 ```
 
 每个条目都指向一个包含 `HOOK.md` 和 `handler.ts`（或 `index.ts`）的 hook 目录。
-Hook 包可以携带依赖；它们会安装到 `~/.openclaw/hooks/<id>` 下。
+Hook 包可以携带依赖；它们会安装到 `~/.foxfang/hooks/<id>` 下。
 每个 `openclaw.hooks` 条目在解析符号链接后都必须保持在包目录内部；超出目录范围的条目会被拒绝。
 
 安全说明：`openclaw hooks install` 会使用 `npm install --ignore-scripts` 安装依赖
@@ -386,13 +386,13 @@ export default handler;
 ### 1. 选择位置
 
 - **工作区 hooks**（`<workspace>/hooks/`）：每个智能体单独配置，优先级最高
-- **托管 hooks**（`~/.openclaw/hooks/`）：跨工作区共享
+- **托管 hooks**（`~/.foxfang/hooks/`）：跨工作区共享
 
 ### 2. 创建目录结构
 
 ```bash
-mkdir -p ~/.openclaw/hooks/my-hook
-cd ~/.openclaw/hooks/my-hook
+mkdir -p ~/.foxfang/hooks/my-hook
+cd ~/.foxfang/hooks/my-hook
 ```
 
 ### 3. 创建 HOOK.md
@@ -579,7 +579,7 @@ openclaw hooks disable command-logger
 
 **要求**：必须配置 `workspace.dir`
 
-**输出**：`<workspace>/memory/YYYY-MM-DD-slug.md`（默认是 `~/.openclaw/workspace`）
+**输出**：`<workspace>/memory/YYYY-MM-DD-slug.md`（默认是 `~/.foxfang/workspace`）
 
 **它的作用**：
 
@@ -659,7 +659,7 @@ openclaw hooks enable bootstrap-extra-files
 
 **要求**：无
 
-**输出**：`~/.openclaw/logs/commands.log`
+**输出**：`~/.foxfang/logs/commands.log`
 
 **它的作用**：
 
@@ -678,13 +678,13 @@ openclaw hooks enable bootstrap-extra-files
 
 ```bash
 # 查看最近的命令
-tail -n 20 ~/.openclaw/logs/commands.log
+tail -n 20 ~/.foxfang/logs/commands.log
 
 # 使用 jq 美化输出
-cat ~/.openclaw/logs/commands.log | jq .
+cat ~/.foxfang/logs/commands.log | jq .
 
 # 按操作筛选
-grep '"action":"new"' ~/.openclaw/logs/commands.log | jq .
+grep '"action":"new"' ~/.foxfang/logs/commands.log | jq .
 ```
 
 **启用**：
@@ -830,7 +830,7 @@ openclaw hooks info my-hook
 ./scripts/clawlog.sh -f
 
 # 其他平台
-tail -f ~/.openclaw/gateway.log
+tail -f ~/.foxfang/gateway.log
 ```
 
 ### 直接测试 Hooks
@@ -910,14 +910,14 @@ Gateway 网关启动
 1. 检查目录结构：
 
    ```bash
-   ls -la ~/.openclaw/hooks/my-hook/
+   ls -la ~/.foxfang/hooks/my-hook/
    # 应显示：HOOK.md, handler.ts
    ```
 
 2. 验证 HOOK.md 格式：
 
    ```bash
-   cat ~/.openclaw/hooks/my-hook/HOOK.md
+   cat ~/.foxfang/hooks/my-hook/HOOK.md
    # 应包含带有 name 和 metadata 的 YAML frontmatter
    ```
 
@@ -995,8 +995,8 @@ node -e "import('./path/to/handler.ts').then(console.log)"
 1. 创建 hook 目录：
 
    ```bash
-   mkdir -p ~/.openclaw/hooks/my-hook
-   mv ./hooks/handlers/my-handler.ts ~/.openclaw/hooks/my-hook/handler.ts
+   mkdir -p ~/.foxfang/hooks/my-hook
+   mv ./hooks/handlers/my-handler.ts ~/.foxfang/hooks/my-hook/handler.ts
    ```
 
 2. 创建 HOOK.md：

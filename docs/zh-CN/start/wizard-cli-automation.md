@@ -196,7 +196,7 @@ openclaw onboard --non-interactive \
 
 ```bash
 openclaw agents add work \
-  --workspace ~/.openclaw/workspace-work \
+  --workspace ~/.foxfang/workspace-work \
   --model openai/gpt-5.2 \
   --bind whatsapp:biz \
   --non-interactive \
@@ -211,7 +211,7 @@ openclaw agents add work \
 
 说明：
 
-- 默认工作区遵循 `~/.openclaw/workspace-<agentId>`。
+- 默认工作区遵循 `~/.foxfang/workspace-<agentId>`。
 - 添加 `bindings` 以路由入站消息（向导可以完成这项操作）。
 - 非交互式标志：`--model`、`--agent-dir`、`--bind`、`--non-interactive`。
 

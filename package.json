@@ -1,20 +1,21 @@
 {
-  "name": "openclaw",
+  "name": "foxfang",
   "version": "2026.3.27",
-  "description": "Multi-channel AI gateway with extensible messaging integrations",
+  "description": "Personal AI marketing assistant with extensible multi-channel integrations",
   "keywords": [],
-  "homepage": "https://github.com/openclaw/openclaw#readme",
+  "homepage": "https://github.com/potlock/foxfang#readme",
   "bugs": {
-    "url": "https://github.com/openclaw/openclaw/issues"
+    "url": "https://github.com/potlock/foxfang/issues"
   },
   "license": "MIT",
   "author": "",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/openclaw/openclaw.git"
+    "url": "git+https://github.com/potlock/foxfang.git"
   },
   "bin": {
-    "openclaw": "openclaw.mjs"
+    "foxfang": "foxfang.mjs",
+    "openclaw": "foxfang.mjs"
   },
   "directories": {
     "doc": "docs",
@@ -23,7 +24,8 @@
   "files": [
     "CHANGELOG.md",
     "LICENSE",
-    "openclaw.mjs",
+    "foxfang.mjs",
+    "foxfang.mjs",
     "README.md",
     "assets/",
     "dist/",
@@ -989,7 +991,7 @@
       "default": "./dist/plugin-sdk/zod.js"
     },
     "./extension-api": "./dist/extensionAPI.js",
-    "./cli-entry": "./openclaw.mjs"
+    "./cli-entry": "./foxfang.mjs"
   },
   "scripts": {
     "android:assemble": "cd apps/android && ./gradlew :app:assemblePlayDebug",
@@ -1096,6 +1098,8 @@
     "mac:package": "bash scripts/package-mac-app.sh",
     "mac:restart": "bash scripts/restart-mac.sh",
     "moltbot:rpc": "node scripts/run-node.mjs agent --mode rpc --json",
+    "foxfang": "node scripts/run-node.mjs",
+    "foxfang:rpc": "node scripts/run-node.mjs agent --mode rpc --json",
     "openclaw": "node scripts/run-node.mjs",
     "openclaw:rpc": "node scripts/run-node.mjs agent --mode rpc --json",
     "plugin-sdk:api:check": "node --import tsx scripts/generate-plugin-sdk-api-baseline.ts --check",

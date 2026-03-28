@@ -258,7 +258,7 @@ export async function resolveGlobalManager(params: {
 }
 
 export async function tryWriteCompletionCache(root: string, jsonMode: boolean): Promise<void> {
-  const binPath = path.join(root, "openclaw.mjs");
+  const binPath = path.join(root, "foxfang.mjs");
   if (!(await pathExists(binPath))) {
     return;
   }

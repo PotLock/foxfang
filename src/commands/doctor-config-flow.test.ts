@@ -290,7 +290,7 @@ describe("doctor config flow", () => {
     const noteSpy = vi.spyOn(noteModule, "note").mockImplementation(() => {});
     try {
       await withTempHome(async (home) => {
-        const stateDir = path.join(home, ".openclaw");
+        const stateDir = path.join(home, ".foxfang");
         await fs.mkdir(path.join(stateDir, "matrix"), { recursive: true });
         await fs.writeFile(
           path.join(stateDir, "openclaw.json"),
@@ -332,7 +332,7 @@ describe("doctor config flow", () => {
     const noteSpy = vi.spyOn(noteModule, "note").mockImplementation(() => {});
     try {
       await withTempHome(async (home) => {
-        const stateDir = path.join(home, ".openclaw");
+        const stateDir = path.join(home, ".foxfang");
         const { rootDir: accountRoot } = resolveMatrixAccountStorageRoot({
           stateDir,
           homeserver: "https://matrix.example.org",
@@ -378,7 +378,7 @@ describe("doctor config flow", () => {
     const noteSpy = vi.spyOn(noteModule, "note").mockImplementation(() => {});
     try {
       await withTempHome(async (home) => {
-        const stateDir = path.join(home, ".openclaw");
+        const stateDir = path.join(home, ".foxfang");
         await fs.mkdir(path.join(stateDir, "matrix"), { recursive: true });
         await fs.writeFile(
           path.join(stateDir, "openclaw.json"),
@@ -438,7 +438,7 @@ describe("doctor config flow", () => {
 
   it("creates a Matrix migration snapshot before doctor repair mutates Matrix state", async () => {
     await withTempHome(async (home) => {
-      const stateDir = path.join(home, ".openclaw");
+      const stateDir = path.join(home, ".foxfang");
       await fs.mkdir(path.join(stateDir, "matrix"), { recursive: true });
       await fs.writeFile(
         path.join(stateDir, "openclaw.json"),
@@ -735,7 +735,7 @@ describe("doctor config flow", () => {
 
   it("converts numeric discord ids to strings on repair", async () => {
     await withTempHome(async (home) => {
-      const configDir = path.join(home, ".openclaw");
+      const configDir = path.join(home, ".foxfang");
       await fs.mkdir(configDir, { recursive: true });
       await fs.writeFile(
         path.join(configDir, "openclaw.json"),
@@ -979,7 +979,7 @@ describe("doctor config flow", () => {
 
   it('repairs dmPolicy="allowlist" by restoring allowFrom from pairing store on repair', async () => {
     const result = await withTempHome(async (home) => {
-      const configDir = path.join(home, ".openclaw");
+      const configDir = path.join(home, ".foxfang");
       const credentialsDir = path.join(configDir, "credentials");
       await fs.mkdir(credentialsDir, { recursive: true });
       await fs.writeFile(

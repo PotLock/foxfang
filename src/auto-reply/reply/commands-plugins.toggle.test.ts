@@ -70,7 +70,7 @@ describe("handleCommands /plugins toggle", () => {
           createPluginRecord({
             id: "superpowers",
             format: "bundle",
-            source: "/tmp/workspace/.openclaw/extensions/superpowers",
+            source: "/tmp/workspace/.foxfang/extensions/superpowers",
             enabled: false,
             status: "disabled",
           }),
@@ -110,7 +110,7 @@ describe("handleCommands /plugins toggle", () => {
           createPluginRecord({
             id: "superpowers",
             format: "bundle",
-            source: "/tmp/workspace/.openclaw/extensions/superpowers",
+            source: "/tmp/workspace/.foxfang/extensions/superpowers",
             enabled: true,
           }),
         ],

@@ -31,7 +31,7 @@ Note: `openclaw cron run` now returns as soon as the manual run is queued for ex
 Note: retention/pruning is controlled in config:
 
 - `cron.sessionRetention` (default `24h`) prunes completed isolated run sessions.
-- `cron.runLog.maxBytes` + `cron.runLog.keepLines` prune `~/.openclaw/cron/runs/<jobId>.jsonl`.
+- `cron.runLog.maxBytes` + `cron.runLog.keepLines` prune `~/.foxfang/cron/runs/<jobId>.jsonl`.
 
 Upgrade note: if you have older cron jobs from before the current delivery/store format, run
 `openclaw doctor --fix`. Doctor now normalizes legacy cron fields (`jobId`, `schedule.cron`,

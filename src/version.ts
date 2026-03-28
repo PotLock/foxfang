@@ -1,7 +1,8 @@
 import { createRequire } from "node:module";
 
+declare const __FOXFANG_VERSION__: string | undefined;
 declare const __OPENCLAW_VERSION__: string | undefined;
-const CORE_PACKAGE_NAME = "openclaw";
+const CORE_PACKAGE_NAMES = new Set(["foxfang", "openclaw"]);
 
 const PACKAGE_JSON_CANDIDATES = [
   "../package.json",
@@ -30,7 +31,7 @@ function readVersionFromJsonCandidates(
         if (!version) {
           continue;
         }
-        if (opts.requirePackageName && parsed.name !== CORE_PACKAGE_NAME) {
+        if (opts.requirePackageName && !CORE_PACKAGE_NAMES.has(parsed.name ?? "")) {
           continue;
         }
         return version;
@@ -111,11 +112,12 @@ function resolveVersionFromRuntimeSources(params: {
 }): string {
   const preferredCandidates =
     params.preference === "env-first"
-      ? [params.env["OPENCLAW_VERSION"], params.runtimeVersion]
-      : [params.runtimeVersion, params.env["OPENCLAW_VERSION"]];
+      ? [params.env["FOXFANG_VERSION"], params.env["OPENCLAW_VERSION"], params.runtimeVersion]
+      : [params.runtimeVersion, params.env["FOXFANG_VERSION"], params.env["OPENCLAW_VERSION"]];
   return (
     firstNonEmpty(
       ...preferredCandidates,
+      params.env["FOXFANG_SERVICE_VERSION"],
       params.env["OPENCLAW_SERVICE_VERSION"],
       params.env["npm_package_version"],
     ) ?? params.fallback
@@ -146,11 +148,13 @@ export function resolveCompatibilityHostVersion(
   });
 }
 
-// Single source of truth for the current OpenClaw version.
+// Single source of truth for the current FoxFang version.
 // - Embedded/bundled builds: injected define or env var.
 // - Dev/npm builds: package.json.
 export const VERSION = resolveBinaryVersion({
   moduleUrl: import.meta.url,
-  injectedVersion: typeof __OPENCLAW_VERSION__ === "string" ? __OPENCLAW_VERSION__ : undefined,
-  bundledVersion: process.env.OPENCLAW_BUNDLED_VERSION,
+  injectedVersion:
+    (typeof __FOXFANG_VERSION__ === "string" ? __FOXFANG_VERSION__ : undefined) ||
+    (typeof __OPENCLAW_VERSION__ === "string" ? __OPENCLAW_VERSION__ : undefined),
+  bundledVersion: process.env.FOXFANG_BUNDLED_VERSION || process.env.OPENCLAW_BUNDLED_VERSION,
 });

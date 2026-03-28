@@ -71,4 +71,4 @@ tokens.
 
 If the Gateway runs as a daemon (launchd/systemd), make sure
 `VOLCANO_ENGINE_API_KEY` is available to that process (for example, in
-`~/.openclaw/.env` or via `env.shellEnv`).
+`~/.foxfang/.env` or via `env.shellEnv`).

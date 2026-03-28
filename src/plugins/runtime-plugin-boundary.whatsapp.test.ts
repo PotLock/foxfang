@@ -32,7 +32,7 @@ function createBundledWhatsAppRuntimeFixture() {
         name: "openclaw",
         type: "module",
         bin: {
-          openclaw: "openclaw.mjs",
+          openclaw: "foxfang.mjs",
         },
         exports: {
           "./plugin-sdk": {
@@ -43,7 +43,7 @@ function createBundledWhatsAppRuntimeFixture() {
       null,
       2,
     ),
-    "openclaw.mjs": "export {};\n",
+    "foxfang.mjs": "export {};\n",
     "dist/extensions/whatsapp/index.js": "export default {};\n",
     "dist/extensions/whatsapp/light-runtime-api.js":
       'export { getActiveWebListener } from "../../active-listener.js";\n',

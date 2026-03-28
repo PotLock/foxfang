@@ -78,7 +78,7 @@ CLI 新手引导包含一个 web search 步骤，你可以选择一个提供商
    对于非交互式运行，`--secret-input-mode ref` 会在认证配置文件中存储基于环境变量的引用，而不是明文 API 密钥值。
    在非交互式 `ref` 模式下，必须设置提供商环境变量；如果传入内联密钥标志但缺少该环境变量，则会快速失败。
    在交互式运行中，选择 secret reference 模式后，你可以指向环境变量或已配置的 provider ref（`file` 或 `exec`），并在保存前进行快速预检校验。
-2. **工作区** —— 智能体文件的位置（默认 `~/.openclaw/workspace`）。会植入引导文件。
+2. **工作区** —— 智能体文件的位置（默认 `~/.foxfang/workspace`）。会植入引导文件。
 3. **Gateway 网关** —— 端口、绑定地址、认证模式、Tailscale 暴露。
    在交互式 token 模式中，你可以选择默认的明文 token 存储，或选择启用 SecretRef。
    非交互式 token SecretRef 路径：`--gateway-token-ref-env <ENV_VAR>`。
@@ -112,7 +112,7 @@ CLI `--reset` 默认会重置配置、凭证和会话；如需包含工作区，
 
 说明：
 
-- 默认工作区遵循 `~/.openclaw/workspace-<agentId>`。
+- 默认工作区遵循 `~/.foxfang/workspace-<agentId>`。
 - 添加 `bindings` 以路由入站消息（新手引导可以完成这项操作）。
 - 非交互式标志：`--model`、`--agent-dir`、`--bind`、`--non-interactive`。
 

@@ -474,7 +474,7 @@ describe("deliverOutboundPayloads", () => {
     );
     expect(
       sendOpts?.mediaLocalRoots?.some((root) =>
-        root.endsWith(path.join(".openclaw", "workspace-work")),
+        root.endsWith(path.join(".foxfang", "workspace-work")),
       ),
     ).toBe(true);
   });

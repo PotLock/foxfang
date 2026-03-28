@@ -54,7 +54,7 @@ openclaw onboard --non-interactive \
 ## 环境说明
 
 如果 Gateway 网关作为守护进程运行（launchd/systemd），请确保 `TOGETHER_API_KEY`
-对该进程可用（例如在 `~/.openclaw/.env` 中，或通过
+对该进程可用（例如在 `~/.foxfang/.env` 中，或通过
 `env.shellEnv`）。
 
 ## 可用模型

@@ -25,7 +25,7 @@ const DOCKER_OPENAI_MODEL: ModelDefinitionConfig = {
 };
 
 async function main() {
-  const stateDir = process.env.OPENCLAW_STATE_DIR?.trim() || path.join(os.homedir(), ".openclaw");
+  const stateDir = process.env.OPENCLAW_STATE_DIR?.trim() || path.join(os.homedir(), ".foxfang");
   const configPath =
     process.env.OPENCLAW_CONFIG_PATH?.trim() || path.join(stateDir, "openclaw.json");
   const sessionsDir = path.join(stateDir, "agents", "main", "sessions");

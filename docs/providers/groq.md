@@ -72,7 +72,7 @@ model to transcribe voice messages.
 ## Environment note
 
 If the Gateway runs as a daemon (launchd/systemd), make sure `GROQ_API_KEY` is
-available to that process (for example, in `~/.openclaw/.env` or via
+available to that process (for example, in `~/.foxfang/.env` or via
 `env.shellEnv`).
 
 ## Available models

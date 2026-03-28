@@ -96,7 +96,7 @@ vi.mock("../infra/home-dir.js", async (importOriginal) => {
   return {
     ...actual,
     expandHomePrefix: (value: string) => {
-      if (value === "~/.openclaw/plugin-binding-approvals.json") {
+      if (value === "~/.foxfang/plugin-binding-approvals.json") {
         return approvalsPath;
       }
       return actual.expandHomePrefix(value);
@@ -383,7 +383,7 @@ describe("plugin conversation binding approvals", () => {
       return {
         ...actual,
         expandHomePrefix: (value: string) => {
-          if (value === "~/.openclaw/plugin-binding-approvals.json") {
+          if (value === "~/.foxfang/plugin-binding-approvals.json") {
             return approvalsPath;
           }
           return actual.expandHomePrefix(value);

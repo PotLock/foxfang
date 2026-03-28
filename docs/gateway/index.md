@@ -207,8 +207,8 @@ Checklist per instance:
 Example:
 
 ```bash
-OPENCLAW_CONFIG_PATH=~/.openclaw/a.json OPENCLAW_STATE_DIR=~/.openclaw-a openclaw gateway --port 19001
-OPENCLAW_CONFIG_PATH=~/.openclaw/b.json OPENCLAW_STATE_DIR=~/.openclaw-b openclaw gateway --port 19002
+OPENCLAW_CONFIG_PATH=~/.foxfang/a.json OPENCLAW_STATE_DIR=~/.foxfang-a openclaw gateway --port 19001
+OPENCLAW_CONFIG_PATH=~/.foxfang/b.json OPENCLAW_STATE_DIR=~/.foxfang-b openclaw gateway --port 19002
 ```
 
 See: [Multiple gateways](/gateway/multiple-gateways).

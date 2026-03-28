@@ -40,10 +40,10 @@ openclaw models status
 ```
 
 3. 如果 Gateway 通过 systemd/launchd 运行，建议将 key 放入
-   `~/.openclaw/.env`，这样守护进程就可以读取它：
+   `~/.foxfang/.env`，这样守护进程就可以读取它：
 
 ```bash
-cat >> ~/.openclaw/.env <<'EOF'
+cat >> ~/.foxfang/.env <<'EOF'
 <PROVIDER>_API_KEY=...
 EOF
 ```
@@ -59,7 +59,7 @@ openclaw doctor
 API key：`openclaw onboard`。
 
 有关环境继承（`env.shellEnv`、
-`~/.openclaw/.env`、systemd/launchd）的详细信息，请参阅 [Help](/help)。
+`~/.foxfang/.env`、systemd/launchd）的详细信息，请参阅 [Help](/help)。
 
 ## Anthropic：setup-token（订阅认证）
 

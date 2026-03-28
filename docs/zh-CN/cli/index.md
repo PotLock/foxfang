@@ -68,8 +68,8 @@ x-i18n:
 
 ## 全局标志
 
-- `--dev`：将状态隔离到 `~/.openclaw-dev` 下，并变更默认端口。
-- `--profile <name>`：将状态隔离到 `~/.openclaw-<name>` 下。
+- `--dev`：将状态隔离到 `~/.foxfang-dev` 下，并变更默认端口。
+- `--profile <name>`：将状态隔离到 `~/.foxfang-<name>` 下。
 - `--no-color`：禁用 ANSI 颜色。
 - `--update`：`openclaw update` 的简写（仅适用于源码安装）。
 - `-V`, `--version`, `-v`：打印版本并退出。
@@ -323,7 +323,7 @@ openclaw [--dev] [--profile <name>] <command>
 
 选项：
 
-- `--workspace <dir>`：智能体工作区路径（默认 `~/.openclaw/workspace`）。
+- `--workspace <dir>`：智能体工作区路径（默认 `~/.foxfang/workspace`）。
 - `--wizard`：运行新手引导。
 - `--non-interactive`：无提示运行新手引导。
 - `--mode <local|remote>`：新手引导模式。

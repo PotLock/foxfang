@@ -28,12 +28,12 @@ describe("uninstallCommand", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resolveCleanupPlanFromDisk.mockReturnValue({
-      stateDir: "/tmp/.openclaw",
-      configPath: "/tmp/.openclaw/openclaw.json",
-      oauthDir: "/tmp/.openclaw/credentials",
+      stateDir: "/tmp/.foxfang",
+      configPath: "/tmp/.foxfang/openclaw.json",
+      oauthDir: "/tmp/.foxfang/credentials",
       configInsideState: true,
       oauthInsideState: true,
-      workspaceDirs: ["/tmp/.openclaw/workspace"],
+      workspaceDirs: ["/tmp/.foxfang/workspace"],
     });
     removePath.mockResolvedValue({ ok: true });
     removeStateAndLinkedPaths.mockResolvedValue(undefined);

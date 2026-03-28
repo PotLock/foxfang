@@ -107,7 +107,7 @@ describe("config plugin validation", () => {
     ({
       HOME: suiteHome,
       OPENCLAW_HOME: undefined,
-      OPENCLAW_STATE_DIR: path.join(suiteHome, ".openclaw"),
+      OPENCLAW_STATE_DIR: path.join(suiteHome, ".foxfang"),
       OPENCLAW_PLUGIN_MANIFEST_CACHE_MS: "10000",
       OPENCLAW_DISABLE_PLUGIN_DISCOVERY_CACHE: "1",
       OPENCLAW_BUNDLED_PLUGINS_DIR: undefined,

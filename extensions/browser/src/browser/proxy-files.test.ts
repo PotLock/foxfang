@@ -29,7 +29,7 @@ describe("persistBrowserProxyFiles", () => {
     const savedPath = mapping.get(sourcePath);
     expect(typeof savedPath).toBe("string");
     expect(path.normalize(savedPath ?? "")).toContain(
-      `${path.sep}.openclaw${path.sep}media${path.sep}browser${path.sep}`,
+      `${path.sep}.foxfang${path.sep}media${path.sep}browser${path.sep}`,
     );
     await expect(fs.readFile(savedPath ?? "", "utf8")).resolves.toBe("hello from browser proxy");
   });
@@ -48,7 +48,7 @@ describe("persistBrowserProxyFiles", () => {
     ).rejects.toThrow("Media exceeds 5MB limit");
 
     await expect(
-      fs.stat(path.join(tempHome.home, ".openclaw", "media", "browser")),
+      fs.stat(path.join(tempHome.home, ".foxfang", "media", "browser")),
     ).rejects.toThrow();
   });
 });

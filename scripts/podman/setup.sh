@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One-time host setup for rootless OpenClaw in Podman. Uses the current
 # non-root user throughout, builds or pulls the image into that user's Podman
-# store, writes config under ~/.openclaw by default, and uses the repo-local
+# store, writes config under ~/.foxfang by default, and uses the repo-local
 # launch script at ./scripts/run-openclaw-podman.sh.
 #
 # Usage: ./scripts/podman/setup.sh [--quadlet|--container]
@@ -341,7 +341,7 @@ if [[ -z "$OPENCLAW_HOME" ]]; then
   exit 1
 fi
 if [[ -z "$OPENCLAW_CONFIG_DIR" ]]; then
-  OPENCLAW_CONFIG_DIR="$OPENCLAW_HOME/.openclaw"
+  OPENCLAW_CONFIG_DIR="$OPENCLAW_HOME/.foxfang"
 fi
 if [[ -z "$OPENCLAW_WORKSPACE_DIR" ]]; then
   OPENCLAW_WORKSPACE_DIR="$OPENCLAW_CONFIG_DIR/workspace"

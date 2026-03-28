@@ -156,11 +156,11 @@ OpenClaw scans for plugins in this order (first match wins):
   </Step>
 
   <Step title="Workspace extensions">
-    `\<workspace\>/.openclaw/extensions/*.ts` and `\<workspace\>/.openclaw/extensions/*/index.ts`.
+    `\<workspace\>/.foxfang/extensions/*.ts` and `\<workspace\>/.foxfang/extensions/*/index.ts`.
   </Step>
 
   <Step title="Global extensions">
-    `~/.openclaw/extensions/*.ts` and `~/.openclaw/extensions/*/index.ts`.
+    `~/.foxfang/extensions/*.ts` and `~/.foxfang/extensions/*/index.ts`.
   </Step>
 
   <Step title="Bundled plugins">

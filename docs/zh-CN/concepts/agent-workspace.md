@@ -17,21 +17,21 @@ x-i18n:
 
 工作区是智能体的“家”。它是文件工具和工作区上下文所使用的唯一工作目录。请将其保持为私有，并将其视为记忆。
 
-这与存储配置、凭证和会话的 `~/.openclaw/` 是分开的。
+这与存储配置、凭证和会话的 `~/.foxfang/` 是分开的。
 
-**重要：**工作区是**默认 cwd**，而不是硬性沙箱。工具会相对于工作区解析相对路径，但除非启用沙箱隔离，否则绝对路径仍然可以访问主机上的其他位置。如果你需要隔离，请使用 [`agents.defaults.sandbox`](/gateway/sandboxing)（和/或按智能体配置的沙箱）。启用沙箱隔离后，如果 `workspaceAccess` 不是 `"rw"`，工具会在 `~/.openclaw/sandboxes` 下的沙箱工作区中运行，而不是在你的主机工作区中运行。
+**重要：**工作区是**默认 cwd**，而不是硬性沙箱。工具会相对于工作区解析相对路径，但除非启用沙箱隔离，否则绝对路径仍然可以访问主机上的其他位置。如果你需要隔离，请使用 [`agents.defaults.sandbox`](/gateway/sandboxing)（和/或按智能体配置的沙箱）。启用沙箱隔离后，如果 `workspaceAccess` 不是 `"rw"`，工具会在 `~/.foxfang/sandboxes` 下的沙箱工作区中运行，而不是在你的主机工作区中运行。
 
 ## 默认位置
 
-- 默认值：`~/.openclaw/workspace`
+- 默认值：`~/.foxfang/workspace`
 - 如果设置了 `OPENCLAW_PROFILE` 且其值不是 `"default"`，默认值将变为
-  `~/.openclaw/workspace-<profile>`。
-- 在 `~/.openclaw/openclaw.json` 中覆盖：
+  `~/.foxfang/workspace-<profile>`。
+- 在 `~/.foxfang/openclaw.json` 中覆盖：
 
 ```json5
 {
   agent: {
-    workspace: "~/.openclaw/workspace",
+    workspace: "~/.foxfang/workspace",
   },
 }
 ```
@@ -115,12 +115,12 @@ x-i18n:
 
 ## 不在工作区中的内容
 
-这些内容位于 `~/.openclaw/` 下，**不应**提交到工作区仓库：
+这些内容位于 `~/.foxfang/` 下，**不应**提交到工作区仓库：
 
-- `~/.openclaw/openclaw.json`（配置）
-- `~/.openclaw/credentials/`（OAuth 令牌、API 密钥）
-- `~/.openclaw/agents/<agentId>/sessions/`（会话记录和元数据）
-- `~/.openclaw/skills/`（托管 Skills）
+- `~/.foxfang/openclaw.json`（配置）
+- `~/.foxfang/credentials/`（OAuth 令牌、API 密钥）
+- `~/.foxfang/agents/<agentId>/sessions/`（会话记录和元数据）
+- `~/.foxfang/skills/`（托管 Skills）
 
 如果你需要迁移会话或配置，请单独复制它们，并确保不要将其纳入版本控制。
 
@@ -135,7 +135,7 @@ x-i18n:
 如果已安装 git，全新工作区会自动初始化。如果这个工作区还不是仓库，请运行：
 
 ```bash
-cd ~/.openclaw/workspace
+cd ~/.foxfang/workspace
 git init
 git add AGENTS.md SOUL.md TOOLS.md IDENTITY.md USER.md HEARTBEAT.md memory/
 git commit -m "Add agent workspace"
@@ -190,10 +190,10 @@ git push
 即使在私有仓库中，也应避免在工作区中存储密钥：
 
 - API 密钥、OAuth 令牌、密码或私有凭证。
-- `~/.openclaw/` 下的任何内容。
+- `~/.foxfang/` 下的任何内容。
 - 聊天原始转储或敏感附件。
 
-如果你必须存储敏感引用，请使用占位符，并将真实密钥保存在其他地方（密码管理器、环境变量或 `~/.openclaw/`）。
+如果你必须存储敏感引用，请使用占位符，并将真实密钥保存在其他地方（密码管理器、环境变量或 `~/.foxfang/`）。
 
 建议的 `.gitignore` 起始内容：
 
@@ -207,10 +207,10 @@ git push
 
 ## 将工作区迁移到新机器
 
-1. 将仓库克隆到所需路径（默认是 `~/.openclaw/workspace`）。
-2. 在 `~/.openclaw/openclaw.json` 中将 `agents.defaults.workspace` 设置为该路径。
+1. 将仓库克隆到所需路径（默认是 `~/.foxfang/workspace`）。
+2. 在 `~/.foxfang/openclaw.json` 中将 `agents.defaults.workspace` 设置为该路径。
 3. 运行 `openclaw setup --workspace <path>` 以植入任何缺失的文件。
-4. 如果你需要会话，请将旧机器上的 `~/.openclaw/agents/<agentId>/sessions/` 单独复制过来。
+4. 如果你需要会话，请将旧机器上的 `~/.foxfang/agents/<agentId>/sessions/` 单独复制过来。
 
 ## 高级说明
 

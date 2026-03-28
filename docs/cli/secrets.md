@@ -169,7 +169,7 @@ What `apply` may update:
 - `openclaw.json` (SecretRef targets + provider upserts/deletes)
 - `auth-profiles.json` (provider-target scrubbing)
 - legacy `auth.json` residues
-- `~/.openclaw/.env` known secret keys whose values were migrated
+- `~/.foxfang/.env` known secret keys whose values were migrated
 
 ## Why no rollback backups
 

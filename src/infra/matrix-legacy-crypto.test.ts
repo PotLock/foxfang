@@ -36,7 +36,7 @@ function createDefaultMatrixConfig(): OpenClawConfig {
 }
 
 function writeDefaultLegacyCryptoFixture(home: string) {
-  const stateDir = path.join(home, ".openclaw");
+  const stateDir = path.join(home, ".foxfang");
   const cfg = createDefaultMatrixConfig();
   const { rootDir } = resolveMatrixAccountStorageRoot({
     stateDir,
@@ -57,7 +57,7 @@ function createOpsLegacyCryptoFixture(params: {
   accessToken?: string;
   includeStoredCredentials?: boolean;
 }) {
-  const stateDir = path.join(params.home, ".openclaw");
+  const stateDir = path.join(params.home, ".foxfang");
   writeMatrixPluginFixture(path.join(params.home, "bundled", "matrix"));
   writeFile(
     path.join(stateDir, "matrix", "crypto", "bot-sdk.json"),
@@ -322,7 +322,7 @@ describe("matrix legacy encrypted-state migration", () => {
 
   it("requires channels.matrix.defaultAccount before preparing flat legacy crypto for one of multiple accounts", async () => {
     await withTempHome(async (home) => {
-      const stateDir = path.join(home, ".openclaw");
+      const stateDir = path.join(home, ".foxfang");
       writeFile(
         path.join(stateDir, "matrix", "crypto", "bot-sdk.json"),
         JSON.stringify({ deviceId: MATRIX_OPS_DEVICE_ID }),
@@ -359,7 +359,7 @@ describe("matrix legacy encrypted-state migration", () => {
 
   it("warns instead of throwing when a legacy crypto path is a file", async () => {
     await withTempHome(async (home) => {
-      const stateDir = path.join(home, ".openclaw");
+      const stateDir = path.join(home, ".foxfang");
       writeFile(path.join(stateDir, "matrix", "crypto"), "not-a-directory");
 
       const cfg: OpenClawConfig = {
@@ -383,7 +383,7 @@ describe("matrix legacy encrypted-state migration", () => {
   it("reports a missing matrix plugin helper once when encrypted-state migration cannot run", async () => {
     await withTempHome(
       async (home) => {
-        const stateDir = path.join(home, ".openclaw");
+        const stateDir = path.join(home, ".foxfang");
         writeFile(
           path.join(stateDir, "matrix", "crypto", "bot-sdk.json"),
           JSON.stringify({ deviceId: MATRIX_DEFAULT_DEVICE_ID }),

@@ -55,7 +55,7 @@ openclaw onboard --non-interactive \
 ## 环境说明
 
 如果 Gateway 作为守护进程运行（launchd/systemd），请确保 `AI_GATEWAY_API_KEY`
-对此进程可用（例如放在 `~/.openclaw/.env` 中，或通过
+对此进程可用（例如放在 `~/.foxfang/.env` 中，或通过
 `env.shellEnv` 提供）。
 
 ## 模型 ID 简写

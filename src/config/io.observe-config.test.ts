@@ -31,8 +31,8 @@ describe("config io observe", () => {
         error,
       },
     });
-    const configPath = path.join(home, ".openclaw", "openclaw.json");
-    const auditPath = path.join(home, ".openclaw", "logs", "config-audit.jsonl");
+    const configPath = path.join(home, ".foxfang", "openclaw.json");
+    const auditPath = path.join(home, ".foxfang", "logs", "config-audit.jsonl");
     return { io, configPath, auditPath, warn, error };
   }
 

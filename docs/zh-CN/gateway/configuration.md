@@ -16,7 +16,7 @@ x-i18n:
 
 # 配置
 
-OpenClaw 会从 `~/.openclaw/openclaw.json` 读取可选的 <Tooltip tip="JSON5 supports comments and trailing commas">**JSON5**</Tooltip> 配置。
+OpenClaw 会从 `~/.foxfang/openclaw.json` 读取可选的 <Tooltip tip="JSON5 supports comments and trailing commas">**JSON5**</Tooltip> 配置。
 
 如果该文件缺失，OpenClaw 会使用安全的默认值。添加配置的常见原因包括：
 
@@ -33,9 +33,9 @@ OpenClaw 会从 `~/.openclaw/openclaw.json` 读取可选的 <Tooltip tip="JSON5 
 ## 最小配置
 
 ```json5
-// ~/.openclaw/openclaw.json
+// ~/.foxfang/openclaw.json
 {
-  agents: { defaults: { workspace: "~/.openclaw/workspace" } },
+  agents: { defaults: { workspace: "~/.foxfang/workspace" } },
   channels: { whatsapp: { allowFrom: ["+15555550123"] } },
 }
 ```
@@ -61,7 +61,7 @@ OpenClaw 会从 `~/.openclaw/openclaw.json` 读取可选的 <Tooltip tip="JSON5 
     Control UI 会根据配置 schema 渲染表单，并提供 **Raw JSON** 编辑器作为后备方式。
   </Tab>
   <Tab title="Direct edit">
-    直接编辑 `~/.openclaw/openclaw.json`。Gateway 网关会监视该文件并自动应用更改（参见[热重载](#config-hot-reload)）。
+    直接编辑 `~/.foxfang/openclaw.json`。Gateway 网关会监视该文件并自动应用更改（参见[热重载](#config-hot-reload)）。
   </Tab>
 </Tabs>
 
@@ -401,8 +401,8 @@ OpenClaw 只接受完全符合 schema 的配置。未知键、类型格式错误
     {
       agents: {
         list: [
-          { id: "home", default: true, workspace: "~/.openclaw/workspace-home" },
-          { id: "work", workspace: "~/.openclaw/workspace-work" },
+          { id: "home", default: true, workspace: "~/.foxfang/workspace-home" },
+          { id: "work", workspace: "~/.foxfang/workspace-work" },
         ],
       },
       bindings: [
@@ -420,7 +420,7 @@ OpenClaw 只接受完全符合 schema 的配置。未知键、类型格式错误
     使用 `$include` 组织大型配置：
 
     ```json5
-    // ~/.openclaw/openclaw.json
+    // ~/.foxfang/openclaw.json
     {
       gateway: { port: 18789 },
       agents: { $include: "./agents.json5" },
@@ -442,7 +442,7 @@ OpenClaw 只接受完全符合 schema 的配置。未知键、类型格式错误
 
 ## 配置热重载
 
-Gateway 网关会监视 `~/.openclaw/openclaw.json` 并自动应用更改 —— 对于大多数设置，无需手动重启。
+Gateway 网关会监视 `~/.foxfang/openclaw.json` 并自动应用更改 —— 对于大多数设置，无需手动重启。
 
 ### 重载模式
 
@@ -507,7 +507,7 @@ Gateway 网关会监视 `~/.openclaw/openclaw.json` 并自动应用更改 ——
     ```bash
     openclaw gateway call config.get --params '{}'  # 捕获 payload.hash
     openclaw gateway call config.apply --params '{
-      "raw": "{ agents: { defaults: { workspace: \"~/.openclaw/workspace\" } } }",
+      "raw": "{ agents: { defaults: { workspace: \"~/.foxfang/workspace\" } } }",
       "baseHash": "<hash>",
       "sessionKey": "agent:main:whatsapp:direct:+15555550123"
     }'
@@ -545,7 +545,7 @@ Gateway 网关会监视 `~/.openclaw/openclaw.json` 并自动应用更改 ——
 OpenClaw 会从父进程读取环境变量，另外还会读取：
 
 - 当前工作目录中的 `.env`（如果存在）
-- `~/.openclaw/.env`（全局回退）
+- `~/.foxfang/.env`（全局回退）
 
 这两个文件都不会覆盖现有环境变量。你也可以在配置中设置内联环境变量：
 

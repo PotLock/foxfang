@@ -24,7 +24,7 @@ x-i18n:
 
 <Steps>
   <Step title="现有配置检测">
-    - 如果 `~/.openclaw/openclaw.json` 存在，请选择 **Keep / Modify / Reset**。
+    - 如果 `~/.foxfang/openclaw.json` 存在，请选择 **Keep / Modify / Reset**。
     - 重新运行向导**不会**清除任何内容，除非你明确选择 **Reset**
       （或传入 `--reset`）。
     - CLI `--reset` 默认值为 `config+creds+sessions`；使用 `--reset-scope full`
@@ -64,16 +64,16 @@ x-i18n:
     - 从已检测到的选项中选择默认模型（或手动输入 `provider/model`）。为了获得最佳质量并降低 prompt injection 风险，请选择你在提供商栈中可用的最强最新一代模型。
     - 向导会运行模型检查，并在所配置模型未知或缺少认证时发出警告。
     - API key 存储模式默认为明文 auth-profile 值。使用 `--secret-input-mode ref` 可改为存储基于环境变量的引用（例如 `keyRef: { source: "env", provider: "default", id: "OPENAI_API_KEY" }`）。
-    - OAuth 凭证保存在 `~/.openclaw/credentials/oauth.json`；auth-profile 保存在 `~/.openclaw/agents/<agentId>/agent/auth-profiles.json`（API key + OAuth）。
+    - OAuth 凭证保存在 `~/.foxfang/credentials/oauth.json`；auth-profile 保存在 `~/.foxfang/agents/<agentId>/agent/auth-profiles.json`（API key + OAuth）。
     - 更多细节： [/concepts/oauth](/concepts/oauth)
     <Note>
     无头/服务器提示：在有浏览器的机器上完成 OAuth，然后将
-    `~/.openclaw/credentials/oauth.json`（或 `$OPENCLAW_STATE_DIR/credentials/oauth.json`）复制到
+    `~/.foxfang/credentials/oauth.json`（或 `$OPENCLAW_STATE_DIR/credentials/oauth.json`）复制到
     Gateway 网关主机上。
     </Note>
   </Step>
   <Step title="工作区">
-    - 默认为 `~/.openclaw/workspace`（可配置）。
+    - 默认为 `~/.foxfang/workspace`（可配置）。
     - 为工作区植入智能体引导仪式所需的文件。
     - 完整工作区布局 + 备份指南： [智能体工作区](/concepts/agent-workspace)
   </Step>
@@ -181,7 +181,7 @@ openclaw onboard --non-interactive \
 
 ```bash
 openclaw agents add work \
-  --workspace ~/.openclaw/workspace-work \
+  --workspace ~/.foxfang/workspace-work \
   --model openai/gpt-5.2 \
   --bind whatsapp:biz \
   --non-interactive \
@@ -198,7 +198,7 @@ Gateway 网关通过 RPC 暴露向导流程（`wizard.start`、`wizard.next`、`
 向导可以从 GitHub releases 安装 `signal-cli`：
 
 - 下载适合的发布资源。
-- 将其存储到 `~/.openclaw/tools/signal-cli/<version>/` 下。
+- 将其存储到 `~/.foxfang/tools/signal-cli/<version>/` 下。
 - 将 `channels.signal.cliPath` 写入你的配置。
 
 说明：
@@ -209,7 +209,7 @@ Gateway 网关通过 RPC 暴露向导流程（`wizard.start`、`wizard.next`、`
 
 ## 向导会写入的内容
 
-`~/.openclaw/openclaw.json` 中的典型字段：
+`~/.foxfang/openclaw.json` 中的典型字段：
 
 - `agents.defaults.workspace`
 - `agents.defaults.model` / `models.providers`（如果选择了 Minimax）
@@ -227,8 +227,8 @@ Gateway 网关通过 RPC 暴露向导流程（`wizard.start`、`wizard.next`、`
 
 `openclaw agents add` 会写入 `agents.list[]` 和可选的 `bindings`。
 
-WhatsApp 凭证位于 `~/.openclaw/credentials/whatsapp/<accountId>/` 下。
-会话存储在 `~/.openclaw/agents/<agentId>/sessions/` 下。
+WhatsApp 凭证位于 `~/.foxfang/credentials/whatsapp/<accountId>/` 下。
+会话存储在 `~/.foxfang/agents/<agentId>/sessions/` 下。
 
 某些渠道以插件形式提供。当你在设置期间选择其中一个时，向导
 会提示先安装它（npm 或本地路径），然后才能配置。

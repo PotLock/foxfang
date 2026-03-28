@@ -48,7 +48,7 @@ pnpm add -g openclaw@latest
 
 ## Auto-updater
 
-The auto-updater is off by default. Enable it in `~/.openclaw/openclaw.json`:
+The auto-updater is off by default. Enable it in `~/.foxfang/openclaw.json`:
 
 ```json5
 {

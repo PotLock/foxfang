@@ -38,8 +38,8 @@ JSON examples:
 {
   "path": null,
   "stores": [
-    { "agentId": "main", "path": "/home/user/.openclaw/agents/main/sessions/sessions.json" },
-    { "agentId": "work", "path": "/home/user/.openclaw/agents/work/sessions/sessions.json" }
+    { "agentId": "main", "path": "/home/user/.foxfang/agents/main/sessions/sessions.json" },
+    { "agentId": "work", "path": "/home/user/.foxfang/agents/work/sessions/sessions.json" }
   ],
   "allAgents": true,
   "count": 2,
@@ -87,7 +87,7 @@ openclaw sessions cleanup --json
   "stores": [
     {
       "agentId": "main",
-      "storePath": "/home/user/.openclaw/agents/main/sessions/sessions.json",
+      "storePath": "/home/user/.foxfang/agents/main/sessions/sessions.json",
       "beforeCount": 120,
       "afterCount": 80,
       "pruned": 40,
@@ -95,7 +95,7 @@ openclaw sessions cleanup --json
     },
     {
       "agentId": "work",
-      "storePath": "/home/user/.openclaw/agents/work/sessions/sessions.json",
+      "storePath": "/home/user/.foxfang/agents/work/sessions/sessions.json",
       "beforeCount": 18,
       "afterCount": 18,
       "pruned": 0,

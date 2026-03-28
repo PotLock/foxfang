@@ -8,7 +8,7 @@ title: "Skills Config"
 
 # Skills Config
 
-All skills-related configuration lives under `skills` in `~/.openclaw/openclaw.json`.
+All skills-related configuration lives under `skills` in `~/.foxfang/openclaw.json`.
 
 ```json5
 {
@@ -53,7 +53,7 @@ Examples:
 
 ## Fields
 
-- Built-in skill roots always include `~/.openclaw/skills`, `~/.agents/skills`,
+- Built-in skill roots always include `~/.foxfang/skills`, `~/.agents/skills`,
   `<workspace>/.agents/skills`, and `<workspace>/skills`.
 - `allowBundled`: optional allowlist for **bundled** skills only. When set, only
   bundled skills in the list are eligible (managed, agent, and workspace skills unaffected).
@@ -78,7 +78,7 @@ Per-skill fields:
 - Keys under `entries` map to the skill name by default. If a skill defines
   `metadata.openclaw.skillKey`, use that key instead.
 - Load precedence is `<workspace>/skills` → `<workspace>/.agents/skills` →
-  `~/.agents/skills` → `~/.openclaw/skills` → bundled skills →
+  `~/.agents/skills` → `~/.foxfang/skills` → bundled skills →
   `skills.load.extraDirs`.
 - Changes to skills are picked up on the next agent turn when the watcher is enabled.
 

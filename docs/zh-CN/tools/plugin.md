@@ -578,13 +578,13 @@ OpenClaw 按以下顺序扫描：
 
 2. 工作区扩展
 
-- `<workspace>/.openclaw/extensions/*.ts`
-- `<workspace>/.openclaw/extensions/*/index.ts`
+- `<workspace>/.foxfang/extensions/*.ts`
+- `<workspace>/.foxfang/extensions/*/index.ts`
 
 3. 全局扩展
 
-- `~/.openclaw/extensions/*.ts`
-- `~/.openclaw/extensions/*/index.ts`
+- `~/.foxfang/extensions/*.ts`
+- `~/.foxfang/extensions/*/index.ts`
 
 4. 捆绑扩展（随 OpenClaw 一起提供；默认开启/关闭混合）
 
@@ -733,9 +733,9 @@ Bundle 目录会从与原生插件相同的根目录中被发现。
 OpenClaw 还可以合并 **外部渠道目录**（例如 MPM registry 导出）。
 将 JSON 文件放到以下任一位置：
 
-- `~/.openclaw/mpm/plugins.json`
-- `~/.openclaw/mpm/catalog.json`
-- `~/.openclaw/plugins/catalog.json`
+- `~/.foxfang/mpm/plugins.json`
+- `~/.foxfang/mpm/catalog.json`
+- `~/.foxfang/plugins/catalog.json`
 
 或者将 `OPENCLAW_PLUGIN_CATALOG_PATHS`（或 `OPENCLAW_MPM_CATALOG_PATHS`）指向一个或多个 JSON 文件（用逗号/分号/`PATH` 分隔）。
 每个文件应包含
@@ -887,7 +887,7 @@ OpenClaw 会在运行时根据已发现的插件增强 `uiHints`：
 ```bash
 openclaw plugins list
 openclaw plugins info <id>
-openclaw plugins install <path>                 # 将本地文件/目录复制到 ~/.openclaw/extensions/<id>
+openclaw plugins install <path>                 # 将本地文件/目录复制到 ~/.foxfang/extensions/<id>
 openclaw plugins install ./extensions/voice-call # 支持相对路径
 openclaw plugins install ./plugin.tgz           # 从本地 tarball 安装
 openclaw plugins install ./plugin.zip           # 从本地 zip 安装
@@ -1576,7 +1576,7 @@ export default function (api) {
 - 插件 `package.json` 必须包含 `openclaw.extensions`，并指向一个或多个入口文件。
 - 可选：`openclaw.setupEntry` 可指向一个轻量级的仅 setup 入口，用于已禁用或尚未配置完成的渠道 setup。
 - 入口文件可以是 `.js` 或 `.ts`（jiti 会在运行时加载 TS）。
-- `openclaw plugins install <npm-spec>` 会使用 `npm pack`，提取到 `~/.openclaw/extensions/<id>/`，并在配置中启用它。
+- `openclaw plugins install <npm-spec>` 会使用 `npm pack`，提取到 `~/.foxfang/extensions/<id>/`，并在配置中启用它。
 - 配置键稳定性：带 scope 的包会被规范化为 **无 scope** 的 id，用于 `plugins.entries.*`。
 
 ## 示例插件：Voice Call

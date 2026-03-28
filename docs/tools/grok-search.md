@@ -54,7 +54,7 @@ with citations.
 ```
 
 **Environment alternative:** set `XAI_API_KEY` in the Gateway environment.
-For a gateway install, put it in `~/.openclaw/.env`.
+For a gateway install, put it in `~/.foxfang/.env`.
 
 ## How it works
 

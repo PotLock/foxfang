@@ -22,7 +22,7 @@ describe("backupCreateCommand atomic archive write", () => {
 
   async function resetTempHome() {
     await fs.rm(tempHome.home, { recursive: true, force: true });
-    await fs.mkdir(path.join(tempHome.home, ".openclaw"), { recursive: true });
+    await fs.mkdir(path.join(tempHome.home, ".foxfang"), { recursive: true });
     delete process.env.OPENCLAW_CONFIG_PATH;
   }
 
@@ -45,7 +45,7 @@ describe("backupCreateCommand atomic archive write", () => {
   });
 
   it("does not leave a partial final archive behind when tar creation fails", async () => {
-    const stateDir = path.join(tempHome.home, ".openclaw");
+    const stateDir = path.join(tempHome.home, ".foxfang");
     const archiveDir = await fs.mkdtemp(path.join(os.tmpdir(), "openclaw-backup-failure-"));
     try {
       await fs.writeFile(path.join(stateDir, "openclaw.json"), JSON.stringify({}), "utf8");
@@ -75,7 +75,7 @@ describe("backupCreateCommand atomic archive write", () => {
   });
 
   it("does not overwrite an archive created after readiness checks complete", async () => {
-    const stateDir = path.join(tempHome.home, ".openclaw");
+    const stateDir = path.join(tempHome.home, ".foxfang");
     const archiveDir = await fs.mkdtemp(path.join(os.tmpdir(), "openclaw-backup-race-"));
     const realLink = fs.link.bind(fs);
     const linkSpy = vi.spyOn(fs, "link");
@@ -112,7 +112,7 @@ describe("backupCreateCommand atomic archive write", () => {
   });
 
   it("falls back to exclusive copy when hard-link publication is unsupported", async () => {
-    const stateDir = path.join(tempHome.home, ".openclaw");
+    const stateDir = path.join(tempHome.home, ".foxfang");
     const archiveDir = await fs.mkdtemp(path.join(os.tmpdir(), "openclaw-backup-copy-fallback-"));
     const linkSpy = vi.spyOn(fs, "link");
     try {

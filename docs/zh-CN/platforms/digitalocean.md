@@ -205,13 +205,13 @@ htop
 
 所有状态都存储在：
 
-- `~/.openclaw/` — 配置、凭证、会话数据
-- `~/.openclaw/workspace/` — 工作区（`SOUL.md`、memory 等）
+- `~/.foxfang/` — 配置、凭证、会话数据
+- `~/.foxfang/workspace/` — 工作区（`SOUL.md`、memory 等）
 
 这些内容在重启后仍会保留。请定期备份：
 
 ```bash
-tar -czvf openclaw-backup.tar.gz ~/.openclaw ~/.openclaw/workspace
+tar -czvf openclaw-backup.tar.gz ~/.foxfang ~/.foxfang/workspace
 ```
 
 ---

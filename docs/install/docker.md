@@ -172,8 +172,8 @@ Use bind mode values in `gateway.bind` (`lan` / `loopback` / `custom` /
 
 ### Storage and persistence
 
-Docker Compose bind-mounts `OPENCLAW_CONFIG_DIR` to `/home/node/.openclaw` and
-`OPENCLAW_WORKSPACE_DIR` to `/home/node/.openclaw/workspace`, so those paths
+Docker Compose bind-mounts `OPENCLAW_CONFIG_DIR` to `/home/node/.foxfang` and
+`OPENCLAW_WORKSPACE_DIR` to `/home/node/.foxfang/workspace`, so those paths
 survive container replacement.
 
 For full persistence details on VM deployments, see
@@ -235,7 +235,7 @@ See the [`ClawDock` Helper README](https://github.com/openclaw/openclaw/blob/mai
 
   <Accordion title="Permissions and EACCES">
     The image runs as `node` (uid 1000). If you see permission errors on
-    `/home/node/.openclaw`, make sure your host bind mounts are owned by uid 1000:
+    `/home/node/.foxfang`, make sure your host bind mounts are owned by uid 1000:
 
     ```bash
     sudo chown -R 1000:1000 /path/to/openclaw-config /path/to/openclaw-workspace

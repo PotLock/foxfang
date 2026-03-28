@@ -21,7 +21,7 @@ OpenClaw 提供三个安装脚本，由 `openclaw.ai` 提供。
 | 脚本                               | 平台                  | 功能                                                                          |
 | ---------------------------------- | --------------------- | ----------------------------------------------------------------------------- |
 | [`install.sh`](#installsh)         | macOS / Linux / WSL   | 如有需要则安装 Node，通过 npm（默认）或 git 安装 OpenClaw，并可运行新手引导。 |
-| [`install-cli.sh`](#install-clish) | macOS / Linux / WSL   | 将 Node + OpenClaw 安装到本地前缀（`~/.openclaw`）中。无需 root。             |
+| [`install-cli.sh`](#install-clish) | macOS / Linux / WSL   | 将 Node + OpenClaw 安装到本地前缀（`~/.foxfang`）中。无需 root。             |
 | [`install.ps1`](#installps1)       | Windows（PowerShell） | 如有需要则安装 Node，通过 npm（默认）或 git 安装 OpenClaw，并可运行新手引导。 |
 
 ## 快速命令
@@ -180,7 +180,7 @@ OpenClaw 提供三个安装脚本，由 `openclaw.ai` 提供。
 ## install-cli.sh
 
 <Info>
-适用于你希望所有内容都放在本地前缀（默认 `~/.openclaw`）下，并且不依赖系统 Node 的环境。
+适用于你希望所有内容都放在本地前缀（默认 `~/.foxfang`）下，并且不依赖系统 Node 的环境。
 </Info>
 
 ### 流程（install-cli.sh）
@@ -227,7 +227,7 @@ OpenClaw 提供三个安装脚本，由 `openclaw.ai` 提供。
 
 | 标志                   | 说明                                                                   |
 | ---------------------- | ---------------------------------------------------------------------- |
-| `--prefix <path>`      | 安装前缀（默认：`~/.openclaw`）                                        |
+| `--prefix <path>`      | 安装前缀（默认：`~/.foxfang`）                                        |
 | `--version <ver>`      | OpenClaw 版本或 dist-tag（默认：`latest`）                             |
 | `--node-version <ver>` | Node 版本（默认：`22.22.0`）                                           |
 | `--json`               | 输出 NDJSON 事件                                                       |

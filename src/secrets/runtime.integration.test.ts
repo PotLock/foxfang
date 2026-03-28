@@ -42,7 +42,7 @@ function loadAuthStoreWithProfiles(profiles: AuthProfileStore["profiles"]): Auth
 }
 
 async function createOpenAIFileRuntimeFixture(home: string) {
-  const configDir = path.join(home, ".openclaw");
+  const configDir = path.join(home, ".foxfang");
   const secretFile = path.join(configDir, "secrets.json");
   const agentDir = path.join(configDir, "agents", "main", "agent");
   const authStorePath = path.join(agentDir, "auth-profiles.json");
@@ -329,7 +329,7 @@ describe("secrets runtime snapshot integration", () => {
         expect(getActiveRuntimeWebToolsMetadata()?.search.selectedProvider).toBe("gemini");
 
         const persistedConfig = JSON.parse(
-          await fs.readFile(path.join(home, ".openclaw", "openclaw.json"), "utf8"),
+          await fs.readFile(path.join(home, ".foxfang", "openclaw.json"), "utf8"),
         ) as OpenClawConfig;
         const persistedGoogleWebSearchConfig = persistedConfig.plugins?.entries?.google?.config as
           | { webSearch?: { apiKey?: unknown } }
@@ -346,8 +346,8 @@ describe("secrets runtime snapshot integration", () => {
 
   it("recomputes config-derived agent dirs when refreshing active secrets runtime snapshots", async () => {
     await withTempHome("openclaw-secrets-runtime-agent-dirs-", async (home) => {
-      const mainAgentDir = path.join(home, ".openclaw", "agents", "main", "agent");
-      const opsAgentDir = path.join(home, ".openclaw", "agents", "ops", "agent");
+      const mainAgentDir = path.join(home, ".foxfang", "agents", "main", "agent");
+      const opsAgentDir = path.join(home, ".foxfang", "agents", "ops", "agent");
       await fs.mkdir(mainAgentDir, { recursive: true });
       await fs.mkdir(opsAgentDir, { recursive: true });
       await fs.writeFile(

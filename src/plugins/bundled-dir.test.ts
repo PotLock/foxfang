@@ -209,7 +209,7 @@ describe("resolveBundledPluginsDir", () => {
         return {
           installedRoot,
           cwd: cwdRepoRoot,
-          argv1: path.join(installedRoot, "openclaw.mjs"),
+          argv1: path.join(installedRoot, "foxfang.mjs"),
         };
       },
     },
@@ -222,7 +222,7 @@ describe("resolveBundledPluginsDir", () => {
         });
         return {
           installedRoot,
-          argv1: path.join(installedRoot, "openclaw.mjs"),
+          argv1: path.join(installedRoot, "foxfang.mjs"),
           bundledDirOverride: path.join(installedRoot, "missing-extensions"),
         };
       },

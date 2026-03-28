@@ -23,7 +23,7 @@ Check which engine is active:
 ```bash
 openclaw doctor
 # or inspect config directly:
-cat ~/.openclaw/openclaw.json | jq '.plugins.slots.contextEngine'
+cat ~/.foxfang/openclaw.json | jq '.plugins.slots.contextEngine'
 ```
 
 ### Installing a context engine plugin

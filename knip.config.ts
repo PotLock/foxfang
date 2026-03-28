@@ -1,5 +1,5 @@
 const rootEntries = [
-  "openclaw.mjs!",
+  "foxfang.mjs!",
   "src/index.ts!",
   "src/entry.ts!",
   "src/cli/daemon-cli.ts!",

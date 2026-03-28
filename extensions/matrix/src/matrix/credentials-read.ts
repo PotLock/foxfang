@@ -32,7 +32,7 @@ function resolveStateDir(env: NodeJS.ProcessEnv): string {
       return path.resolve(override);
     }
     const homeDir = env.OPENCLAW_HOME?.trim() || env.HOME?.trim() || os.homedir();
-    return path.join(homeDir, ".openclaw");
+    return path.join(homeDir, ".foxfang");
   }
 }
 

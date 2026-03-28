@@ -82,4 +82,4 @@ Some models (qwen3.5-plus, kimi-k2.5) support image input. Context windows range
 
 If the Gateway runs as a daemon (launchd/systemd), make sure
 `MODELSTUDIO_API_KEY` is available to that process (for example, in
-`~/.openclaw/.env` or via `env.shellEnv`).
+`~/.foxfang/.env` or via `env.shellEnv`).

@@ -9531,7 +9531,7 @@ export const GENERATED_BUNDLED_PLUGIN_METADATA = [
         },
         dbPath: {
           label: "Database Path",
-          placeholder: "~/.openclaw/memory/lancedb",
+          placeholder: "~/.foxfang/memory/lancedb",
           advanced: true,
         },
         autoCapture: {

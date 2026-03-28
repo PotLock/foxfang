@@ -75,4 +75,4 @@ openclaw onboard --non-interactive \
 
 ## 环境说明
 
-如果 Gateway 作为守护进程运行（launchd/systemd），请确保 `CLOUDFLARE_AI_GATEWAY_API_KEY` 对该进程可用（例如放在 `~/.openclaw/.env` 中，或通过 `env.shellEnv` 提供）。
+如果 Gateway 作为守护进程运行（launchd/systemd），请确保 `CLOUDFLARE_AI_GATEWAY_API_KEY` 对该进程可用（例如放在 `~/.foxfang/.env` 中，或通过 `env.shellEnv` 提供）。

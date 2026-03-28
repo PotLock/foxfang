@@ -44,7 +44,7 @@ describe("bundle plugin hooks", () => {
   });
 
   async function writeBundleHookFixture(): Promise<string> {
-    const bundleRoot = path.join(workspaceDir, ".openclaw", "extensions", "sample-bundle");
+    const bundleRoot = path.join(workspaceDir, ".foxfang", "extensions", "sample-bundle");
     const hookDir = path.join(bundleRoot, "hooks", "bundle-hook");
     await fsp.mkdir(path.join(bundleRoot, ".codex-plugin"), { recursive: true });
     await fsp.mkdir(hookDir, { recursive: true });
@@ -133,7 +133,7 @@ describe("bundle plugin hooks", () => {
   });
 
   it("does not treat Claude hooks.json bundles as OpenClaw hook packs", async () => {
-    const bundleRoot = path.join(workspaceDir, ".openclaw", "extensions", "claude-bundle");
+    const bundleRoot = path.join(workspaceDir, ".foxfang", "extensions", "claude-bundle");
     await fsp.mkdir(path.join(bundleRoot, ".claude-plugin"), { recursive: true });
     await fsp.mkdir(path.join(bundleRoot, "hooks"), { recursive: true });
     await fsp.writeFile(

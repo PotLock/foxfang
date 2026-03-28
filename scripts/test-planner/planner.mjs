@@ -1242,8 +1242,8 @@ export function buildCIExecutionManifest(scopeInput = {}, options = {}) {
                 command: [
                   "pnpm build",
                   "pnpm ui:build",
-                  "node openclaw.mjs --help",
-                  "node openclaw.mjs status --json --timeout 1",
+                  "node foxfang.mjs --help",
+                  "node foxfang.mjs status --json --timeout 1",
                   "pnpm test:build:singleton",
                 ].join("\n"),
               },

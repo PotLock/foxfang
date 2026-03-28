@@ -57,7 +57,7 @@ ssh exe.dev new
 ssh <vm-name>.exe.xyz
 ```
 
-提示：请让这个 VM 保持**有状态**。OpenClaw 会将状态存储在 `~/.openclaw/` 和 `~/.openclaw/workspace/` 下。
+提示：请让这个 VM 保持**有状态**。OpenClaw 会将状态存储在 `~/.foxfang/` 和 `~/.foxfang/workspace/` 下。
 
 ## 2）安装前置依赖（在 VM 上）
 

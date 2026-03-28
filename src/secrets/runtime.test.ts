@@ -2425,7 +2425,7 @@ describe("secrets runtime snapshot", () => {
 
   it("does not write inherited auth stores during runtime secret activation", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "openclaw-secrets-runtime-"));
-    const stateDir = path.join(root, ".openclaw");
+    const stateDir = path.join(root, ".foxfang");
     const mainAgentDir = path.join(stateDir, "agents", "main", "agent");
     const workerStorePath = path.join(stateDir, "agents", "worker", "agent", "auth-profiles.json");
     const prevStateDir = process.env.OPENCLAW_STATE_DIR;

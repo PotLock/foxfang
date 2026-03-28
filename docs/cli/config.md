@@ -249,7 +249,7 @@ Success example:
 {
   "ok": true,
   "operations": 1,
-  "configPath": "~/.openclaw/openclaw.json",
+  "configPath": "~/.foxfang/openclaw.json",
   "inputModes": ["builder"],
   "checks": {
     "schema": false,
@@ -267,7 +267,7 @@ Failure example:
 {
   "ok": false,
   "operations": 1,
-  "configPath": "~/.openclaw/openclaw.json",
+  "configPath": "~/.foxfang/openclaw.json",
   "inputModes": ["builder"],
   "checks": {
     "schema": false,

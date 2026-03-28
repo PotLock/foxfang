@@ -166,7 +166,7 @@ examples.
     export BRAVE_API_KEY="YOUR_KEY"
     ```
 
-    For a gateway install, put it in `~/.openclaw/.env`.
+    For a gateway install, put it in `~/.foxfang/.env`.
     See [Env vars](/help/faq#env-vars-and-env-loading).
 
   </Tab>

@@ -169,7 +169,7 @@ export function installDockerReadMock(params?: { canonicalPath?: string }) {
       return dockerExecResult("content");
     }
     if (script.includes("mktemp")) {
-      return dockerExecResult("/workspace/.openclaw-write-b.txt.ABC123\n");
+      return dockerExecResult("/workspace/.foxfang-write-b.txt.ABC123\n");
     }
     return dockerExecResult("");
   });

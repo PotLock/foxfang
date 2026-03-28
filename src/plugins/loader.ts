@@ -824,7 +824,7 @@ export function loadOpenClawPlugins(options: PluginLoadOptions = {}): PluginRegi
   const getJiti = (modulePath: string) => {
     const tryNative = shouldPreferNativeJiti(modulePath);
     // Pass loader's moduleUrl so the openclaw root can always be resolved even when
-    // loading external plugins from outside the installation directory (e.g. ~/.openclaw/extensions/).
+    // loading external plugins from outside the installation directory (e.g. ~/.foxfang/extensions/).
     const aliasMap = buildPluginLoaderAliasMap(
       modulePath,
       process.argv[1],

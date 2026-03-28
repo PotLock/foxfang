@@ -252,9 +252,9 @@ fs.writeFileSync(file, `${JSON.stringify(parsed, null, 2)}\n`);
 NODE
 }
 
-mkdir -p "$HOME/.openclaw/extensions/demo-plugin"
+mkdir -p "$HOME/.foxfang/extensions/demo-plugin"
 
-cat > "$HOME/.openclaw/extensions/demo-plugin/index.js" <<'JS'
+cat > "$HOME/.foxfang/extensions/demo-plugin/index.js" <<'JS'
 module.exports = {
   id: "demo-plugin",
   name: "Demo Plugin",
@@ -267,7 +267,7 @@ module.exports = {
   },
 };
 JS
-cat > "$HOME/.openclaw/extensions/demo-plugin/openclaw.plugin.json" <<'JSON'
+cat > "$HOME/.foxfang/extensions/demo-plugin/openclaw.plugin.json" <<'JSON'
 {
   "id": "demo-plugin",
   "configSchema": {
@@ -450,7 +450,7 @@ console.log("ok");
 NODE
 
 echo "Testing /plugin alias with Claude bundle restart semantics..."
-bundle_root="$HOME/.openclaw/extensions/claude-bundle-e2e"
+bundle_root="$HOME/.foxfang/extensions/claude-bundle-e2e"
 mkdir -p "$bundle_root/.claude-plugin" "$bundle_root/commands"
 cat > "$bundle_root/.claude-plugin/plugin.json" <<'JSON'
 {
@@ -471,7 +471,7 @@ node - <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
 
-const configPath = path.join(process.env.HOME, ".openclaw", "openclaw.json");
+const configPath = path.join(process.env.HOME, ".foxfang", "openclaw.json");
 const config = fs.existsSync(configPath)
   ? JSON.parse(fs.readFileSync(configPath, "utf8"))
   : {};
@@ -734,7 +734,7 @@ node - <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
 
-const configPath = path.join(process.env.HOME, ".openclaw", "openclaw.json");
+const configPath = path.join(process.env.HOME, ".foxfang", "openclaw.json");
 const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
 for (const id of ["marketplace-shortcut", "marketplace-direct"]) {
   const record = config.plugins?.installs?.[id];

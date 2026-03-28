@@ -224,7 +224,7 @@ TRASH
     local home_dir="$1"
     export HOME="$home_dir"
     export OPENCLAW_HOME="$home_dir"
-    export OPENCLAW_STATE_DIR="$home_dir/.openclaw"
+    export OPENCLAW_STATE_DIR="$home_dir/.foxfang"
     export OPENCLAW_CONFIG_PATH="$OPENCLAW_STATE_DIR/openclaw.json"
     mkdir -p "$OPENCLAW_STATE_DIR"
   }

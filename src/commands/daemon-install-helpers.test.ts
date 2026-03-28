@@ -86,7 +86,7 @@ function mockNodeGatewayPlanFixture(
 }
 
 describe("buildGatewayInstallPlan", () => {
-  // Prevent tests from reading the developer's real ~/.openclaw/.env when
+  // Prevent tests from reading the developer's real ~/.foxfang/.env when
   // passing `env: {}` (which falls back to os.homedir for state-dir resolution).
   let isolatedHome: string;
   beforeEach(() => {
@@ -429,7 +429,7 @@ describe("buildGatewayInstallPlan — dotenv merge", () => {
 
   it("merges .env file vars into the install plan", async () => {
     await writeStateDirDotEnv("BRAVE_API_KEY=BSA-from-env\nOPENROUTER_API_KEY=or-key\n", {
-      stateDir: path.join(tmpDir, ".openclaw"),
+      stateDir: path.join(tmpDir, ".foxfang"),
     });
     mockNodeGatewayPlanFixture({ serviceEnvironment: { OPENCLAW_PORT: "3000" } });
 
@@ -446,7 +446,7 @@ describe("buildGatewayInstallPlan — dotenv merge", () => {
 
   it("config env vars override .env file vars", async () => {
     await writeStateDirDotEnv("MY_KEY=from-dotenv\n", {
-      stateDir: path.join(tmpDir, ".openclaw"),
+      stateDir: path.join(tmpDir, ".foxfang"),
     });
     mockNodeGatewayPlanFixture({ serviceEnvironment: {} });
 
@@ -468,7 +468,7 @@ describe("buildGatewayInstallPlan — dotenv merge", () => {
 
   it("service env overrides .env file vars", async () => {
     await writeStateDirDotEnv("HOME=/from-dotenv\n", {
-      stateDir: path.join(tmpDir, ".openclaw"),
+      stateDir: path.join(tmpDir, ".foxfang"),
     });
     mockNodeGatewayPlanFixture({
       serviceEnvironment: { HOME: "/from-service" },

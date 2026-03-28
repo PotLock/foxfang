@@ -317,7 +317,7 @@ Broadcast groups work alongside existing routing:
 **Debug:**
 
 ```bash
-tail -f ~/.openclaw/logs/gateway.log | grep broadcast
+tail -f ~/.foxfang/logs/gateway.log | grep broadcast
 ```
 
 ### Only One Agent Responding

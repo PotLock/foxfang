@@ -38,7 +38,7 @@ x-i18n:
 
 <Steps>
   <Step title="现有配置检测">
-    - 如果 `~/.openclaw/openclaw.json` 存在，可选择 Keep、Modify 或 Reset。
+    - 如果 `~/.foxfang/openclaw.json` 存在，可选择 Keep、Modify 或 Reset。
     - 重新运行向导不会清除任何内容，除非你明确选择 Reset（或传递 `--reset`）。
     - CLI `--reset` 默认作用于 `config+creds+sessions`；使用 `--reset-scope full` 还会删除工作区。
     - 如果配置无效或包含旧版键，向导会停止，并要求你先运行 `openclaw doctor` 再继续。
@@ -51,7 +51,7 @@ x-i18n:
     - 完整选项矩阵见 [身份验证和模型选项](#auth-and-model-options)。
   </Step>
   <Step title="工作区">
-    - 默认值为 `~/.openclaw/workspace`（可配置）。
+    - 默认值为 `~/.foxfang/workspace`（可配置）。
     - 会植入首次运行 bootstrap 仪式所需的工作区文件。
     - 工作区布局：[智能体工作区](/concepts/agent-workspace)。
   </Step>
@@ -222,8 +222,8 @@ x-i18n:
 
 凭证和配置档案路径：
 
-- OAuth 凭证：`~/.openclaw/credentials/oauth.json`
-- Auth profile（API 密钥 + OAuth）：`~/.openclaw/agents/<agentId>/agent/auth-profiles.json`
+- OAuth 凭证：`~/.foxfang/credentials/oauth.json`
+- Auth profile（API 密钥 + OAuth）：`~/.foxfang/agents/<agentId>/agent/auth-profiles.json`
 
 凭证存储模式：
 
@@ -249,13 +249,13 @@ x-i18n:
 
 <Note>
 无头和服务器提示：在有浏览器的机器上完成 OAuth，然后复制
-`~/.openclaw/credentials/oauth.json`（或 `$OPENCLAW_STATE_DIR/credentials/oauth.json`）
+`~/.foxfang/credentials/oauth.json`（或 `$OPENCLAW_STATE_DIR/credentials/oauth.json`）
 到 Gateway 网关主机。
 </Note>
 
 ## 输出和内部机制
 
-`~/.openclaw/openclaw.json` 中的典型字段：
+`~/.foxfang/openclaw.json` 中的典型字段：
 
 - `agents.defaults.workspace`
 - `agents.defaults.model` / `models.providers`（如果选择了 Minimax）
@@ -273,8 +273,8 @@ x-i18n:
 
 `openclaw agents add` 会写入 `agents.list[]` 和可选的 `bindings`。
 
-WhatsApp 凭证位于 `~/.openclaw/credentials/whatsapp/<accountId>/`。
-会话存储在 `~/.openclaw/agents/<agentId>/sessions/` 下。
+WhatsApp 凭证位于 `~/.foxfang/credentials/whatsapp/<accountId>/`。
+会话存储在 `~/.foxfang/agents/<agentId>/sessions/` 下。
 
 <Note>
 某些渠道以插件形式交付。在设置期间选择这些渠道时，向导
@@ -293,7 +293,7 @@ Gateway 网关向导 RPC：
 Signal 设置行为：
 
 - 下载适当的发布资源
-- 将其存储在 `~/.openclaw/tools/signal-cli/<version>/`
+- 将其存储在 `~/.foxfang/tools/signal-cli/<version>/`
 - 在配置中写入 `channels.signal.cliPath`
 - JVM 构建需要 Java 21
 - 在可用时使用原生构建

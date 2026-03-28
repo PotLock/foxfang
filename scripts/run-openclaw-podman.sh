@@ -225,7 +225,7 @@ if [[ -z "${EFFECTIVE_HOME:-}" ]]; then
 fi
 validate_absolute_path "effective home" "$EFFECTIVE_HOME"
 
-CONFIG_DIR="${OPENCLAW_CONFIG_DIR:-$EFFECTIVE_HOME/.openclaw}"
+CONFIG_DIR="${OPENCLAW_CONFIG_DIR:-$EFFECTIVE_HOME/.foxfang}"
 ENV_FILE="${OPENCLAW_PODMAN_ENV:-$CONFIG_DIR/.env}"
 # Bootstrap `.env` may set runtime/container options, but it must not
 # relocate the config/workspace/env paths mid-run. Those path overrides are
@@ -234,7 +234,7 @@ if [[ -f "$ENV_FILE" ]]; then
   load_podman_env_file "$ENV_FILE"
 fi
 
-CONFIG_DIR="${OPENCLAW_CONFIG_DIR:-$EFFECTIVE_HOME/.openclaw}"
+CONFIG_DIR="${OPENCLAW_CONFIG_DIR:-$EFFECTIVE_HOME/.foxfang}"
 ENV_FILE="${OPENCLAW_PODMAN_ENV:-$CONFIG_DIR/.env}"
 WORKSPACE_DIR="${OPENCLAW_WORKSPACE_DIR:-$CONFIG_DIR/workspace}"
 CONTAINER_NAME="${OPENCLAW_PODMAN_CONTAINER:-openclaw}"
@@ -529,11 +529,11 @@ if [[ "$RUN_SETUP" == true ]]; then
     --init \
     "${USERNS_ARGS[@]}" "${RUN_USER_ARGS[@]}" \
     -e HOME=/home/node -e TERM=xterm-256color -e BROWSER=echo \
-    -e NPM_CONFIG_CACHE=/home/node/.openclaw/.npm \
+    -e NPM_CONFIG_CACHE=/home/node/.foxfang/.npm \
     -e OPENCLAW_NO_RESPAWN=1 \
     --env-file "$TOKEN_ENV_FILE" \
-    -v "$CONFIG_DIR:/home/node/.openclaw:rw${SELINUX_MOUNT_OPTS}" \
-    -v "$WORKSPACE_DIR:/home/node/.openclaw/workspace:rw${SELINUX_MOUNT_OPTS}" \
+    -v "$CONFIG_DIR:/home/node/.foxfang:rw${SELINUX_MOUNT_OPTS}" \
+    -v "$WORKSPACE_DIR:/home/node/.foxfang/workspace:rw${SELINUX_MOUNT_OPTS}" \
     "$OPENCLAW_IMAGE" \
     node dist/index.js onboard "$@"
   exit 0
@@ -545,11 +545,11 @@ podman run --pull="$PODMAN_PULL" -d --replace \
   --init \
   "${USERNS_ARGS[@]}" "${RUN_USER_ARGS[@]}" \
   -e HOME=/home/node -e TERM=xterm-256color \
-  -e NPM_CONFIG_CACHE=/home/node/.openclaw/.npm \
+  -e NPM_CONFIG_CACHE=/home/node/.foxfang/.npm \
   -e OPENCLAW_NO_RESPAWN=1 \
   --env-file "$TOKEN_ENV_FILE" \
-  -v "$CONFIG_DIR:/home/node/.openclaw:rw${SELINUX_MOUNT_OPTS}" \
-  -v "$WORKSPACE_DIR:/home/node/.openclaw/workspace:rw${SELINUX_MOUNT_OPTS}" \
+  -v "$CONFIG_DIR:/home/node/.foxfang:rw${SELINUX_MOUNT_OPTS}" \
+  -v "$WORKSPACE_DIR:/home/node/.foxfang/workspace:rw${SELINUX_MOUNT_OPTS}" \
   -p "${PUBLISH_HOST}:${HOST_GATEWAY_PORT}:18789" \
   -p "${PUBLISH_HOST}:${HOST_BRIDGE_PORT}:18790" \
   "$OPENCLAW_IMAGE" \

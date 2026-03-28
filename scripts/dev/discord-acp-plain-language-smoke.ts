@@ -140,7 +140,7 @@ function resolveStateDir(): string {
       : path.resolve(override);
   }
   const home = process.env.OPENCLAW_HOME?.trim() || process.env.HOME || "";
-  return path.join(home, ".openclaw");
+  return path.join(home, ".foxfang");
 }
 
 function resolveArg(flag: string): string | undefined {

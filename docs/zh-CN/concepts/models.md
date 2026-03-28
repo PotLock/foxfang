@@ -210,7 +210,7 @@ openclaw models status
 ## 模型注册表（`models.json`）
 
 `models.providers` 中的自定义提供商会写入
-智能体目录下的 `models.json`（默认是 `~/.openclaw/agents/<agentId>/agent/models.json`）。默认会合并此文件，除非将 `models.mode` 设置为 `replace`。
+智能体目录下的 `models.json`（默认是 `~/.foxfang/agents/<agentId>/agent/models.json`）。默认会合并此文件，除非将 `models.mode` 设置为 `replace`。
 
 匹配提供商 ID 时的合并模式优先级：
 
