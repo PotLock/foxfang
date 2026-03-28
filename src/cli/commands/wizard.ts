@@ -713,6 +713,7 @@ async function runBrowserWizardInline(config: any): Promise<void> {
     config.browser = {
       enabled: true,
       port: 9222,
+      cdpPort: 18800,
       host: 'localhost',
       headless: headless,
       defaultProfile: 'default',

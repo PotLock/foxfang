@@ -10,6 +10,7 @@ import type { BrowserConfig, BrowserProfile } from './types';
 
 const DEFAULT_PORT = 9222;
 const DEFAULT_HOST = 'localhost';
+const DEFAULT_CDP_PORT = 18800;
 
 export function getDefaultBrowserConfig(): BrowserConfig {
   return {
@@ -17,11 +18,13 @@ export function getDefaultBrowserConfig(): BrowserConfig {
     port: DEFAULT_PORT,
     host: DEFAULT_HOST,
     headless: true,
+    cdpPort: DEFAULT_CDP_PORT,
     defaultProfile: 'default',
     profiles: {
       default: {
         name: 'default',
         headless: true,
+        cdpPort: DEFAULT_CDP_PORT,
       },
     },
     autoStart: true,
@@ -31,14 +34,24 @@ export function getDefaultBrowserConfig(): BrowserConfig {
 
 export function resolveBrowserConfig(userConfig?: Partial<BrowserConfig>): BrowserConfig {
   const defaults = getDefaultBrowserConfig();
+  const mergedProfiles = {
+    ...defaults.profiles,
+    ...userConfig?.profiles,
+  };
+
+  // Ensure every configured profile has a deterministic CDP port fallback.
+  for (const [name, profile] of Object.entries(mergedProfiles)) {
+    mergedProfiles[name] = {
+      ...profile,
+      cdpPort: profile?.cdpPort ?? userConfig?.cdpPort ?? defaults.cdpPort,
+    };
+  }
   
   return {
     ...defaults,
     ...userConfig,
-    profiles: {
-      ...defaults.profiles,
-      ...userConfig?.profiles,
-    },
+    cdpPort: userConfig?.cdpPort ?? defaults.cdpPort,
+    profiles: mergedProfiles,
   };
 }
 
@@ -51,11 +64,13 @@ export function getProfileConfig(config: BrowserConfig, profileName?: string): B
     return config.profiles[config.defaultProfile] || {
       name: 'default',
       headless: config.headless,
+      cdpPort: config.cdpPort,
     };
   }
   
   return {
     headless: config.headless,
+    cdpPort: config.cdpPort,
     ...profile,
     name,
   };

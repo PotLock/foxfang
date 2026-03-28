@@ -2,7 +2,7 @@
  * Anthropic Provider
  */
 
-import { Provider, ChatRequest, ChatResponse, StreamChunk } from './traits';
+import { Provider, ChatRequest, ChatResponse, StreamChunk, MessageContentBlock } from './traits';
 import { ProviderConfig } from './index';
 
 interface AnthropicApiError {
@@ -35,11 +35,13 @@ export class AnthropicProvider implements Provider {
   private buildRequestBody(request: ChatRequest) {
     // Separate system messages from conversation messages
     const systemContent: string[] = [];
-    const conversationMessages: Array<{ role: string; content: string }> = [];
+    const conversationMessages: Array<{ role: string; content: string | MessageContentBlock[] }> = [];
 
     for (const m of request.messages) {
       if (m.role === 'system') {
-        systemContent.push(m.content);
+        // System messages must always be plain strings
+        const text = typeof m.content === 'string' ? m.content : '';
+        if (text) systemContent.push(text);
       } else {
         conversationMessages.push({ role: m.role, content: m.content });
       }
@@ -51,15 +53,25 @@ export class AnthropicProvider implements Provider {
       messages: conversationMessages,
     };
 
-    // Use native system parameter with cache_control for prompt caching
+    // Static system block with cache_control — stays identical across turns
+    // so Anthropic can serve it from cache (~10% of normal input token cost).
     if (systemContent.length > 0) {
-      body.system = [
+      const blocks: Array<Record<string, unknown>> = [
         {
           type: 'text',
           text: systemContent.join('\n\n'),
           cache_control: { type: 'ephemeral' },
         },
       ];
+      // Dynamic per-turn context goes in a second block WITHOUT cache_control
+      // so it never pollutes the cached static block.
+      if (request.dynamicSystemContent) {
+        blocks.push({
+          type: 'text',
+          text: request.dynamicSystemContent,
+        });
+      }
+      body.system = blocks;
     }
 
     if (request.tools && request.tools.length > 0) {

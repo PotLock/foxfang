@@ -138,10 +138,12 @@ export interface AppConfig {
       executablePath?: string;
       userDataDir?: string;
       headless?: boolean;
+      cdpPort?: number;
       remoteCdpUrl?: string;
     }>;
     executablePath?: string;
     headless?: boolean;
+    cdpPort?: number;
     remoteCdpUrl?: string;
     port?: number;
     host?: string;

@@ -55,6 +55,7 @@ interface BrowserConfig {
   profiles?: Record<string, BrowserProfileConfig>;
   executablePath?: string;
   headless?: boolean;
+  cdpPort?: number;
   remoteCdpUrl?: string;
   port?: number;
   host?: string;
@@ -66,6 +67,7 @@ interface BrowserProfileConfig {
   executablePath?: string;
   userDataDir?: string;
   headless?: boolean;
+  cdpPort?: number;
   remoteCdpUrl?: string;
 }
 
@@ -363,11 +365,11 @@ export class BrowserTool implements Tool {
     };
   }
 
-  private loadConfig(): void {
+  private async loadConfig(): Promise<void> {
     try {
       // Try to load from Foxfang config
-      const { loadConfig: loadFoxfangConfig } = require('../../config');
-      const foxfangConfig = loadFoxfangConfig();
+      const { loadConfig: loadFoxfangConfig } = await import('../../config');
+      const foxfangConfig = await loadFoxfangConfig();
       
       if (foxfangConfig.browser) {
         this.config = {
@@ -386,11 +388,12 @@ export class BrowserTool implements Tool {
         enabled: false,
         headless: true,
       };
+      this.baseUrl = 'http://localhost:9222';
     }
   }
 
   async execute(args: BrowserParameters): Promise<ToolResult> {
-    this.loadConfig();
+    await this.loadConfig();
 
     // Normalize args - ensure action is a string
     const action = typeof args?.action === 'string' ? args.action.trim() : undefined;
@@ -655,9 +658,12 @@ export class BrowserTool implements Tool {
       timeoutMs: 30000,
     });
 
+    const header = `Opened ${url}\nTab ID: ${result.targetId}\nTitle: ${result.title || 'N/A'}\n\n`;
+    const snapshot = await this.fetchSnapshotText(result.targetId, args.profile, args.maxChars);
+
     return {
       success: true,
-      output: `Opened ${url}\nTab ID: ${result.targetId}\nTitle: ${result.title || 'N/A'}`,
+      output: header + snapshot,
       data: result,
     };
   }
@@ -808,9 +814,12 @@ export class BrowserTool implements Tool {
       timeoutMs: 30000,
     });
 
+    const header = `Navigated to ${result.url}\n\n`;
+    const snapshot = await this.fetchSnapshotText(result.targetId ?? args.targetId, args.profile, args.maxChars);
+
     return {
       success: true,
-      output: `Navigated to ${result.url}`,
+      output: header + snapshot,
       data: result,
     };
   }
@@ -947,18 +956,70 @@ export class BrowserTool implements Tool {
       };
     }
 
-    const result = await this.fetchBrowserApi('/act', {
+    const result = await this.fetchBrowserApi<{ targetId?: string }>('/act', {
       method: 'POST',
       body: request,
       profile: args.profile,
       timeoutMs: args.timeoutMs || 30000,
     });
 
+    // Skip snapshot for non-visual actions (wait, evaluate, close)
+    const skipSnapshot = request.kind === 'wait' || request.kind === 'evaluate' || request.kind === 'close';
+    const targetId = request.targetId ?? result.targetId ?? args.targetId;
+
+    if (skipSnapshot) {
+      return {
+        success: true,
+        output: `Action ${request.kind} executed`,
+        data: result,
+      };
+    }
+
+    const header = `Action ${request.kind} executed\n\n`;
+    const snapshot = await this.fetchSnapshotText(targetId, args.profile, args.maxChars);
+
     return {
       success: true,
-      output: `Action ${request.kind} executed`,
+      output: header + snapshot,
       data: result,
     };
+  }
+
+  /**
+   * Fetch a compact AI snapshot for the given tab and return it as text.
+   * Used to give the agent page context after open/navigate/act.
+   */
+  private async fetchSnapshotText(
+    targetId: string | undefined,
+    profile: string | undefined,
+    maxChars: number | undefined,
+  ): Promise<string> {
+    try {
+      const query: Record<string, string> = {
+        format: 'ai',
+        compact: 'true',
+        maxChars: String(maxChars ?? DEFAULT_MAX_CHARS),
+      };
+      const queryString = Object.entries(query)
+        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+        .join('&');
+
+      const result = await this.fetchBrowserApi<{
+        snapshot?: string;
+        truncated?: boolean;
+      }>(`/snapshot?${queryString}`, {
+        method: 'POST',
+        body: targetId ? { targetId } : undefined,
+        profile,
+        timeoutMs: 15000,
+      });
+
+      let text = result.snapshot ?? '';
+      if (result.truncated) text += '\n[Snapshot truncated]';
+      return text;
+    } catch {
+      return '';
+    }
   }
 }
 

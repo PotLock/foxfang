@@ -19,7 +19,7 @@ import {
 import { ensureAgentRegistered } from './registry';
 import { getProvider, getProviderConfig } from '../providers/index';
 import { toolRegistry } from '../tools/index';
-import { ChatMessage } from '../providers/traits';
+import { ChatMessage, MessageContentBlock } from '../providers/traits';
 import { formatSkillsForPrompt, loadAvailableSkills, type SkillDefinition } from '../skill-system';
 import { cacheToolResult } from '../tools/tool-result-cache';
 import { resolveTokenBudget, trimMessagesToBudget } from './budget';
@@ -447,7 +447,9 @@ function buildToolCallStyleSection(agent: Agent, promptMode: PromptMode): string
   if (hasBrowserTool) {
     lines.push('For visual/UI page tasks (footer/header/nav/button text, what is visible), prefer `browser` over static crawl.');
     lines.push('If browser execution is blocked/failing repeatedly, choose fallback tools (`fetch_url`, `firecrawl_*`, or search) yourself instead of stopping.');
-    lines.push('When using `browser` for multi-step navigation, chain actions like "open" -> "snapshot" -> "act" with explicit action sequences decided by the agent.');
+    lines.push('After `open`, the snapshot shows the loaded page content. Do NOT call `open` again for the same URL — the tab is already open.');
+    lines.push('To see footer or content below the fold: call `browser action=act kind=evaluate script="window.scrollTo(0,document.body.scrollHeight)"` then `browser action=snapshot` to capture the bottom of the page.');
+    lines.push('To interact with elements: use `browser action=act kind=click ref=<aria-ref>` where ref comes from the snapshot.');
     lines.push('For snapshots, use refs="aria" for stable references that work across multiple calls.');
   } else if (hasBashTool) {
     lines.push('For visual/UI page tasks, use the `browser` tool if available.');
@@ -559,6 +561,29 @@ const MINIMAL_BOOTSTRAP_FILES = new Set([
   'presets/PRESETS.md',
   'presets/REPLY_CASH_BRAND.md',
   'presets/REPLY_CASH_BRAND_VOICE.md',
+]);
+
+// Files that go into the STATIC (cached) system prompt block for channel mode.
+// Must be stable across turns — no user-specific or session-specific content.
+const CHANNEL_STATIC_BOOTSTRAP_FILES = new Set([
+  'SOUL.md',
+  'IDENTITY.md',
+]);
+
+// Files that go into the DYNAMIC (uncached, per-turn) context block for channel mode.
+// These vary per workspace/session and must always be fresh — brand files included
+// so the agent always knows the full brand context when users ask about it.
+const CHANNEL_DYNAMIC_BOOTSTRAP_FILES = new Set([
+  'USER.md',
+  'MEMORY.md',
+  'memory.md',
+  'presets/PRESETS.md',
+  'presets/REPLY_CASH_BRAND.md',
+  'presets/REPLY_CASH_BRAND_VOICE.md',
+  'BRAND_VOICE.md',
+  'BRAND.md',
+  'AUDIENCE_PERSONAS.md',
+  'PERSONAS_REPLY_CASH.md',
 ]);
 
 const SKILL_CATALOG_CACHE_TTL_MS = 45_000;
@@ -727,12 +752,25 @@ function compactBrowserPayload(rawData: unknown): {
   const obj = rawData && typeof rawData === 'object' ? (rawData as Record<string, unknown>) : {};
 
   const mediaUrls = collectMediaUrlsFromToolData('browser', rawData);
-  
-  // Handle browser tool format
-  const snapshot = (obj as Record<string, unknown>).snapshot || ((obj as Record<string, unknown>).data as Record<string, unknown>)?.snapshot;
-  const snapshotExcerpt = typeof snapshot === 'string' 
-    ? snapshot.slice(0, 700) 
-    : readNestedString((obj as Record<string, unknown>).snapshot, 700);
+
+  // Handle browser tool format.
+  // The agent loop passes result.output (= "Opened...\n[AI snapshot]") for browser,
+  // so rawData may be a plain string. Fall back to obj.snapshot / obj.data.snapshot
+  // for the explicit snapshot action which returns structured data.
+  let snapshotFull = '';
+  if (typeof rawData === 'string') {
+    snapshotFull = rawData; // output text: "Opened...\nTitle\n\n[page snapshot]"
+  } else {
+    const fromOutput = typeof (obj as Record<string, unknown>).output === 'string'
+      ? (obj as Record<string, unknown>).output as string : '';
+    const fromSnapshot = typeof (obj as Record<string, unknown>).snapshot === 'string'
+      ? (obj as Record<string, unknown>).snapshot as string : '';
+    const dataObj = (obj as Record<string, unknown>).data;
+    const fromDataSnapshot = dataObj && typeof dataObj === 'object' && typeof (dataObj as Record<string, unknown>).snapshot === 'string'
+      ? (dataObj as Record<string, unknown>).snapshot as string : '';
+    snapshotFull = fromOutput || fromSnapshot || fromDataSnapshot;
+  }
+  const snapshotExcerpt = snapshotFull.length > 0 ? snapshotFull.slice(0, 4000) : undefined;
   const selectorExcerpt = readNestedString((obj as Record<string, unknown>).selectorText, 420) || readNestedString((obj as Record<string, unknown>).focus, 420);
   
   // Extract action info for browser tool
@@ -747,11 +785,8 @@ function compactBrowserPayload(rawData: unknown): {
   if (url) {
     keyPoints.push(`url: ${url}`);
   }
-  if (snapshotExcerpt) {
-    keyPoints.push(`snapshot excerpt: ${snapshotExcerpt}`);
-  }
   if (selectorExcerpt) {
-    keyPoints.push(`selector/focus excerpt: ${selectorExcerpt}`);
+    keyPoints.push(`selector/focus: ${selectorExcerpt}`);
   }
   if (mediaUrls.length > 0) {
     keyPoints.push(`media: ${mediaUrls.slice(0, 3).join(', ')}`);
@@ -762,6 +797,7 @@ function compactBrowserPayload(rawData: unknown): {
 
   const summaryParts: string[] = [];
   summaryParts.push(`browser action=${action || 'completed'}`);
+  if (url) summaryParts.push(`url=${url}`);
   if (mediaUrls.length > 0) {
     summaryParts.push(`screenshot=${mediaUrls[0]}`);
   }
@@ -776,9 +812,11 @@ function compactBrowserPayload(rawData: unknown): {
     title: 'browser action',
     summary: compactText(summaryParts.join(' | '), TOOL_SUMMARY_MAX_CHARS),
     keyPoints: keyPoints.slice(0, 6),
+    // pageContent carries the full page snapshot with a larger budget in the narrative block
+    ...(snapshotExcerpt ? { pageContent: snapshotExcerpt } : {}),
     relevanceToTask:
       snapshotExcerpt || selectorExcerpt || mediaUrls.length > 0
-        ? 'Use the captured snapshot, selector text, and screenshot to answer the user directly. Do not rerun the same browser action unless you need a different selector, interaction, or page state.'
+        ? 'Use the page content to answer the user directly. The tab is already open — do NOT call open again for the same URL. To see content below the fold, use act(kind=evaluate, script=window.scrollTo(0,document.body.scrollHeight)) then snapshot.'
         : 'Use snapshot/selector excerpts and any error info to decide the next explicit browser actions.',
     ...(rawRef ? { rawRef } : {}),
   };
@@ -1026,8 +1064,14 @@ function compactToolPayload(toolName: string, rawData: unknown): {
 /**
  * Build tool section for system prompt
  */
-function buildToolSection(tools: string[]): string {
+// Max description length per tool in channel/minimal mode — keeps system prompt tight.
+// 150 chars: enough for first sentence + key "when to use" hint; saves ~60% vs full desc.
+const TOOL_DESC_MAX_CHARS_CHANNEL = 150;
+
+function buildToolSection(tools: string[], promptMode: PromptMode = 'full'): string {
   if (tools.length === 0) return '';
+
+  const isCompact = isChannelPromptMode(promptMode) || isMinimalPromptMode(promptMode);
 
   const lines: string[] = [];
   lines.push('## Tooling');
@@ -1038,7 +1082,14 @@ function buildToolSection(tools: string[]): string {
   for (const toolName of tools) {
     const tool = toolRegistry.get(toolName);
     const category = tool?.category || 'Other';
-    const description = tool?.description || 'No description';
+    let description = tool?.description || 'No description';
+    if (isCompact && description.length > TOOL_DESC_MAX_CHARS_CHANNEL) {
+      // Use first two sentences to keep "when to use" context, then hard-truncate
+      const twoSentences = description.match(/^(?:[^.!?]+[.!?]\s*){1,2}/)?.[0]?.trimEnd() ?? description;
+      description = twoSentences.length <= TOOL_DESC_MAX_CHARS_CHANNEL
+        ? twoSentences
+        : description.slice(0, TOOL_DESC_MAX_CHARS_CHANNEL - 1) + '…';
+    }
     if (!grouped[category]) grouped[category] = [];
     grouped[category].push({ name: toolName, description });
   }
@@ -1658,6 +1709,8 @@ function buildWorkspaceContext(
     if (!content) continue;
     // In minimal mode, skip non-essential files
     if (isMinimal && !MINIMAL_BOOTSTRAP_FILES.has(name)) continue;
+    // In channel mode, load only static identity files (brand/memory go in dynamic block)
+    if (isChannel && !CHANNEL_STATIC_BOOTSTRAP_FILES.has(name)) continue;
     // Budget gate: stop adding files when total budget exhausted
     if (totalChars >= totalMax) {
       debugLog(`[WorkspaceContext] ⏩ Budget exhausted (${totalChars}/${totalMax}), skipping ${name}`);
@@ -1673,6 +1726,55 @@ function buildWorkspaceContext(
     }
 
     // Enforce per-file budget
+    const remaining = totalMax - totalChars;
+    const fileMax = Math.min(perFileMax, remaining);
+    const truncated = content.length > fileMax
+      ? content.slice(0, fileMax) + `\n[...truncated ${name}, ${content.length - fileMax} chars omitted...]`
+      : content;
+
+    lines.push(`## ${name}`);
+    lines.push('');
+    lines.push(truncated);
+    lines.push('');
+    totalChars += truncated.length;
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Build the dynamic workspace context block for channel mode.
+ * Loads CHANNEL_DYNAMIC_BOOTSTRAP_FILES (brand files, memory, presets) and
+ * returns them as a workspace context string using the channel per-file budget.
+ * Called per-turn; goes into the uncached dynamic system block.
+ */
+function buildDynamicWorkspaceContext(
+  workspace: WorkspaceManagerLike,
+  sessionId?: string,
+): string {
+  const perFileMax = BOOTSTRAP_CHANNEL_MAX_CHARS_PER_FILE;
+  // Use a slightly larger budget for the dynamic block since it carries brand context
+  const totalMax = BOOTSTRAP_CHANNEL_TOTAL_MAX_CHARS;
+
+  const files = loadBootstrapFiles(workspace, sessionId);
+  const lines: string[] = [];
+  let hasContent = false;
+  let totalChars = 0;
+
+  for (const [name, content] of files) {
+    if (!content) continue;
+    if (!CHANNEL_DYNAMIC_BOOTSTRAP_FILES.has(name)) continue;
+    if (totalChars >= totalMax) {
+      debugLog(`[DynamicWorkspace] ⏩ Budget exhausted (${totalChars}/${totalMax}), skipping ${name}`);
+      break;
+    }
+
+    if (!hasContent) {
+      lines.push('# Brand & Memory Context');
+      lines.push('');
+      hasContent = true;
+    }
+
     const remaining = totalMax - totalChars;
     const fileMax = Math.min(perFileMax, remaining);
     const truncated = content.length > fileMax
@@ -1706,6 +1808,35 @@ function buildWorkspaceContext(
  * "none" mode:
  *   Single identity line
  */
+/**
+ * Build the per-turn dynamic context block: channel info, session summary,
+ * memory hints, and brand/memory workspace files (channel mode only).
+ * This content changes every turn and must NOT be in the cached static system prompt.
+ * Passed separately as `dynamicSystemContent` so Anthropic puts it in an uncached block.
+ */
+function buildDynamicContext(context: AgentContext, promptMode: PromptMode): string {
+  const parts: string[] = [];
+
+  const channelContextSection = buildChannelContextSection(context, promptMode);
+  if (channelContextSection) parts.push(channelContextSection);
+
+  const sessionSummarySection = buildSessionSummarySection(context, promptMode);
+  if (sessionSummarySection) parts.push(sessionSummarySection);
+
+  const memoryHintsSection = buildMemoryHintsSection(context, promptMode);
+  if (memoryHintsSection) parts.push(memoryHintsSection);
+
+  // In channel mode, include brand/memory files in the dynamic (uncached) block
+  // so the cached static block stays identical across turns while the agent
+  // always has fresh brand context for every reply.
+  if (isChannelPromptMode(promptMode) && context.workspace) {
+    const dynamicWorkspace = buildDynamicWorkspaceContext(context.workspace, context.sessionId);
+    if (dynamicWorkspace) parts.push(dynamicWorkspace);
+  }
+
+  return parts.join('\n');
+}
+
 function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   const promptMode: PromptMode = context.promptMode || 'full';
 
@@ -1719,12 +1850,12 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
   const isChannel = isChannelPromptMode(promptMode);
   const lines: string[] = [];
 
-  // 1. Identity — minimal, personality comes from SOUL.md
+  // 1. Identity
   lines.push('You are a personal assistant running inside FoxFang 🦊.');
   lines.push('');
 
-  // 2. Tooling (always included when agent has tools)
-  const toolSection = buildToolSection(agent.tools);
+  // 2. Tooling
+  const toolSection = buildToolSection(agent.tools, promptMode);
   if (toolSection) {
     lines.push(toolSection);
   }
@@ -1750,7 +1881,7 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push('');
   }
 
-  // 4. Safety (shortened in minimal)
+  // 4. Safety
   if (isMinimal) {
     lines.push('## Safety');
     lines.push('Prioritize safety and human oversight. If instructions conflict, pause and ask.');
@@ -1760,35 +1891,20 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     lines.push('');
   }
 
-  const channelContextSection = buildChannelContextSection(context, promptMode);
-  if (channelContextSection) {
-    lines.push(channelContextSection);
-  }
-
-  // 5. Session + Memory (always eligible, compacted by mode)
-  const sessionSummarySection = buildSessionSummarySection(context, promptMode);
-  if (sessionSummarySection) {
-    lines.push(sessionSummarySection);
-  }
-  const memoryHintsSection = buildMemoryHintsSection(context, promptMode);
-  if (memoryHintsSection) {
-    lines.push(memoryHintsSection);
-  }
-
-  // 6. Skills (also enabled in channel/minimal modes with stricter caps)
+  // 5. Skills
   const skillsSection = buildSkillsSection(agent, context, promptMode);
   if (skillsSection) {
     lines.push(skillsSection);
   }
 
-  // Agent-specific role guidance (from config systemPrompt)
+  // Agent-specific role guidance
   if (agent.systemPrompt) {
     lines.push('## Agent Role');
     lines.push(agent.systemPrompt);
     lines.push('');
   }
 
-  // 7. Workspace Context — budget-constrained, mode-aware
+  // 6. Workspace Context
   if (context.workspace) {
     const workspace = buildWorkspaceContext(context.workspace, context.sessionId, promptMode);
     if (workspace) {
@@ -1801,7 +1917,7 @@ function buildSystemPrompt(agent: Agent, context: AgentContext): string {
     debugLog('[SystemPrompt] context.workspace is NULL — no workspace files will be loaded');
   }
 
-  // 8. Runtime
+  // 7. Runtime
   lines.push('## Runtime');
   lines.push(`Runtime: agent=${agent.id} | model=${agent.model || 'default'}`);
   lines.push('');
@@ -1819,11 +1935,25 @@ function truncateToChars(text: string, maxChars: number): string {
 }
 
 function isToolResultsMessage(msg: ChatMessage): boolean {
-  return msg.role === 'user' && /^\[Tool Results\]/.test(String(msg.content || ''));
+  if (msg.role !== 'user') return false;
+  if (Array.isArray(msg.content)) {
+    return msg.content.some(b => b.type === 'tool_result');
+  }
+  return /^\[Tool Results\]/.test(String(msg.content || ''));
 }
 
 function estimateContextChars(messages: ChatMessage[]): number {
-  return messages.reduce((sum, msg) => sum + String(msg.content || '').length, 0);
+  return messages.reduce((sum, msg) => {
+    if (Array.isArray(msg.content)) {
+      return sum + msg.content.reduce((s, b) => {
+        if (b.type === 'text') return s + b.text.length;
+        if (b.type === 'tool_result') return s + b.content.length;
+        if (b.type === 'tool_use') return s + JSON.stringify(b.input).length;
+        return s;
+      }, 0);
+    }
+    return sum + String(msg.content || '').length;
+  }, 0);
 }
 
 function enforceToolResultContextBudget(messages: ChatMessage[], maxInputTokens: number): ChatMessage[] {
@@ -1840,6 +1970,15 @@ function enforceToolResultContextBudget(messages: ChatMessage[], maxInputTokens:
 
   const next = messages.map((msg) => {
     if (!isToolResultsMessage(msg)) return msg;
+    if (Array.isArray(msg.content)) {
+      // Truncate each tool_result block's content individually
+      const truncated = msg.content.map(b => {
+        if (b.type !== 'tool_result') return b;
+        if (b.content.length <= maxSingleToolChars) return b;
+        return { ...b, content: truncateToChars(b.content, maxSingleToolChars) };
+      });
+      return { ...msg, content: truncated };
+    }
     const text = String(msg.content || '');
     if (text.length <= maxSingleToolChars) return msg;
     return { ...msg, content: truncateToChars(text, maxSingleToolChars) };
@@ -1894,6 +2033,10 @@ function buildToolResultNarrativeBlock(toolName: string | undefined, result: Too
         lines.push(`- ${compactForModelInputText(quote, 220)}`);
       }
     }
+    // Browser page snapshot — given large budget so model sees footer/body content
+    if (compact.pageContent) {
+      lines.push(`page_content:\n${compactForModelInputText(compact.pageContent, 4000)}`);
+    }
     lines.push(`relevance: ${compactForModelInputText(compact.relevanceToTask, 220)}`);
     if (compact.rawRef) {
       lines.push(`raw_ref: ${compact.rawRef}`);
@@ -1934,7 +2077,9 @@ export async function runAgent(
 ): Promise<AgentRunResult> {
   const agent = await ensureAgentRegistered(agentId);
 
+  const promptMode = context.promptMode || 'full';
   const systemPrompt = buildSystemPrompt(agent, context);
+  const dynamicSystemContent = buildDynamicContext(context, promptMode) || undefined;
 
   const tools = agent.tools
     .map(name => toolRegistry.get(name))
@@ -2092,6 +2237,7 @@ export async function runAgent(
         model,
         messages,
         tools: effectiveTools.length > 0 ? effectiveTools : undefined,
+        dynamicSystemContent,
       });
     } catch (error) {
       console.error('Provider chat error:', error);
@@ -2296,12 +2442,47 @@ export async function runAgent(
     lastToolCallSignature = toolCallSignature;
 
     if (repeatedToolCallStreak >= 2) {
+      // Special case: browser "open" repeated — the tab is already loaded.
+      // Instead of finalizing, inject a specific scroll instruction so the model
+      // actually scrolls to see below-the-fold content (footer, etc.) rather than
+      // giving up with a progress-only text like "Let me scroll to the footer".
+      const repeatedIsBrowserOpen = toolCallsWithIds.length === 1
+        && toolCallsWithIds[0].name === 'browser'
+        && (toolCallsWithIds[0].arguments as Record<string, unknown>)?.action === 'open'
+        && repeatedToolCallStreak === 2;
+
+      if (repeatedIsBrowserOpen && iteration < maxIterations) {
+        const openedTab = allToolCalls.find(tc => tc.name === 'browser');
+        const targetId = (openedTab?.arguments as Record<string, unknown>)?.targetId as string | undefined;
+        const scrollInstruction = [
+          'The page is already loaded in the browser — do NOT call open again.',
+          'To see content below the fold (footer, chains, providers, etc.), make these tool calls in order:',
+          '1. browser action=act kind=evaluate' + (targetId ? ` targetId=${targetId}` : '') + ' script="window.scrollTo(0,document.body.scrollHeight)"',
+          '2. browser action=snapshot' + (targetId ? ` targetId=${targetId}` : ''),
+          'Then answer the user from the snapshot.',
+        ].join(' ');
+        messages = trimMessagesToBudget(
+          [
+            ...messages,
+            { role: 'user' as const, content: scrollInstruction },
+          ],
+          budget.requestMaxInputTokens,
+        ).messages;
+        repeatedToolCallStreak = 0;
+        lastToolCallSignature = '';
+        continue;
+      }
+
       try {
         const finalized = await finalizeWithoutTools(
           'The same tool call was already executed multiple times successfully. Answer from the existing tool results now and do not call the same tool again.',
         );
         const finalizedContent = String(finalized.content || '').trim();
-        if (finalizedContent && !isInternalToolPlaceholder(finalizedContent)) {
+        if (
+          finalizedContent &&
+          !isInternalToolPlaceholder(finalizedContent) &&
+          !isProgressOnlyStatusUpdate(finalizedContent)
+        ) {
           return {
             content: finalizedContent,
             toolCalls: allToolCalls,
@@ -2381,13 +2562,39 @@ export async function runAgent(
         }
       }
     });
-    const toolResultsForModel = buildToolResultsForModelInput(toolCallsWithIds, results);
+    // Build assistant message with tool_use content blocks (Anthropic native format).
+    // This tells the model exactly which tool calls it made, keyed by ID.
+    const assistantBlocks: MessageContentBlock[] = [];
+    const textPart = (response.content || '').trim();
+    if (textPart) assistantBlocks.push({ type: 'text', text: textPart });
+    for (const tc of toolCallsWithIds) {
+      assistantBlocks.push({
+        type: 'tool_use',
+        id: tc.id,
+        name: tc.name,
+        input: (tc.arguments as Record<string, unknown>) ?? {},
+      });
+    }
 
-    const assistantContent = (response.content || '').trim() || '[Tool invocation]';
+    // Build tool_result user message: one block per tool call, keyed by the same ID.
+    // Content is the formatted tool output. This closes the tool_use/tool_result pair
+    // so the model doesn't repeat the same tool call.
+    const toolResultBlocks: MessageContentBlock[] = results.map(r => {
+      const tc = toolCallsWithIds.find(t => t.id === r.toolCallId);
+      const toolName = tc?.name;
+      const content = buildToolResultNarrativeBlock(toolName, r);
+      return {
+        type: 'tool_result' as const,
+        tool_use_id: r.toolCallId || tc?.id || `call_${Date.now()}`,
+        content,
+        is_error: Boolean(r.error),
+      };
+    });
+
     messages = [
       ...messages,
-      { role: 'assistant', content: assistantContent },
-      { role: 'user', content: toolResultsForModel },
+      { role: 'assistant', content: assistantBlocks.length > 0 ? assistantBlocks : textPart || '[Tool invocation]' },
+      { role: 'user', content: toolResultBlocks.length > 0 ? toolResultBlocks : '[Tool Results]' },
     ];
     messages = enforceToolResultContextBudget(
       trimMessagesToBudget(messages, budget.requestMaxInputTokens).messages,
@@ -2414,13 +2621,14 @@ export async function runAgent(
     debugWarn(`[AgentRuntime] Finalize-without-tools failed after max iterations: ${error instanceof Error ? error.message : String(error)}`);
   }
 
-  const rawFallback = String(messages[messages.length - 1]?.content || '').trim();
+  const lastMsg = messages[messages.length - 1];
+  const lastContent = Array.isArray(lastMsg?.content) ? '' : String(lastMsg?.content || '').trim();
   const safeFallback =
-    !rawFallback
+    !lastContent || Array.isArray(lastMsg?.content)
       ? 'I gathered context but could not finalize the answer in time. Please retry.'
-      : (/^\[Tool Results\]/.test(rawFallback) || /^\[Tool invocation\]$/.test(rawFallback))
+      : (/^\[Tool Results\]/.test(lastContent) || /^\[Tool invocation\]$/.test(lastContent))
         ? 'I gathered context but could not finalize the answer in time. Please retry.'
-        : rawFallback;
+        : lastContent;
 
   return {
     content: safeFallback,
@@ -2439,7 +2647,9 @@ export async function* runAgentStream(
 ): AsyncGenerator<StreamChunk> {
   const agent = await ensureAgentRegistered(agentId);
 
+  const promptMode = context.promptMode || 'full';
   const systemPrompt = buildSystemPrompt(agent, context);
+  const dynamicSystemContent = buildDynamicContext(context, promptMode) || undefined;
 
   const tools = agent.tools
     .map(name => toolRegistry.get(name))
@@ -2594,6 +2804,7 @@ export async function* runAgentStream(
       model,
       messages: finalizeMessages,
       tools: undefined,
+      dynamicSystemContent,
     });
     return {
       content: String(finalized.content || '').trim(),
@@ -2615,6 +2826,7 @@ export async function* runAgentStream(
         model,
         messages,
         tools: effectiveTools.length > 0 ? effectiveTools : undefined,
+        dynamicSystemContent,
       });
 
       for await (const chunk of stream) {
@@ -2982,7 +3194,13 @@ async function executeToolCalls(toolCalls: ToolCall[]): Promise<ToolResult[]> {
           console.log(`[SkillUsage] skill guide read: ${docPath}`);
         }
       }
-      const toolData = result.success ? (result.data ?? result.output ?? '') : '';
+      // For browser: prefer output (contains "Opened...\n[AI snapshot]") over data ({targetId,url,title})
+      // so the snapshot text flows into compactBrowserPayload and reaches the model.
+      const toolData = result.success
+        ? (toolCall.name === 'browser'
+            ? (result.output ?? result.data ?? '')
+            : (result.data ?? result.output ?? ''))
+        : '';
       const compacted = result.success
         ? compactToolPayload(toolCall.name, toolData)
         : undefined;

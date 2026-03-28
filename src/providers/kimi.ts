@@ -2,7 +2,7 @@
  * Kimi Provider
  */
 
-import { Provider, ChatRequest, ChatResponse, StreamChunk } from './traits';
+import { Provider, ChatRequest, ChatResponse, StreamChunk, MessageContentBlock } from './traits';
 import { ProviderConfig } from './index';
 
 interface KimiApiError {
@@ -48,17 +48,21 @@ export class KimiCodingProvider implements Provider {
     };
   }
 
-  private transformMessages(messages: Array<{role: string; content: string}>): { system?: string; messages: Array<{role: string; content: string}> } {
-    // Kimi Coding uses Anthropic format - system should be separate parameter
+  private transformMessages(messages: Array<{role: string; content: string | MessageContentBlock[]}>): {
+    system?: string;
+    messages: Array<{role: string; content: string | MessageContentBlock[]}>;
+  } {
+    // KimiCoding uses Anthropic Messages API format.
+    // System must be a plain string parameter; all other messages keep their
+    // content as-is (string or content blocks) so tool_use/tool_result blocks
+    // flow through to the API without conversion.
     const systemMessage = messages.find(m => m.role === 'system');
     const otherMessages = messages.filter(m => m.role !== 'system');
-    
+    const systemText = typeof systemMessage?.content === 'string' ? systemMessage.content : '';
+
     return {
-      system: systemMessage?.content,
-      messages: otherMessages.map(m => ({
-        role: m.role,
-        content: m.content,
-      })),
+      system: systemText || undefined,
+      messages: otherMessages.map(m => ({ role: m.role, content: m.content })),
     };
   }
 

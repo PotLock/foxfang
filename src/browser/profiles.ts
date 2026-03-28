@@ -4,9 +4,9 @@
  * Manage browser profiles and their runtimes
  */
 
-import type { BrowserConfig, BrowserProfile, BrowserRuntime, ProfileStatus } from './types';
+import type { BrowserConfig, BrowserRuntime, ProfileStatus } from './types';
 import { getProfileConfig, getUserDataDir } from './config';
-import { launchChrome, stopChrome, type LaunchedChrome } from './chrome';
+import { launchChrome, stopChrome } from './chrome';
 
 export class ProfileManager {
   private runtimes: Map<string, BrowserRuntime>;
@@ -32,22 +32,34 @@ export class ProfileManager {
     // Check if already running
     const existing = this.runtimes.get(name);
     if (existing) {
-      return existing;
+      if (!existing.process || existing.process.exitCode === null) {
+        return existing;
+      }
+      this.runtimes.delete(name);
     }
 
     const userDataDir = getUserDataDir(this.config, name);
+    const cdpPort = Number(profile.cdpPort ?? this.config.cdpPort ?? 18800);
+    const controlPort = Number(this.config.port || 0);
+    if (Number.isFinite(controlPort) && controlPort > 0 && cdpPort === controlPort) {
+      throw new Error(
+        `Browser CDP port (${cdpPort}) conflicts with browser control server port (${controlPort}). ` +
+        `Set browser.cdpPort or browser.profiles.${name}.cdpPort to a different port.`
+      );
+    }
 
     // Launch Chrome with CDP
     const launched = await launchChrome({
       executablePath: profile.executablePath || this.config.executablePath,
       userDataDir,
       headless: profile.headless ?? this.config.headless,
-      port: this.config.port,
+      port: cdpPort,
     });
 
     // Connect Playwright to the launched Chrome
     const { chromium } = await import('playwright');
-    const browser = await chromium.connectOverCDP(`http://localhost:${launched.cdpPort}`);
+    const connectUrl = await resolvePlaywrightConnectUrl(launched.cdpUrl);
+    const browser = await chromium.connectOverCDP(connectUrl);
     const context = browser.contexts()[0] || await browser.newContext();
 
     const runtime: BrowserRuntime = {
@@ -135,8 +147,38 @@ export class ProfileManager {
   async getOrCreateRuntime(profileName?: string): Promise<BrowserRuntime> {
     const runtime = this.getRuntime(profileName);
     if (runtime) {
-      return runtime;
+      if (!runtime.process || runtime.process.exitCode === null) {
+        return runtime;
+      }
+      await this.stopProfile(profileName);
     }
     return this.startProfile(profileName);
+  }
+}
+
+async function resolvePlaywrightConnectUrl(cdpUrl: string): Promise<string> {
+  const normalized = cdpUrl.replace(/\/+$/, '');
+  const versionUrl = `${normalized}/json/version`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 2500);
+  try {
+    const response = await fetch(versionUrl, {
+      method: 'GET',
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      throw new Error(`CDP endpoint returned HTTP ${response.status}`);
+    }
+    const data = await response.json().catch(() => null) as { webSocketDebuggerUrl?: string } | null;
+    const wsUrl = String(data?.webSocketDebuggerUrl || '').trim();
+    return wsUrl || normalized;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to resolve Chrome DevTools endpoint from ${versionUrl}: ${detail}. ` +
+      `This usually means the configured CDP port is not serving DevTools.`
+    );
+  } finally {
+    clearTimeout(timeout);
   }
 }

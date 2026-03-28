@@ -183,6 +183,7 @@ export async function registerBrowserCommand(program: Command): Promise<void> {
         config.browser = {
           enabled: true,
           port: 9222,
+          cdpPort: 18800,
           host: 'localhost',
           headless: headless,
           defaultProfile: 'default',

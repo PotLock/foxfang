@@ -25,6 +25,9 @@ export interface LaunchedChrome {
 }
 
 const DEFAULT_CDP_PORT = 9222;
+const CHROME_READY_POLL_MS = 200;
+const CHROME_READY_WINDOW_MS = 12_000;
+const CHROME_STDIN_STDERR_HINT_MAX_CHARS = 1_400;
 
 export async function launchChrome(options: LaunchChromeOptions): Promise<LaunchedChrome> {
   const {
@@ -42,7 +45,7 @@ export async function launchChrome(options: LaunchChromeOptions): Promise<Launch
     // Directory might already exist
   }
 
-  const cdpUrl = `http://localhost:${port}`;
+  const cdpUrl = `http://127.0.0.1:${port}`;
 
   const args: string[] = [
     `--remote-debugging-port=${port}`,
@@ -68,6 +71,14 @@ export async function launchChrome(options: LaunchChromeOptions): Promise<Launch
   };
   const getSpawnError = () => spawnError;
   chromeProcess.on('error', onSpawnError);
+  const stderrChunks: Buffer[] = [];
+  const onStderr = (chunk: Buffer) => {
+    stderrChunks.push(chunk);
+    if (stderrChunks.length > 32) {
+      stderrChunks.splice(0, stderrChunks.length - 32);
+    }
+  };
+  chromeProcess.stderr?.on('data', onStderr);
 
   // Give spawn a brief moment to surface immediate launch errors.
   await new Promise((resolve) => setTimeout(resolve, 100));
@@ -81,21 +92,41 @@ export async function launchChrome(options: LaunchChromeOptions): Promise<Launch
     throw new Error(`Failed to launch browser "${chromeExecutable}": no PID`);
   }
 
-  // Wait a bit for Chrome to start
-  await new Promise((resolve) => setTimeout(resolve, 1900));
-
-  const startupSpawnError = getSpawnError();
-  if (startupSpawnError) {
-    throw new Error(`Failed to launch browser "${chromeExecutable}": ${startupSpawnError.message}`);
+  const deadline = Date.now() + CHROME_READY_WINDOW_MS;
+  let cdpReady = false;
+  while (Date.now() < deadline) {
+    const startupSpawnError = getSpawnError();
+    if (startupSpawnError) {
+      throw new Error(`Failed to launch browser "${chromeExecutable}": ${startupSpawnError.message}`);
+    }
+    if (chromeProcess.exitCode !== null) {
+      const stderrHint = formatStderrHint(stderrChunks);
+      throw new Error(
+        `Chrome exited immediately with code ${chromeProcess.exitCode}${stderrHint ? `\n${stderrHint}` : ''}`
+      );
+    }
+    if (await isChromeReachable(cdpUrl)) {
+      cdpReady = true;
+      break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, CHROME_READY_POLL_MS));
   }
 
-  // Check if process is still running
-  if (chromeProcess.exitCode !== null) {
-    throw new Error(`Chrome exited immediately with code ${chromeProcess.exitCode}`);
+  if (!cdpReady) {
+    const stderrHint = formatStderrHint(stderrChunks);
+    try {
+      chromeProcess.kill('SIGKILL');
+    } catch {
+      // Ignore kill errors.
+    }
+    throw new Error(
+      `Failed to start Chrome CDP endpoint on ${cdpUrl}${stderrHint ? `\n${stderrHint}` : ''}`
+    );
   }
 
   // Clean up bootstrap error listener after successful start.
   chromeProcess.off('error', onSpawnError);
+  chromeProcess.stderr?.off('data', onStderr);
 
   return {
     process: chromeProcess,
@@ -103,6 +134,37 @@ export async function launchChrome(options: LaunchChromeOptions): Promise<Launch
     cdpUrl,
     pid: chromeProcess.pid,
   };
+}
+
+async function isChromeReachable(cdpUrl: string): Promise<boolean> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 800);
+  try {
+    const versionUrl = `${cdpUrl.replace(/\/+$/, '')}/json/version`;
+    const response = await fetch(versionUrl, {
+      method: 'GET',
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      return false;
+    }
+    const payload = await response.json().catch(() => null) as { webSocketDebuggerUrl?: string; Browser?: string } | null;
+    return Boolean(payload?.webSocketDebuggerUrl || payload?.Browser);
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function formatStderrHint(chunks: Buffer[]): string {
+  if (!chunks.length) return '';
+  const merged = Buffer.concat(chunks).toString('utf8').trim();
+  if (!merged) return '';
+  const clipped = merged.length > CHROME_STDIN_STDERR_HINT_MAX_CHARS
+    ? `${merged.slice(0, CHROME_STDIN_STDERR_HINT_MAX_CHARS)}...`
+    : merged;
+  return `Chrome stderr:\n${clipped}`;
 }
 
 export async function stopChrome(launched: LaunchedChrome | BrowserRuntime): Promise<void> {

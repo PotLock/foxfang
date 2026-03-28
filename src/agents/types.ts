@@ -40,6 +40,8 @@ export type CompactToolResult = {
   usefulQuotes?: string[];
   relevanceToTask: string;
   rawRef?: string;
+  /** Full page snapshot text — browser tool only. Given larger budget in narrative. */
+  pageContent?: string;
 };
 
 export type AgentChannelContext = {

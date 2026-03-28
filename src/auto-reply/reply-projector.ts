@@ -295,12 +295,17 @@ export function createReplyProjector(options: ReplyProjectorOptions): ReplyProje
     }
 
     if (chunk.type === 'tool_call') {
-      enqueueToolStatus(formatToolCallStatus(chunk));
+      // Browser tool runs silently — no "Running browser: ..." shown to user
+      if (chunk.tool !== 'browser') {
+        enqueueToolStatus(formatToolCallStatus(chunk));
+      }
       return;
     }
 
     if (chunk.type === 'tool_result') {
       rememberMediaUrls(chunk.mediaUrls);
+      // Browser result status is internal detail — only surface errors
+      if (chunk.tool === 'browser' && !chunk.error) return;
       const resultStatus = formatToolResultStatus(chunk);
       if (resultStatus) {
         enqueueToolStatus(resultStatus, Boolean(chunk.error));

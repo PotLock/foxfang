@@ -39,7 +39,23 @@ function estimateTokensFromText(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
-export function trimMessagesToBudget<T extends { role: string; content: string }>(
+function estimateContentTokens(content: string | unknown): number {
+  if (typeof content === 'string') return estimateTokensFromText(content);
+  if (Array.isArray(content)) {
+    return content.reduce((sum: number, block: unknown) => {
+      if (block && typeof block === 'object') {
+        const b = block as Record<string, unknown>;
+        if (b.type === 'text' && typeof b.text === 'string') return sum + estimateTokensFromText(b.text);
+        if (b.type === 'tool_result' && typeof b.content === 'string') return sum + estimateTokensFromText(b.content);
+        if (b.type === 'tool_use') return sum + estimateTokensFromText(JSON.stringify(b.input ?? {}));
+      }
+      return sum;
+    }, 0);
+  }
+  return 0;
+}
+
+export function trimMessagesToBudget<T extends { role: string; content: string | unknown }>(
   messages: T[],
   maxInputTokens: number,
 ) {
@@ -51,7 +67,7 @@ export function trimMessagesToBudget<T extends { role: string; content: string }
   for (const msg of messages) {
     if (msg.role === 'system') {
       systemMessages.push(msg);
-      systemTokens += estimateTokensFromText(msg.content);
+      systemTokens += estimateContentTokens(msg.content);
     } else {
       otherMessages.push(msg);
     }
@@ -65,7 +81,7 @@ export function trimMessagesToBudget<T extends { role: string; content: string }
   let used = 0;
   for (let idx = otherMessages.length - 1; idx >= 0; idx -= 1) {
     const msg = otherMessages[idx];
-    const tokens = estimateTokensFromText(msg.content);
+    const tokens = estimateContentTokens(msg.content);
     if (used + tokens > remainingBudget) {
       continue;
     }

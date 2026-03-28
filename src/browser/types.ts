@@ -10,14 +10,18 @@ export interface BrowserProfile {
   userDataDir?: string;
   executablePath?: string;
   headless?: boolean;
+  cdpPort?: number;
   remoteCdpUrl?: string;
 }
 
 export interface BrowserConfig {
   enabled: boolean;
+  /** Browser control server port */
   port: number;
   host: string;
   headless: boolean;
+  /** Default local CDP port for launched browser profiles */
+  cdpPort?: number;
   executablePath?: string;
   defaultProfile: string;
   profiles: Record<string, BrowserProfile>;
