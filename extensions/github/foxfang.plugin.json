@@ -1,5 +1,6 @@
 {
   "id": "github",
+  "enabledByDefault": true,
   "providerAuthEnvVars": {
     "github": [
       "GITHUB_APP_ID",
