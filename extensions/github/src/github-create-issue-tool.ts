@@ -17,7 +17,9 @@ const CreateIssueSchema = Type.Object(
     }),
     body: Type.Optional(
       Type.String({
-        description: "Issue body / description (markdown supported).",
+        description:
+          "Issue body / description in GitHub Markdown. Use actual markdown headings (## Heading), " +
+          "bullet lists (- item), and real newlines. Do NOT prefix headings with $ or use \\n escape sequences.",
       }),
     ),
     owner: Type.Optional(
@@ -76,7 +78,9 @@ export function createGitHubCreateIssueTool(api: FoxFangPluginApi) {
       }
 
       const title = readStringParam(rawParams, "title", { required: true });
-      const body = readStringParam(rawParams, "body");
+      const rawBody = readStringParam(rawParams, "body");
+      // Normalize escaped newlines that LLMs sometimes emit as literal \n sequences
+      const body = rawBody ? rawBody.replace(/\\n/g, "\n") : undefined;
       const ownerParam = readStringParam(rawParams, "owner");
       const repoParam = readStringParam(rawParams, "repo");
       const assigneesParam = readStringParam(rawParams, "assignees");
