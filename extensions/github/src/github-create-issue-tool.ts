@@ -80,7 +80,10 @@ export function createGitHubCreateIssueTool(api: FoxFangPluginApi) {
       const title = readStringParam(rawParams, "title", { required: true });
       const rawBody = readStringParam(rawParams, "body");
       // Normalize escaped newlines that LLMs sometimes emit as literal \n sequences
-      const body = rawBody ? rawBody.replace(/\\n/g, "\n") : undefined;
+      // Also strip leading $ that LLMs sometimes prepend before markdown headings (e.g. $## → ##)
+      const body = rawBody
+        ? rawBody.replace(/\\n/g, "\n").replace(/^\$/gm, "")
+        : undefined;
       const ownerParam = readStringParam(rawParams, "owner");
       const repoParam = readStringParam(rawParams, "repo");
       const assigneesParam = readStringParam(rawParams, "assignees");
