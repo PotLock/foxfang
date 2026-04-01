@@ -46,6 +46,15 @@ Skills are shared. Your setup is yours. Keeping them apart means you can update 
 
 Add whatever helps you do your job. This is your cheat sheet.
 
+## Screenshots & Browser Files
+
+Screenshots are saved to `/tmp/foxfang/` (or the path returned by `resolvePreferredFoxFangTmpDir()`).
+
+**Important — Snap Chromium issue on Ubuntu servers:**
+- Snap Chromium virtualizes `/tmp` — files written appear to succeed but are NOT accessible by FoxFang
+- Fix: use Google Chrome (non-Snap) with `browser.executablePath=/usr/bin/google-chrome-stable` and `browser.noSandbox=true`
+- After taking a screenshot, verify the file exists before trying to send it
+
 ## Web Tools
 
 Two separate tools available:
