@@ -45,3 +45,27 @@ Skills are shared. Your setup is yours. Keeping them apart means you can update 
 ---
 
 Add whatever helps you do your job. This is your cheat sheet.
+
+## Web Tools
+
+Two separate tools available:
+
+- **`web_fetch`** — HTTP fetch (static pages, APIs, llms.txt). Always available.
+- **`browser`** — Full Playwright browser control (SPAs, interactive pages, screenshots). Requires `browser.enabled=true` in foxfang.json.
+
+For Reply.cash: use `web_fetch` on `https://reply.cash/llms.txt` (static, AI-readable). The main site `https://reply.cash` is a SPA — use `browser` if available, otherwise use `https://marketing.reply.cash/narrative` via `web_fetch`.
+
+Do NOT pre-explain tool limitations. Try the tool first, report failure only if it actually fails.
+
+## GitHub
+
+GitHub access is via the **GitHub App plugin** — NOT the `gh` CLI.
+
+Available tools (already authenticated):
+- `github_create_issue` — create issues in a repo
+- `github_list_issues` — list/search issues
+- `github_add_comment` — add a comment to an issue
+
+Do NOT run `gh auth status` or suggest `gh` CLI setup. The plugin handles auth automatically via App ID + private key.
+
+When asked about GitHub access, use the tools above directly.
